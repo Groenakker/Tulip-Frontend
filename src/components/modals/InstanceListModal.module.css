@@ -1,0 +1,158 @@
+.instanceModalContainer {
+    width: 85vw;
+    max-width: 1000px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 10px;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.content {
+    margin-bottom: 20px;
+}
+
+.tableContainer {
+    margin-bottom: 20px;
+}
+
+.instanceTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.instanceTable th {
+    background-color: #2d3748;
+    color: white;
+    text-align: left;
+    padding: 10px 12px;
+    font-weight: 600;
+}
+
+.instanceTable td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.instanceTable tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.instanceTable tr:hover {
+    background-color: #f0f4f8;
+}
+
+.statusBadge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.intesting {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.completed {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.pending {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.actionButtons {
+    display: flex;
+    gap: 5px;
+}
+
+.editBtn, .deleteBtn {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.editBtn {
+    background-color: #4570b6;
+    color: white;
+}
+
+.deleteBtn {
+    background-color: #dc2626;
+    color: white;
+}
+
+.printBtn {
+    background-color: #059669;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.printBtn:hover {
+    background-color: #047857;
+}
+
+.buttonGroup {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.addButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #4570b6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 16px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.addButton:hover {
+    background-color: #013179;
+}
+
+.closeBtn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    background-color: #f1f1f1;
+    color: #333;
+}
+
+.closeBtn:hover {
+    background-color: #e0e0e0;
+}

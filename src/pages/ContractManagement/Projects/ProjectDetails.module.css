@@ -1,0 +1,153 @@
+.bHeading {
+  margin-bottom: 15px;
+}
+
+.detailPage {
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+}
+
+.leftGrid {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  flex: 1;
+}
+
+.bigIsland {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  /* gap: 12px; */
+  min-width: 0;
+}
+
+.bigIsland h3 {
+  font-size: 20px;
+  font-weight: 600;
+  border-bottom: 1px solid black;
+  margin-bottom: 5px;
+  padding-bottom: 5px;
+}
+
+.main {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+.picture {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-right: 8px;
+  gap: 8px;
+  height: 100%;
+}
+
+.uploadButton {
+  color: rgb(69 112 182);
+  border: none;
+  border-radius: 5px;
+  padding: 8px 12px;
+  cursor: pointer;
+  background-color: #ffffff;
+  font-weight: 650;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.uploadButton:hover {
+  color: rgb(1, 49, 126);
+}
+
+.detailContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.details,
+.details2,
+.details3 {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+.infoDetail {
+  font-size: 13px;
+  font-weight: 550;
+  padding: 0px 6px
+}
+
+.info,
+.info2 {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding: 6px 6px;
+  /* flex: 1 1 250px; */
+
+}
+
+.info input,
+.info select,
+.info2 input {
+  width: auto;
+  padding: 5px 0px 5px 9px;
+  border-radius: 20px;
+  border: 1px solid #D0D5DD;
+  background-color: #ffffff;
+}
+
+.saves{
+  display: flex;
+  justify-content: end;
+  align-items: center;
+  margin-top: 10px;
+  gap: 10px;
+
+}
+
+.saveButton {
+  display: flex ;
+  background-color: rgb(69 112 182);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 12px;
+  cursor: pointer;
+  gap: 8px;
+  align-items: center;
+}
+.deleteButton {
+  display: flex ;
+  background-color: rgb(220, 38, 38);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 12px;
+  cursor: pointer;
+  gap: 8px;
+  align-items: center;
+}
+
+.deleteButton:hover {
+  background-color: rgb(153, 27, 27);
+}
+
+.saveButton:hover {
+  background-color:  rgb(1, 49, 126);
+}
+
+
+.table {
+  margin: 0;
+  padding: 0;
+  margin-bottom: 32px;
+}

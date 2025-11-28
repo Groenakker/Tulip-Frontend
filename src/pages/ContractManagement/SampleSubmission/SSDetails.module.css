@@ -1,0 +1,577 @@
+.bHeading {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.detailPage {
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+}
+
+.leftGrid {
+    display: flex;
+    flex-direction: row;
+    gap: 24px;
+    flex: 1;
+}
+
+.bigIsland {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.bigIsland h3 {
+    font-size: 20px;
+    font-weight: 600;
+    border-bottom: 1px solid black;
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+}
+
+.main {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+
+}
+
+.detailContainer {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.picture {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-right: 8px;
+    gap: 8px;
+    height: 100%;
+    margin-left: 8px;
+}
+
+.uploadButton {
+    color: rgb(69 112 182);
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px;
+    cursor: pointer;
+    background-color: #ffffff;
+    font-weight: 650;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.uploadButton:hover {
+    color: rgb(1, 49, 126);
+}
+
+.details,
+.details2 {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 6px;
+}
+
+.infoDetail {
+    font-size: 13px;
+    font-weight: 550;
+    padding: 0px 6px;
+}
+
+.info,
+.info2 {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    padding: 6px 6px;
+}
+
+.info input,
+.info2 input {
+    width: auto;
+    padding: 5px 0px 5px 9px;
+    border-radius: 20px;
+    border: 1px solid #D0D5DD;
+    background-color: #ffffff;
+    font-size: 13px;
+}
+
+.info input:focus,
+.info2 input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+
+.info label {
+    display: flex;
+    font-size: 13px;
+    padding: 0px 6px;
+    align-items: center;
+    accent-color: rgb(69, 112, 182);
+}
+
+.dropdown {
+    width: 100%;
+    padding: 5px 0px 5px 9px;
+    border-radius: 20px;
+    border: 1px solid #D0D5DD;
+    background-color: #ffffff;
+}
+
+.autoGrowInput {
+    width: 100%;
+    padding: 5px 0px 5px 9px;
+    border-radius: 20px;
+    border: 1px solid #D0D5DD;
+    background-color: #ffffff;
+    resize: none;
+    overflow: hidden;
+    font-family: inherit;
+    font-size: 13.3px;
+    display: block;
+    box-sizing: border-box;
+    margin: 0;
+
+}
+
+.autoGrowInput:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.saves {
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    margin-top: 10px;
+    gap: 10px;
+}
+
+.savesTop {
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    gap: 10px;
+}
+
+.saveButton {
+    display: flex;
+    background-color: rgb(69 112 182);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px;
+    cursor: pointer;
+    gap: 8px;
+    align-items: center;
+}
+
+.deleteButton {
+    display: flex;
+    background-color: rgb(220, 38, 38);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px;
+    cursor: pointer;
+    gap: 8px;
+    align-items: center;
+}
+
+.deleteButton:hover {
+    background-color: rgb(153, 27, 27);
+}
+
+.saveButton:hover {
+    background-color: rgb(1, 49, 126);
+}
+
+.conditionsTable {
+    border: 1px solid #e0e0e0;
+    margin-bottom: 15px;
+}
+
+.conditionColumn {
+    width: 33.33%;
+    border-right: 1px solid #e0e0e0;
+    justify-content: flex-start;
+}
+
+.conditionColumn:last-child {
+    border-right: none;
+}
+
+.columnHeader {
+    text-align: center;
+    font-weight: bold;
+    background-color: rgb(30, 44, 68);
+    color: white;
+    padding: 8px;
+    font-size: 13px;
+}
+
+.radioGroup {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+
+/* Image Section Styles */
+.imageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.editButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+    padding: 0;
+}
+
+.imageContainer {
+    justify-content: space-around;
+    flex-wrap: wrap;
+}
+
+.imageBox {
+    width: 45%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid #e0e0e0;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.imageFrame {
+    width: 300px;
+    height: 280px;
+    background-color: #f5f5f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.sampleImage {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.placeholderText {
+    color: #888;
+}
+
+.imageUploadButton {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    cursor: pointer;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 5px;
+    border-radius: 5px;
+    display: flex;
+    color: rgb(69 112 182);
+}
+
+.imageLabel {
+    font-weight: bold;
+}
+
+.fullScreenImageContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 90vw;
+    height: 80vh;
+}
+
+.fullScreenImage {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.sampleImage {
+    max-width: 100%;
+    max-height: 100%;
+    cursor: pointer;
+}
+
+/* Requested Tests Table Styles */
+.requestedTestsTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    accent-color: rgb(69, 112, 182);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 20px;
+    font-weight: 600;
+    border-bottom: 1px solid black;
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+    margin-bottom: 12px;
+}
+
+.addButton {
+    display: flex;
+    background-color: rgb(69 112 182);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px;
+    cursor: pointer;
+    gap: 8px;
+    align-items: center;
+    height: 20%;
+}
+
+.addButton:hover {
+    background-color: rgb(1, 49, 126);
+}
+
+
+.requestedTestsTable th {
+    background-color: #2d3748;
+    color: white;
+    text-align: left;
+    padding: 8px;
+    font-weight: 600;
+}
+
+.requestedTestsTable td {
+    padding: 8px;
+    border-bottom: 1px solid #e0e0e0;
+    vertical-align: top;
+}
+
+.requestedTestsTable tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.centerAlign {
+    text-align: center;
+}
+
+.extractionParams {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.extractionInput {
+    width: 50px;
+    padding: 2px 4px;
+    border: 1px solid #D0D5DD;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 5px;
+    text-align: center;
+}
+
+.extractionInput:focus {
+    outline: none;
+    border-color: #4570b6;
+}
+
+.qualityOptions {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.qualityOptions label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.testActions {
+    display: flex;
+    gap: 5px;
+}
+
+.iconButton {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    color: #4570b6;
+    font-size: 1.1em;
+    padding: 2px;
+}
+
+.iconButton:hover {
+    color: #013179;
+}
+
+.testsSummary {
+    display: flex;
+    justify-content: space-between;
+    margin: 15px 0;
+    align-items: center;
+}
+
+.sampleCount {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+.generateButton {
+    background-color: #4570b6;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.generateButton:hover {
+    background-color: #013179;
+}
+
+.serviceLevel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    accent-color: rgb(69, 112, 182);
+}
+
+.serviceLevelOptions {
+    display: flex;
+    gap: 15px;
+}
+
+.notesSection {
+    margin-top: 15px;
+}
+
+
+/* Submission Approval Styles */
+.approvalSection {
+    width: 100%;
+    min-height: 100px;
+    border-radius: 4px;
+    overflow: visible;
+    margin-bottom: 7px;
+}
+.approvalRow {
+    display: flex;
+    align-items: center;
+    padding: 15px 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.approvalRow:last-child {
+    border-bottom: none;
+}
+
+.approvalLabel {
+    width: 25%;
+    font-weight: 600;
+    font-size: 14px;
+    padding-right: 10px;
+}
+
+.approvalName {
+    width: 25%;
+    font-size: 14px;
+    height: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.approvalSignature {
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    height: 60px;
+    padding: 10px;
+}
+
+.signatureCanvas {
+    width: 100%;
+    height: 60px;
+    border-radius: 8px;
+    border: 1px solid #D0D5DD;
+    background-color: #f0f0f0;
+    /* cursor: crosshair; */
+}
+
+
+.approvalDate {
+    width: 20%;
+    font-size: 14px;
+    height: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.subText {
+    font-size: 12px;
+    color: #666;
+    display: flex;
+    justify-content: center;
+}
+
+.mainText {
+    font-size: 14px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    text-align: center;
+}
+
+.signatureActions {
+    display: flex;
+    gap: 8px;
+    margin-top: 5px;
+    justify-content: center;
+}
+
+.smallBtn {
+    font-size: 11px;
+    padding: 4px 12px;
+    border: none;
+    border-radius: 15px;
+    background-color: #4570b6;
+    color: white;
+    cursor: pointer;
+}
+
+.smallBtn:hover {
+    background-color: #013179;
+}

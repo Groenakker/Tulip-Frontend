@@ -1,0 +1,20 @@
+
+body {
+  margin: 0;
+  background-color: #EFF3F4;
+}
+
+.appContainer {
+  display: flex;
+}
+
+.mainContentArea{
+  margin-left: 256px;
+  width: auto;
+  background-color: #EFF3F4;
+  height: calc(100vh - 64px);
+  padding: 32px;
+}
+.titleArea{
+  margin-bottom: 20px;
+}

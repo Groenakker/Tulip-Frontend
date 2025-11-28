@@ -1,0 +1,114 @@
+.sampleFormContainer {
+    width: 90vw;
+    max-width: 1200px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.formGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+.formSection {
+    flex: 1;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.infoDetail {
+    font-size: 13px;
+    font-weight: 550;
+    padding: 0px 6px;
+}
+
+.input {
+    width: 100%;
+    padding: 5px 0px 5px 9px;
+    border-radius: 20px;
+    border: 1px solid #D0D5DD;
+    background-color: #ffffff;
+    font-size: 13px;
+}
+
+.textarea {
+    resize: vertical;
+    min-height: 80px;
+    border-radius: 10px;
+}
+
+.buttonGroup {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.leftButtons, .rightButtons {
+    display: flex;
+    gap: 10px;
+}
+
+.saveBtn, .cancelBtn, .viewButton {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.saveBtn {
+    background-color: #4570b6;
+    color: white;
+}
+
+.saveBtn:hover {
+    background-color: #013179;
+}
+
+.cancelBtn {
+    background-color: #f1f1f1;
+    color: #333;
+}
+
+.cancelBtn:hover {
+    background-color: #e0e0e0;
+}
+
+.viewButton {
+    background-color: #4570b6;
+    color: white;
+}
+
+.viewButton:hover {
+    background-color: #013179;
+}

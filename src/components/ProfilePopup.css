@@ -1,0 +1,209 @@
+.profilePopupOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: transparent;
+  z-index: 998;
+  cursor: default;
+}
+
+.profilePopupCard {
+  position: fixed;
+  bottom: 80px;
+  left: 16px;
+  width: 320px;
+  background-color: hsl(0, 0%, 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  padding: 20px;
+  z-index: 999;
+  font-family: "Poppins", sans-serif;
+  animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* User Info Header */
+.profilePopupHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.profilePopupAvatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #ffe5d9;
+  object-fit: cover;
+}
+
+.profilePopupUserInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profilePopupName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.profilePopupEmail {
+  font-size: 14px;
+  color: #777;
+  margin: 0;
+}
+
+/* Sections */
+.profilePopupSection {
+  margin-bottom: 12px;
+}
+
+.profilePopupSection:last-of-type {
+  margin-bottom: 0;
+}
+
+/* Menu Items */
+.profilePopupItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  color: #333;
+}
+
+.profilePopupItem:hover {
+  background-color: #e9f0fe;
+  color: rgb(69, 112, 182);
+}
+
+.profilePopupItemLogout {
+  color: #dc3545;
+}
+
+.profilePopupItemLogout:hover {
+  background-color: #fee;
+  color: #dc3545;
+}
+
+.profilePopupIcon {
+  font-size: 18px;
+  color: #5e5e5e;
+  min-width: 18px;
+}
+
+.profilePopupItem:hover .profilePopupIcon {
+  color: rgb(69, 112, 182);
+}
+
+.profilePopupIconLogout {
+  color: #dc3545;
+}
+
+.profilePopupItemLogout:hover .profilePopupIconLogout {
+  color: #dc3545;
+}
+
+.profilePopupText {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 400;
+  color: #333;
+}
+
+.profilePopupItem:hover .profilePopupText {
+  color: rgb(69, 112, 182);
+}
+
+.profilePopupTextLogout {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.profilePopupItemLogout:hover .profilePopupTextLogout {
+  color: #dc3545;
+}
+
+.profilePopupChevron {
+  font-size: 12px;
+  color: #5e5e5e;
+}
+
+.profilePopupItem:hover .profilePopupChevron {
+  color: rgb(69, 112, 182);
+}
+
+.profilePopupChevronLogout {
+  color: #dc3545;
+}
+
+.profilePopupItemLogout:hover .profilePopupChevronLogout {
+  color: #dc3545;
+}
+
+/* Toggle Switch */
+.profilePopupToggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.profilePopupToggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.profilePopupToggleSlider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  border-radius: 24px;
+  transition: 0.3s;
+}
+
+.profilePopupToggleSlider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.profilePopupToggle input:checked + .profilePopupToggleSlider {
+  background-color: #6c5ce7;
+}
+
+.profilePopupToggle input:checked + .profilePopupToggleSlider:before {
+  transform: translateX(20px);
+}
+

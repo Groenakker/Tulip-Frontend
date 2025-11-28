@@ -1,0 +1,141 @@
+.whiteIsland {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 64px);
+    justify-content: space-around;
+}
+
+.title {
+    color: #1f2937;
+    margin-bottom: 16px;
+}
+
+.addbtn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.searchBar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40%;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.searchInput {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    width: 100%;
+    font-size: 12px;
+}
+
+.searchButton {
+    display: flex;
+    align-items: center;
+    background: none;
+    color: rgb(69 112 182);
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 5px 12px;
+}
+
+.searchButton:hover {
+    color: rgb(1, 49, 126);
+}
+
+
+.addButton {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgb(69 112 182);
+    color: #fff;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    font-size: 12px;
+}
+
+.addButton:hover {
+    background: rgb(1, 49, 126);
+}
+
+
+.recieveTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 24px;
+    font-size: 14px;
+}
+
+.recieveTable th {
+    text-align: left;
+    font-weight: 600;
+    background: #f9fafb;
+    padding: 10px;
+}
+
+.recieveTable td {
+    padding: 10px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.recieveTable tr {
+    cursor: pointer;
+
+}
+
+.recieveTable tr:hover {
+    background-color: #e9f0fe;
+}
+
+.statusBadge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.statusBadge.active {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.statusBadge.inactive {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.pagination {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 24px;
+}
+
+.pagination button {
+    padding: 6px 12px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.pagination button.active {
+    background: rgb(69 112 182);
+    color: #fff;
+}
+
+.pagination button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
