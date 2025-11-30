@@ -18,7 +18,7 @@ export default function InstanceList() {
     useEffect(() => {
         const fetchInstances = async () => {
             try {
-                const response = await fetch('http://localhost:5174/api/instances');
+                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch instances');
                 }

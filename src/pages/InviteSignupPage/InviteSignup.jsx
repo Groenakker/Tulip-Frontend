@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import styles from "./InviteSignup.module.css";
 
-const API_BASE_URL = "http://localhost:5174/api";
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
 const initialFormState = {
   name: "",

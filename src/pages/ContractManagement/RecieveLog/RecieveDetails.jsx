@@ -40,7 +40,7 @@ export default function RecieveDetails() {
             try {
                 // Load projects for dropdown
                 try {
-                    const projRes = await fetch('http://localhost:5174/api/projects');
+                    const projRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects`);
                     if (projRes.ok) {
                         const projData = await projRes.json();
                         setProjects(projData || []);
@@ -53,7 +53,7 @@ export default function RecieveDetails() {
 
                 if (id && id !== 'add') {
                     try {
-                        const res = await fetch(`http://localhost:5174/api/receivings/${id}`);
+                        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}`);
                         if (!res.ok) throw new Error('Failed to fetch receiving');
                         const data = await res.json();
                         setLog({
@@ -69,7 +69,7 @@ export default function RecieveDetails() {
                             signatureImage: data.signatureImage || ''
                         });
                         
-                        const linesRes = await fetch(`http://localhost:5174/api/receivings/${id}/lines`);
+                        const linesRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}/lines`);
                         if (linesRes.ok) {
                             const lines = await linesRes.json();
                             setItems(lines.map(l => ({
@@ -104,7 +104,7 @@ export default function RecieveDetails() {
             next.projectDesc = selected.description || '';
             if (selected.bPartnerID) {
                 try {
-                    const bpRes = await fetch(`http://localhost:5174/api/bpartners/${selected.bPartnerID}`);
+                    const bpRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${selected.bPartnerID}`);
                     if (bpRes.ok) {
                         const bp = await bpRes.json();
                         next.origin = bp.name || next.origin;
@@ -225,7 +225,7 @@ export default function RecieveDetails() {
             ));
 
             // Update on server
-            const res = await fetch(`http://localhost:5174/api/receivings/lines/${lineId}`, {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/lines/${lineId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ [field]: value })
@@ -240,7 +240,7 @@ export default function RecieveDetails() {
         if (!window.confirm('Are you sure you want to delete this line item?')) return;
         
         try {
-            const res = await fetch(`http://localhost:5174/api/receivings/lines/${lineId}`, {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/lines/${lineId}`, {
                 method: 'DELETE'
             });
             if (!res.ok) throw new Error('Failed to delete line item');
@@ -269,7 +269,7 @@ export default function RecieveDetails() {
                 arrivedDate: log.arrivedDate ? new Date(log.arrivedDate) : undefined,
                 estArrival: log.estArrival ? new Date(log.estArrival) : undefined,
             };
-            const res = await fetch(`http://localhost:5174/api/receivings/${id}`, {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -291,7 +291,7 @@ export default function RecieveDetails() {
             },
         });
         try {
-            const res = await fetch(`http://localhost:5174/api/receivings/${id}`, { method: 'DELETE' });
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Failed to delete');
             navigate('/RecieveLog');
         } catch (e) {
@@ -311,7 +311,7 @@ export default function RecieveDetails() {
 
         if (id && id !== 'add') {
             try {
-                const res = await fetch(`http://localhost:5174/api/receivings/${id}`, {
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ signatureImage: dataURL })
@@ -336,7 +336,7 @@ export default function RecieveDetails() {
 
         if (id && id !== 'add') {
             try {
-                const res = await fetch(`http://localhost:5174/api/receivings/${id}`, {
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ signatureImage: '' })
@@ -532,7 +532,7 @@ export default function RecieveDetails() {
                         onSelectSample={async (sample) => {
                             // Add receiving line for selected sample
                             try {
-                                const res = await fetch(`http://localhost:5174/api/receivings/${id}/lines`, {
+                                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}/lines`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({

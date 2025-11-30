@@ -11,7 +11,7 @@ const SampleSelect = ({ onClose, onOpenSampleForm, items, onSelectSample }) => {
         const load = async () => {
             setLoading(true);
             try {
-                const res = await fetch('http://localhost:5174/api/samples');
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`);
                 let normalized = [];
                 if (res.ok) {
                     const data = await res.json();

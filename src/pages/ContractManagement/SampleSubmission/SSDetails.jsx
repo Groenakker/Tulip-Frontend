@@ -155,7 +155,7 @@ export default function SSDetail() {
     const handleSave = async () => {
         try {
             const payload = { ...sample, status: sample.formStatus || 'Draft', description: sample.sampleDescription, formData: sample };
-            const res = await fetch(`http://localhost:5174/api/samples/${id}`, {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}`, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
             });
             if (!res.ok) throw new Error('Failed to save');
@@ -167,7 +167,7 @@ export default function SSDetail() {
 
     const handleDelete = async () => {
         try {
-            const res = await fetch(`http://localhost:5174/api/samples/${id}`, { method: 'DELETE' });
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Failed to delete');
             toast.error('Sample deleted!', { style: { background: 'rgb(220, 38, 38)', color: '#fff' } });
             navigate('/SampleSubmission');
@@ -194,7 +194,7 @@ export default function SSDetail() {
         const load = async () => {
             try {
                 if (id && id !== 'add') {
-                    const res = await fetch(`http://localhost:5174/api/samples/${id}`);
+                    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}`);
                     if (res.ok) {
                         const data = await res.json();
                         const signatureImage = data.signatureImage || data.formData?.signatureImage || null;
@@ -261,7 +261,7 @@ export default function SSDetail() {
 
         if (id && id !== 'add') {
             try {
-                const res = await fetch(`http://localhost:5174/api/samples/${id}`, {
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ signatureImage: null })
@@ -287,7 +287,7 @@ export default function SSDetail() {
 
         if (id && id !== 'add') {
             try {
-                const res = await fetch(`http://localhost:5174/api/samples/${id}`, {
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ signatureImage: dataURL })

@@ -41,7 +41,7 @@ export default function ShipmentDetails() {
             try {
                 // Load projects for dropdown
                 try {
-                    const projRes = await fetch('http://localhost:5174/api/projects');
+                    const projRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects`);
                     if (projRes.ok) {
                         const projData = await projRes.json();
                         setProjects(projData || []);
@@ -54,7 +54,7 @@ export default function ShipmentDetails() {
 
                 if (id && id !== 'add') {
                     try {
-                        const res = await fetch(`http://localhost:5174/api/shipping/${id}`);
+                        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}`);
                         if (!res.ok) throw new Error('Failed to fetch shipping');
                         const data = await res.json();
                         setLog({
@@ -71,7 +71,7 @@ export default function ShipmentDetails() {
                             image: data.image || ''
                         });
                         
-                        const linesRes = await fetch(`http://localhost:5174/api/shipping/${id}/lines`);
+                        const linesRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`);
                         if (linesRes.ok) {
                             const lines = await linesRes.json();
                             setItems(lines.map(l => ({
@@ -107,7 +107,7 @@ export default function ShipmentDetails() {
             next.projectDesc = selected.description || '';
             if (selected.bPartnerID) {
                 try {
-                    const bpRes = await fetch(`http://localhost:5174/api/bpartners/${selected.bPartnerID}`);
+                    const bpRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${selected.bPartnerID}`);
                     if (bpRes.ok) {
                         const bp = await bpRes.json();
                         next.shipmentOrigin = bp.name || next.shipmentOrigin;
@@ -359,7 +359,7 @@ export default function ShipmentDetails() {
         }));
 
         try {
-            const res = await fetch('http://localhost:5174/api/samples');
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`);
             if (!res.ok) throw new Error('Failed to load sample catalog.');
 
             const samples = await res.json();
@@ -395,7 +395,7 @@ export default function ShipmentDetails() {
 
             const createdLines = [];
             for (const sample of samplesToAdd) {
-                const response = await fetch(`http://localhost:5174/api/shipping/${id}/lines`, {
+                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -455,7 +455,7 @@ export default function ShipmentDetails() {
             ));
 
             // Update on server
-            const res = await fetch(`http://localhost:5174/api/shipping/lines/${lineId}`, {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${lineId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ [field]: value })
@@ -471,7 +471,7 @@ export default function ShipmentDetails() {
         if (!window.confirm('Are you sure you want to delete this line item?')) return;
         
         try {
-            const res = await fetch(`http://localhost:5174/api/shipping/lines/${lineId}`, {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${lineId}`, {
                 method: 'DELETE'
             });
             if (!res.ok) throw new Error('Failed to delete line item');
@@ -497,14 +497,14 @@ export default function ShipmentDetails() {
             let res;
             if (id && id !== 'add') {
                 // Update existing
-                res = await fetch(`http://localhost:5174/api/shipping/${id}`, {
+                res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
             } else {
                 // Create new
-                res = await fetch(`http://localhost:5174/api/shipping`, {
+                res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -539,7 +539,7 @@ export default function ShipmentDetails() {
         if (!window.confirm('Are you sure you want to delete this shipping record?')) return;
         
         try {
-            const res = await fetch(`http://localhost:5174/api/shipping/${id}`, { method: 'DELETE' });
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Failed to delete');
             
             toast.error('Log deleted successfully!', {
@@ -571,7 +571,7 @@ export default function ShipmentDetails() {
 
         if (id && id !== 'add') {
             try {
-                const res = await fetch(`http://localhost:5174/api/shipping/${id}`, {
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ image: dataURL })
@@ -596,7 +596,7 @@ export default function ShipmentDetails() {
 
         if (id && id !== 'add') {
             try {
-                const res = await fetch(`http://localhost:5174/api/shipping/${id}`, {
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ image: '' })
@@ -830,7 +830,7 @@ export default function ShipmentDetails() {
                         onSelectSample={async (sample) => {
                             // Add shipping line for selected sample
                             try {
-                                const res = await fetch(`http://localhost:5174/api/shipping/${id}/lines`, {
+                                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({

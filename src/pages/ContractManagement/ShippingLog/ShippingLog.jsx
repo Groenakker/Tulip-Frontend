@@ -43,7 +43,7 @@ export default function ShippingLog() {
   useEffect(() => {
     const fetchRows = async () => {
       try {
-        const res = await fetch('http://localhost:5174/api/shipping');
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping`);
         if (!res.ok) throw new Error('Failed to fetch shipping');
         const data = await res.json();
         setRows(data);
@@ -87,7 +87,7 @@ export default function ShippingLog() {
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
       
-      const res = await fetch('http://localhost:5174/api/shipping', {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

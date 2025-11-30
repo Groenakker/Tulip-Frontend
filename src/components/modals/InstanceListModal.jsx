@@ -12,7 +12,7 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await fetch('http://localhost:5174/api/instances');
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances`);
                 if (res.ok) {
                     const data = await res.json();
                     console.log('All instances from backend:', data);
@@ -46,7 +46,7 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
 
             // Check if backend is reachable
             try {
-                const testRes = await fetch('http://localhost:5174/api/instances');
+                const testRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances`);
                 if (!testRes.ok) {
                     alert('Backend server is not responding. Please make sure the backend is running on port 5174.');
                     return;
@@ -68,7 +68,7 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
             const partnerSuffix = partnerCode.slice(-4).padStart(4, '0');
 
             // Find existing instances for this partner/date to get next serial
-            const existingRes = await fetch('http://localhost:5174/api/instances');
+            const existingRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances`);
             const allInstances = await existingRes.json();
             const existingForPartner = allInstances.filter(i => 
                 i.instanceCode && i.instanceCode.startsWith(`IN-${dateStr}-${partnerSuffix}-`)
@@ -97,7 +97,7 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
                 
                 console.log('Instance data:', instanceData);
                 
-                const res = await fetch('http://localhost:5174/api/instances', {
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(instanceData)
@@ -119,7 +119,7 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
             console.log('All instances created:', created);
             
             // Refresh the instances list
-            const refreshRes = await fetch('http://localhost:5174/api/instances');
+            const refreshRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances`);
             if (refreshRes.ok) {
                 const allInstances = await refreshRes.json();
                 const filtered = allInstances.filter(i => 

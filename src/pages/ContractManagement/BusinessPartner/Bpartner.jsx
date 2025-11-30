@@ -62,7 +62,7 @@ export default function Bpartner() {
   const [filteredPartners, setFilteredPartners] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5174/api/bpartners")
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners`)
       .then((res) => res.json()).then((data) => {
         setPartners(data);
         setFilteredPartners(data);

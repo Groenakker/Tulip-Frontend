@@ -27,7 +27,7 @@ export default function TestCodesDetails() {
   useEffect(() => {
     if (isEdit) {
       // Fetch the test details from the backend using the id
-      fetch(`http://localhost:5174/api/testcodes/${id}`)
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/testcodes/${id}`)
         .then((response) => response.json())
         .then((data) => setTest(data))
         .catch((error) => console.error("Error fetching test details:", error));
@@ -63,7 +63,7 @@ export default function TestCodesDetails() {
   const handleSave = async () => {
     if (isEdit) {
       // Update existing test code
-      await fetch(`http://localhost:5174/api/testcodes/${id}`, {
+      await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/testcodes/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -73,7 +73,7 @@ export default function TestCodesDetails() {
       alert("Test code updated successfully!");
     } else {
       // Create new test code
-      await fetch("http://localhost:5174/api/testcodes", {
+      await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/testcodes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -89,7 +89,7 @@ export default function TestCodesDetails() {
   };
   const handleDelete = () => {
     if (window.confirm("Are you sure you want to delete this test code?")) {
-      fetch(`http://localhost:5174/api/testcodes/${id}`, {
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/testcodes/${id}`, {
         method: "DELETE",
       })
         .then((response) => {

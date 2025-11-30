@@ -17,7 +17,7 @@ import UserEditModal from "../../components/modals/UserEditModal";
 import { useAuth } from "../../context/AuthContext";
 import Modal from "../../components/Modal";
 
-const API_BASE_URL = "http://localhost:5174/api";
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 const DEFAULT_COMPANY_IMAGE =
   "https://via.placeholder.com/120x120.png?text=Company";
 

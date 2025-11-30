@@ -30,7 +30,7 @@ export default function ProjectDetails() {
   console.log("Is Edit Mode:", isEdit);
   useEffect(() => {
     if (isEdit) {
-      fetch(`http://localhost:5174/api/projects/${id}`)
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects/${id}`)
         .then((res) => res.json())
         .then((data) => setProject(data))
         .catch((error) => console.error("Error fetching project:", error));
@@ -59,7 +59,7 @@ export default function ProjectDetails() {
   const [partners, setPartners] = useState([]);
 
   useEffect(() => {
-    fetch(`http://localhost:5174/api/bpartners`)
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners`)
       .then((res) => res.json())
       .then((data) => setPartners(data))
       .catch((err) => console.error("Failed to fetch partners:", err));
@@ -128,7 +128,7 @@ export default function ProjectDetails() {
       // Update existing project
       try {
         const response = await fetch(
-          `http://localhost:5174/api/projects/${id}`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/projects/${id}`,
           {
             method: "PUT",
             headers: {
@@ -144,7 +144,7 @@ export default function ProjectDetails() {
       }
     } else {
       // Create new project
-      await fetch(`http://localhost:5174/api/projects`, {
+      await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -156,7 +156,7 @@ export default function ProjectDetails() {
   };
   const handleDelete = () => {
         if (window.confirm("Are you sure you want to delete this project?")) {
-      fetch(`http://localhost:5174/api/projects${id}`, {
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects${id}`, {
         method: "DELETE",
       })
         .then((response) => {

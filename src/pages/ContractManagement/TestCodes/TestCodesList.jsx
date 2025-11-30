@@ -47,7 +47,7 @@ export default function TestCodesList() {
   const [filteredTests, setFilteredTests] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5174/api/testcodes")
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/testcodes`)
       .then((response) => response.json())
       .then((data) => {
         setTestData(data);

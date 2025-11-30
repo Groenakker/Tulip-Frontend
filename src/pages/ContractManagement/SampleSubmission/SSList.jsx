@@ -33,7 +33,7 @@ export default function SSList() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('http://localhost:5174/api/samples');
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`);
         if (!res.ok) throw new Error('Failed to fetch samples');
         const data = await res.json();
         setRows(data);
@@ -66,7 +66,7 @@ export default function SSList() {
   };
   const HandleAddSample = async () => {
     try {
-      const res = await fetch('http://localhost:5174/api/samples', {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Draft' })
       });
       if (!res.ok) throw new Error('Failed to create');

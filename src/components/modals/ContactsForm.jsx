@@ -22,7 +22,7 @@ const ContactsForm = ({ onClose , bPartnerID }) => {
     
 
     try {
-      const res = await fetch(`http://localhost:5174/api/bpartners/${bPartnerID}/contacts`, {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${bPartnerID}/contacts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

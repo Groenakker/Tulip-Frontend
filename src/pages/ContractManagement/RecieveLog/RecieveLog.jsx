@@ -33,7 +33,7 @@ export default function RecieveLog() {
   useEffect(() => {
     const fetchRows = async () => {
       try {
-        const res = await fetch('http://localhost:5174/api/receivings');
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings`);
         if (!res.ok) throw new Error('Failed to fetch receivings');
         const data = await res.json();
         setRows(data);
@@ -70,7 +70,7 @@ export default function RecieveLog() {
   const HandleAddrecieve = async () => {
     // Create a minimal receiving then navigate to detail
     try {
-      const res = await fetch('http://localhost:5174/api/receivings', {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ origin: 'Unknown' })

@@ -52,7 +52,7 @@ function SignUp() {
     setOtpError('');
     
     try {
-      const response = await fetch('http://localhost:5174/api/auth/send-otp', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/send-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ function SignUp() {
     setOtpError('');
     
     try {
-      const response = await fetch('http://localhost:5174/api/auth/verify-otp', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/verify-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

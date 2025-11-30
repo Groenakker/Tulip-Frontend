@@ -18,7 +18,7 @@ export default function Warehouse() {
     useEffect(() => {
         const fetchWarehouses = async () => {
             try {
-                const res = await fetch('http://localhost:5174/api/warehouses');
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/warehouses`);
                 if (!res.ok) throw new Error('Failed to fetch warehouses');
                 const data = await res.json();
                 setWarehouseData(data);
@@ -65,7 +65,7 @@ export default function Warehouse() {
         if (isEditing) {
             // Save changes
             try {
-                const res = await fetch(`http://localhost:5174/api/warehouses/${warehouseId}`, {
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/warehouses/${warehouseId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -91,7 +91,7 @@ export default function Warehouse() {
                 console.error('Error updating warehouse:', error);
                 toast.error(error.message || 'Failed to update warehouse');
                 // Reload data to revert changes
-                const res = await fetch('http://localhost:5174/api/warehouses');
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/warehouses`);
                 if (res.ok) {
                     const data = await res.json();
                     setWarehouseData(data);
@@ -140,7 +140,7 @@ export default function Warehouse() {
                 space: 'Empty'
             };
 
-            const res = await fetch('http://localhost:5174/api/warehouses', {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/warehouses`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newWarehouse)
@@ -172,7 +172,7 @@ export default function Warehouse() {
         }
 
         try {
-            const res = await fetch(`http://localhost:5174/api/warehouses/${warehouse._id}`, {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/warehouses/${warehouse._id}`, {
                 method: 'DELETE'
             });
 

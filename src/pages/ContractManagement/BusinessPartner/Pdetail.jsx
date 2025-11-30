@@ -48,12 +48,12 @@ export default function Pdetail() {
 
   useEffect(() => {
     if (isEdit) {
-      fetch(`http://localhost:5174/api/bpartners/${id}`)
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}`)
         .then((res) => res.json())
         .then((data) => setPartner(data))
         .catch((err) => console.error("Failed to fetch partner:", err));
       setLoadingRelated(true);
-      fetch(`http://localhost:5174/api/bpartners/${id}/related`)
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}/related`)
         .then((res) => res.json())
         .then((data) => setRelated(data))
         .catch((err) => console.error("Failed to fetch related data:", err))
@@ -116,7 +116,7 @@ export default function Pdetail() {
 
     if (isEdit) {
       const response = await fetch(
-        `http://localhost:5174/api/bpartners/${id}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -133,7 +133,7 @@ export default function Pdetail() {
       
     } else {
       console.log("Creating new partner:", partnerData);
-      const response = await fetch(`http://localhost:5174/api/bpartners`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(partnerData),
@@ -155,7 +155,7 @@ export default function Pdetail() {
   };
   const handleDelete = () => {
     if (window.confirm("Are you sure you want to delete this partner?")) {
-      fetch(`http://localhost:5174/api/bpartners/${id}`, {
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}`, {
         method: "DELETE",
       })
         .then(() => {

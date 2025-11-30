@@ -47,7 +47,7 @@ export default function ProjectList() {
   const [filteredProjects, setFilteredProjects] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5174/api/projects")
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects`)
       .then((response) => response.json())
       .then((data) => {
         setProjectData(data);

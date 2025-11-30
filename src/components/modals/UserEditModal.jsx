@@ -3,7 +3,7 @@ import styles from "./UserEditModal.module.css";
 import { IoMdClose } from "react-icons/io";
 import { FaTrash } from "react-icons/fa";
 
-const API_BASE_URL = "http://localhost:5174/api";
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
 const UserEditModal = ({ user, onClose, onSave }) => {
   const [formData, setFormData] = useState({
