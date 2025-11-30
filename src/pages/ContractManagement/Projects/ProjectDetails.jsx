@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import WhiteIsland from "../../../components/Whiteisland";
-import styles from "./Projectdetails.module.css";
+import styles from "./ProjectDetails.module.css";
 import TabbedTable from "../../../components/TabbedTable";
 import { FaSave, FaTrash, FaImage } from "react-icons/fa";
 import { useState } from "react";
