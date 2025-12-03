@@ -11,6 +11,7 @@ export const useAuth = () => {
 };
 
 const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
+// const API_BASE_URL = 'http://localhost:5174/api';
 
 const normalizeUser = (data) => {
   if (!data) {
@@ -308,6 +309,10 @@ export const AuthProvider = ({ children }) => {
     window.fetch = async (...args) => {
       const [url, options = {}] = args;
       const isApiCall = typeof url === 'string' && url.includes(API_BASE_URL);
+
+      // console.log("ENV FROM CONTEXT:", import.meta.env);
+      // console.log('API_BASE_URL: ', API_BASE_URL);
+      
       
       // Only intercept API calls, and avoid intercepting the refresh endpoint itself
       if (!isApiCall || url.includes('/auth/refresh')) {
