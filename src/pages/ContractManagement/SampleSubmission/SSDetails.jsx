@@ -16,7 +16,7 @@ export default function SSDetail() {
     const [viewingImage, setViewingImage] = useState(null);
     const [showTestCodeModal, setShowTestCodeModal] = useState(false);
 
-    const sigCanvas = useRef(null);
+    const sigCanvas = useRef({});
     const [signatureData, setSignatureData] = useState({
         signature: null
     });
@@ -24,111 +24,86 @@ export default function SSDetail() {
         setShowTestCodeModal(true);
     };
 
+    const handleTestSelected = (selectedTests) => {
+        // Add selected tests to the tests array
+        const newTests = selectedTests.map((test, index) => ({
+            id: Date.now() + index, // Generate unique ID
+            testCodeId: test._id || test.id,
+            grkCode: test.code || test.grkCode || '',
+            description: test.descriptionLong || test.descriptionShort || test.description || '',
+            samplesSubmitted: '',
+            extractionTime: '',
+            extractionTemp: '',
+            quality: 'GLP',
+            category: test.category || '',
+            extractBased: test.extractBased || ''
+        }));
+        setTests(prev => [...prev, ...newTests]);
+        setShowTestCodeModal(false);
+    };
+
+    const handleRemoveTest = (testId) => {
+        setTests(prev => prev.filter(t => t.id !== testId));
+    };
+
     //Sample info data
     const [sample, setSample] = useState({
-        SAPid: 'C00030',
-        bPartnerCode: 'C00030', // Add bPartnerCode field
-        projectId: 'GRK-24004-01',
-        projectName: 'VacHeal Biocompatibility Evaluation & Testing (Medisurge)',
-        formStatus: 'Accepted',
-        client: 'Element Materials Technology - Cincinnati',
-        address: '3701 Port Union Road, Fairfield, OH 45014, USA',
-        sponsor: 'Allison Shuman',
-        email: 'allison.shuman@element.com',
-        phone: '+1 (440) 231-6630',
+        SAPid: '',
+        bPartnerCode: '', // Add bPartnerCode field
+        projectId: '',
+        projectName: '',
+        formStatus: '',
+        client: '',
+        address: '',
+        sponsor: '',
+        email: '',
+        phone: '',
         image: null,
-        sampleId: 'GRK-SMPL-24004-01-01',
+        sampleId: '',
         sampleDescription: '',
         intendedUse: '',
-        partNumber: 'VH-10L',
+        partNumber: '',
         lotNumber: '',
         devicesUsed: '1',
         countryOrigin: '',
         sampleMass: '',
-        surfaceArea: '465.3',
-        contactType: 'Tissue / Bone',
-        contactDuration: 'B - Prolonged (24h-30d)',
-        manufacturer: 'MediSurge',
-        desiredMarkets: 'US / EU / RoW',
-        manufactureDate: '2025-1',
-        expirationDate: '2025-7',
-        wallThickness: '>1.0 mm',
-        extractionRatios: '3 cm2/ml',
-        sampleSterile: 'Sterile',
-        sterilizationMethod: 'Radiation',
-        appearance: 'Tubing, Top Film, and Foam associated with negative pressure would therapy device',
-        deviceType: 'Device', // Radio options: Device, Solid, Liquid, Gel
-        materialsOfConstruction: 'Polyvinyl Chloride - Colorite 7011GN-015, Polyurethane Tape on Poly Carrier - 3M 9836, Hydrophilic Polyester Foam',
+        surfaceArea: '',
+        contactType: '',
+        contactDuration: '',
+        manufacturer: '',
+        desiredMarkets: 'U',
+        manufactureDate: '',
+        expirationDate: '',
+        wallThickness: '',
+        extractionRatios: '',
+        sampleSterile: '',
+        sterilizationMethod: '',
+        appearance: '',
+        deviceType: '', // Radio options: Device, Solid, Liquid, Gel
+        materialsOfConstruction: '',
 
         // Extra info
-        shippingCondition: 'Ambient',
-        sampleStorage: 'Room Temperature',
-        sampleDisposition: 'Return Unused Samples',
+        shippingCondition: '',
+        sampleStorage: '',
+        sampleDisposition: '',
         safetyPrecautions: '',
         sampleImages: {
             general: null,
             labeling: null
-        },
-        signatureImage: null
+        }
     });
 
 
     //Requested tests data
-    const [tests, setTests] = useState([
-        {
-            id: 1,
-            grkCode: 'BC-CYTO-MEM',
-            description: 'Cytotoxicity: 1X MEM Elution Method (GLP)',
-            samplesSubmitted: '1',
-            extractionTime: '72',
-            extractionTemp: '37',
-            quality: 'GLP'
-        },
-        {
-            id: 2,
-            grkCode: 'BC-SENS-ISO',
-            description: 'Sensitization: Magnusson-Kligman Method, 2 extracts',
-            samplesSubmitted: '2',
-            extractionTime: '72',
-            extractionTemp: '50',
-            quality: 'GLP'
-        },
-        {
-            id: 3,
-            grkCode: 'BC-IRR-ISO',
-            description: 'Irritation: Intracutaneous Reactivity (ISO), 2 Extracts (GLP)',
-            samplesSubmitted: '6',
-            extractionTime: '72',
-            extractionTemp: '50',
-            quality: 'GLP'
-        },
-        {
-            id: 4,
-            grkCode: 'CHEMTOX_MAX_EXHAUST',
-            description: 'CHEMTOX™ MAX Chemistry & Toxicological Risk Assessment - Exhaustive',
-            samplesSubmitted: '11',
-            extractionTime: 'EXH',
-            extractionTemp: '50',
-            quality: 'Non-GLP'
-        },
-        {
-            id: 5,
-            grkCode: '',
-            description: '',
-            samplesSubmitted: '',
-            extractionTime: '',
-            extractionTemp: '',
-            quality: ''
-        }
-    ]);
+    const [tests, setTests] = useState([]);
 
 
 
     //Requested test extra data
     const [testMetadata, setTestMetadata] = useState({
-        totalSamplesSubmitted: '29',
+        totalSamplesSubmitted: '',
         serviceLevel: 'Standard',
-        notes: 'For cytotoxicity, sensitization and irritation the entire device is to be tested with the exception of the main spring within the vacuum housing. For chemical evaluation only the bandage portion and approximately 6-inches of tubing are to be tested (patient contacting portions).'
+        notes: ''
     });
 
 
@@ -154,24 +129,57 @@ export default function SSDetail() {
 
     const handleSave = async () => {
         try {
-            const payload = { ...sample, status: sample.formStatus || 'Draft', description: sample.sampleDescription, formData: sample };
-            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}`, {
-                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            const payload = {
+                ...sample,
+                status: sample.formStatus || 'Draft',
+                description: sample.sampleDescription,
+                formData: sample,
+                requestedTests: tests.filter(t => t.grkCode || t.description), // Only save tests with data
+                testMetadata: testMetadata
+            };
+            
+            const url = id === 'add' 
+                ? `${import.meta.env.VITE_BACKEND_URL}/api/samples`
+                : `${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}`;
+            const method = id === 'add' ? 'POST' : 'PUT';
+            
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
+            
             if (!res.ok) throw new Error('Failed to save');
+            
+            const saved = await res.json();
             toast.success('Sample saved!', { style: { background: 'rgba(69, 182, 120, 1)', color: '#fff' } });
+            
+            // If it was a new sample, navigate to the saved sample's ID
+            if (id === 'add' && saved._id) {
+                navigate(`/SampleSubmission/SSDetail/${saved._id}`, { replace: true });
+            }
         } catch (e) {
-            console.error(e);
+            console.error('Error saving sample:', e);
+            toast.error('Failed to save sample');
         }
     };
 
     const handleDelete = async () => {
+        if (id === 'add') {
+            navigate('/SampleSubmission');
+            return;
+        }
+        if (!window.confirm('Are you sure you want to delete this sample?')) return;
+        
         try {
             const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Failed to delete');
             toast.error('Sample deleted!', { style: { background: 'rgb(220, 38, 38)', color: '#fff' } });
             navigate('/SampleSubmission');
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error('Error deleting sample:', e);
+            toast.error('Failed to delete sample');
+        }
     };
 
     // Handle change for sample image
@@ -197,19 +205,169 @@ export default function SSDetail() {
                     const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}`);
                     if (res.ok) {
                         const data = await res.json();
-                        const signatureImage = data.signatureImage || data.formData?.signatureImage || null;
-                        setSample(prev => ({ ...prev, ...data, sampleDescription: data.description || '', signatureImage }));
+                        // Map backend data to frontend state
+                        const formData = data.formData || {};
+                        
+                        // Merge formData with top-level data, prioritizing formData
+                        const mergedData = {
+                            ...data,
+                            ...formData,
+                            // Override with formData values if they exist
+                            SAPid: formData.SAPid || data.SAPid || '',
+                            bPartnerCode: formData.bPartnerCode || data.bPartnerCode || '',
+                            projectId: formData.projectId || data.projectID || formData.projectID || '',
+                            formStatus: data.status || formData.formStatus || 'Draft',
+                            sampleDescription: data.description || formData.sampleDescription || '',
+                            image: data.image || formData.image || null,
+                            sampleImages: formData.sampleImages || data.sampleImages || { general: null, labeling: null }
+                        };
+                        
+                        // Set sample state with defaults for missing fields
+                        setSample(prev => ({
+                            SAPid: '',
+                            bPartnerCode: '',
+                            projectId: '',
+                            projectName: '',
+                            formStatus: 'Draft',
+                            client: '',
+                            address: '',
+                            sponsor: '',
+                            email: '',
+                            phone: '',
+                            image: null,
+                            sampleId: '',
+                            sampleDescription: '',
+                            intendedUse: '',
+                            partNumber: '',
+                            lotNumber: '',
+                            devicesUsed: '1',
+                            countryOrigin: '',
+                            sampleMass: '',
+                            surfaceArea: '',
+                            contactType: '',
+                            contactDuration: '',
+                            manufacturer: '',
+                            desiredMarkets: 'U',
+                            manufactureDate: '',
+                            expirationDate: '',
+                            wallThickness: '',
+                            extractionRatios: '',
+                            sampleSterile: '',
+                            sterilizationMethod: '',
+                            appearance: '',
+                            deviceType: '',
+                            materialsOfConstruction: '',
+                            shippingCondition: '',
+                            sampleStorage: '',
+                            sampleDisposition: '',
+                            safetyPrecautions: '',
+                            sampleImages: {
+                                general: null,
+                                labeling: null
+                            },
+                            ...mergedData
+                        }));
+                        
+                        // Load requested tests if they exist
+                        if (data.requestedTests && Array.isArray(data.requestedTests) && data.requestedTests.length > 0) {
+                            // Ensure each test has an id
+                            const testsWithIds = data.requestedTests.map((test, index) => ({
+                                ...test,
+                                id: test.id || Date.now() + index
+                            }));
+                            setTests(testsWithIds);
+                        } else {
+                            setTests([]);
+                        }
+                        
+                        // Load test metadata if it exists
+                        if (data.testMetadata) {
+                            setTestMetadata({
+                                totalSamplesSubmitted: data.testMetadata.totalSamplesSubmitted || '',
+                                serviceLevel: data.testMetadata.serviceLevel || 'Standard',
+                                notes: data.testMetadata.notes || ''
+                            });
+                        } else {
+                            setTestMetadata({
+                                totalSamplesSubmitted: '',
+                                serviceLevel: 'Standard',
+                                notes: ''
+                            });
+                        }
                     }
+                } else if (id === 'add') {
+                    // Reset to empty state for new sample
+                    setSample({
+                        SAPid: '',
+                        bPartnerCode: '',
+                        projectId: '',
+                        projectName: '',
+                        formStatus: 'Draft',
+                        client: '',
+                        address: '',
+                        sponsor: '',
+                        email: '',
+                        phone: '',
+                        image: null,
+                        sampleId: '',
+                        sampleDescription: '',
+                        intendedUse: '',
+                        partNumber: '',
+                        lotNumber: '',
+                        devicesUsed: '1',
+                        countryOrigin: '',
+                        sampleMass: '',
+                        surfaceArea: '',
+                        contactType: '',
+                        contactDuration: '',
+                        manufacturer: '',
+                        desiredMarkets: 'U',
+                        manufactureDate: '',
+                        expirationDate: '',
+                        wallThickness: '',
+                        extractionRatios: '',
+                        sampleSterile: '',
+                        sterilizationMethod: '',
+                        appearance: '',
+                        deviceType: '',
+                        materialsOfConstruction: '',
+                        shippingCondition: '',
+                        sampleStorage: '',
+                        sampleDisposition: '',
+                        safetyPrecautions: '',
+                        sampleImages: {
+                            general: null,
+                            labeling: null
+                        }
+                    });
+                    setTests([]);
+                    setTestMetadata({
+                        totalSamplesSubmitted: '',
+                        serviceLevel: 'Standard',
+                        notes: ''
+                    });
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error('Error loading sample:', e);
+                toast.error('Failed to load sample data');
+            }
         };
         load();
+    }, [id]);
+
+    // Adjust textarea heights after sample data changes
+    useEffect(() => {
         const textareas = document.getElementsByClassName(styles.autoGrowInput);
         Array.from(textareas).forEach(textarea => {
             adjustTextareaHeight(textarea);
             textarea.addEventListener('input', (e) => adjustTextareaHeight(e.target));
         });
-    }, [sample.materialsOfConstruction, id]);
+        return () => {
+            Array.from(textareas).forEach(textarea => {
+                textarea.removeEventListener('input', (e) => adjustTextareaHeight(e.target));
+            });
+        };
+    }, [sample.materialsOfConstruction, sample.safetyPrecautions, testMetadata.notes]);
 
 
     //Image click handler
@@ -236,71 +394,34 @@ export default function SSDetail() {
         setTestMetadata(prev => ({ ...prev, [name]: value }));
     };
 
+    // Calculate total samples submitted
     useEffect(() => {
-        if (!sigCanvas.current || typeof sigCanvas.current.clear !== 'function') return;
-        if (sample.signatureImage) {
-            try {
-                sigCanvas.current.fromDataURL(sample.signatureImage);
-                setSignatureData({ signature: sample.signatureImage });
-            } catch (error) {
-                console.error('Failed to load saved signature:', error);
-            }
-        } else {
-            sigCanvas.current.clear();
-            setSignatureData({ signature: null });
-        }
-    }, [sample.signatureImage]);
+        const total = tests.reduce((sum, test) => {
+            const num = parseInt(test.samplesSubmitted) || 0;
+            return sum + num;
+        }, 0);
+        setTestMetadata(prev => ({ ...prev, totalSamplesSubmitted: total.toString() }));
+    }, [tests]);
 
     //clear signature
-    const clearSignature = async () => {
-        if (sigCanvas.current?.clear) {
-            sigCanvas.current.clear();
-        }
+    const clearSignature = () => {
+        sigCanvas.current.clear();
         setSignatureData({ signature: null });
-        setSample(prev => ({ ...prev, signatureImage: null }));
-
-        if (id && id !== 'add') {
-            try {
-                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ signatureImage: null })
-                });
-                if (!res.ok) throw new Error('Failed to clear signature');
-                toast.success("Signature cleared.");
-            } catch (error) {
-                console.error('Error clearing signature:', error);
-                toast.error("Failed to clear signature on server.");
-            }
-        }
     }
 
     //saving signature
-    const saveSignature = async () => {
-        if (!sigCanvas.current || sigCanvas.current.isEmpty()) {
+    const saveSignature = () => {
+        if (sigCanvas.current.isEmpty()) {
             toast.error("Please provide a signature first.");
             return;
         }
         const dataURL = sigCanvas.current.toDataURL('image/png');
         setSignatureData({ signature: dataURL });
-        setSample(prev => ({ ...prev, signatureImage: dataURL }));
-
-        if (id && id !== 'add') {
-            try {
-                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ signatureImage: dataURL })
-                });
-                if (!res.ok) throw new Error('Failed to save signature');
-                toast.success("Signature saved!");
-            } catch (error) {
-                console.error('Error saving signature:', error);
-                toast.error("Failed to save signature. Please try again.");
-            }
-        } else {
-            toast.success("Signature captured. Save the submission to persist.");
-        }
+        toast.success("Signature saved!");
+    }
+    const handleSignatureInfoChange = (e) => {
+        const { name, value } = e.target;
+        setSignatureData(prev => ({ ...prev, [name]: value }));
     }
 
 
@@ -310,7 +431,9 @@ export default function SSDetail() {
             <div className={styles.bHeading}>
                 <h2>Sample Submission Detail</h2>
                 <div className={styles.savesTop}>
-                    <button className={styles.deleteButton} onClick={handleDelete}><FaTrash />Delete</button>
+                    {id !== 'add' && (
+                        <button className={styles.deleteButton} onClick={handleDelete}><FaTrash />Delete</button>
+                    )}
                     <button className={styles.saveButton} onClick={handleSave}><FaSave />Save</button>
                 </div>
             </div>
@@ -798,57 +921,88 @@ export default function SSDetail() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {tests.map((test) => (
-                                        <tr key={test.id}>
-                                            <td>{test.grkCode}</td>
-                                            <td>{test.description}</td>
-                                            <td className={styles.centerAlign}>{test.samplesSubmitted}</td>
-                                            <td>
-                                                <div className={styles.extractionParams}>
-                                                    <div>
-                                                        Time (h):
-                                                        <input type="text" value={test.extractionTime}
-                                                            onChange={(e) => handleTestChange(test.id, 'extractionTime', e.target.value)}
-                                                            className={styles.extractionInput}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        Temp (C):
-                                                        <input
-                                                            type="text"
-                                                            value={test.extractionTemp}
-                                                            onChange={(e) => handleTestChange(test.id, 'extractionTemp', e.target.value)}
-                                                            className={styles.extractionInput}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div className={styles.qualityOptions}>
-                                                    <label>
-                                                        <input
-                                                            type="radio"
-                                                            name={`quality_${test.id}`}
-                                                            value="GLP"
-                                                            checked={test.quality === 'GLP'}
-                                                            onChange={() => handleTestChange(test.id, 'quality', 'GLP')}
-                                                        />
-                                                        GLP
-                                                    </label>
-                                                    <label>
-                                                        <input
-                                                            type="radio"
-                                                            name={`quality_${test.id}`}
-                                                            value="Non-GLP"
-                                                            checked={test.quality === 'Non-GLP'}
-                                                            onChange={() => handleTestChange(test.id, 'quality', 'Non-GLP')}
-                                                        />
-                                                        Non-GLP
-                                                    </label>
-                                                </div>
+                                    {tests.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>
+                                                No tests added. Click "+ Add" to add tests.
                                             </td>
                                         </tr>
-                                    ))}
+                                    ) : (
+                                        tests.map((test) => (
+                                            <tr key={test.id}>
+                                                <td>{test.grkCode}</td>
+                                                <td>{test.description}</td>
+                                                <td className={styles.centerAlign}>
+                                                    <input 
+                                                        type="text" 
+                                                        value={test.samplesSubmitted}
+                                                        onChange={(e) => handleTestChange(test.id, 'samplesSubmitted', e.target.value)}
+                                                        className={styles.extractionInput}
+                                                        style={{ width: '60px', textAlign: 'center' }}
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <div className={styles.extractionParams}>
+                                                        <div>
+                                                            Time (h):
+                                                            <input type="text" value={test.extractionTime}
+                                                                onChange={(e) => handleTestChange(test.id, 'extractionTime', e.target.value)}
+                                                                className={styles.extractionInput}
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            Temp (C):
+                                                            <input
+                                                                type="text"
+                                                                value={test.extractionTemp}
+                                                                onChange={(e) => handleTestChange(test.id, 'extractionTemp', e.target.value)}
+                                                                className={styles.extractionInput}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className={styles.qualityOptions}>
+                                                        <label>
+                                                            <input
+                                                                type="radio"
+                                                                name={`quality_${test.id}`}
+                                                                value="GLP"
+                                                                checked={test.quality === 'GLP'}
+                                                                onChange={() => handleTestChange(test.id, 'quality', 'GLP')}
+                                                            />
+                                                            GLP
+                                                        </label>
+                                                        <label>
+                                                            <input
+                                                                type="radio"
+                                                                name={`quality_${test.id}`}
+                                                                value="Non-GLP"
+                                                                checked={test.quality === 'Non-GLP'}
+                                                                onChange={() => handleTestChange(test.id, 'quality', 'Non-GLP')}
+                                                            />
+                                                            Non-GLP
+                                                        </label>
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => handleRemoveTest(test.id)}
+                                                        style={{ 
+                                                            marginTop: '5px', 
+                                                            padding: '2px 8px', 
+                                                            fontSize: '12px',
+                                                            background: '#dc2626',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '3px',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -939,7 +1093,9 @@ export default function SSDetail() {
                 </div>
             </WhiteIsland>
             <div className={styles.saves}>
-                <button className={styles.deleteButton} onClick={handleDelete}><FaTrash />Delete</button>
+                {id !== 'add' && (
+                    <button className={styles.deleteButton} onClick={handleDelete}><FaTrash />Delete</button>
+                )}
                 <button className={styles.saveButton} onClick={handleSave}><FaSave />Save</button>
             </div>
 
@@ -962,7 +1118,10 @@ export default function SSDetail() {
             {/* Test Code Selection Modal */}
             {showTestCodeModal && (
                 <Modal onClose={() => setShowTestCodeModal(false)}>
-                    <TestCodeChecklist onClose={() => setShowTestCodeModal(false)} />
+                    <TestCodeChecklist 
+                        onClose={() => setShowTestCodeModal(false)}
+                        onTestSelected={handleTestSelected}
+                    />
                 </Modal>
             )}
 

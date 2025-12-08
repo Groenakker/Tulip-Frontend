@@ -1,50 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './TestCodeChecklist.module.css';
 import { FaSearch } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
-const TestCodesChecklist = ({ onClose }) => {
-  //State for tracking every test code selected( edit this to change the already added list of code from tulip DB)
+const TestCodesChecklist = ({ onClose, onTestSelected }) => {
+  //State for tracking every test code selected
   const [selectedCodes, setSelectedCodes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [testCodeOptions, setTestCodeOptions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Replace with your actual data later
-  const testCodeOptions = [
-    {
-      id: 'code1',
-      grkCode: 'BC-GP-VOCP',
-      description: 'Gas Pathway : 48 hour VOC and Particulate Sampling',
-      category: 'Physical and chemical',
-      extractedBasis: 'No'
-    },
-    {
-      id: 'code2',
-      grkCode: 'BC-GP-VOCP2',
-      description: 'Gas Pathway : 48 hour VOC and Particulate Sampling',
-      category: 'Physical and chemical',
-      extractedBasis: 'No'
-    },
-    {
-      id: 'code3',
-      grkCode: 'BC-GP-VOCP3',
-      description: 'Gas Pathway : 48 hour VOC and Particulate Sampling',
-      category: 'Physical and chemical',
-      extractedBasis: 'No'
-    },
-    {
-      id: 'code4',
-      grkCode: 'BC-GP-VOCP4',
-      description: 'Gas Pathway : 48 hour VOC and Particulate Sampling',
-      category: 'Physical and chemical',
-      extractedBasis: 'No'
-    },
-    {
-      id: 'code5',
-      grkCode: 'BC-GP-VOCP5',
-      description: 'Gas Pathway : 48 hour VOC and Particulate Sampling',
-      category: 'Physical and chemical',
-      extractedBasis: 'No'
-    }
-  ];
+  // Fetch test codes from backend
+  useEffect(() => {
+    const fetchTestCodes = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/testcodes`);
+        if (!res.ok) throw new Error('Failed to fetch test codes');
+        const data = await res.json();
+        setTestCodeOptions(data);
+      } catch (error) {
+        console.error('Error fetching test codes:', error);
+        toast.error('Failed to load test codes');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTestCodes();
+  }, []);
 
   const handleCheckboxChange = (id) => {
     setSelectedCodes(prev =>
@@ -56,9 +38,28 @@ const TestCodesChecklist = ({ onClose }) => {
 
   // Save to commit saved data to DB
   const handleSave = () => {
-    console.log('Selected Test Codes:', selectedCodes);
+    if (selectedCodes.length === 0) {
+      toast.error('Please select at least one test code');
+      return;
+    }
+    
+    const selectedTests = testCodeOptions.filter(test => selectedCodes.includes(test._id));
+    if (onTestSelected) {
+      onTestSelected(selectedTests);
+    }
     onClose(); // Close the modal after saving
   };
+
+  // Filter test codes based on search term
+  const filteredTestCodes = testCodeOptions.filter(test => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      (test.code || '').toLowerCase().includes(searchLower) ||
+      (test.descriptionShort || '').toLowerCase().includes(searchLower) ||
+      (test.descriptionLong || '').toLowerCase().includes(searchLower) ||
+      (test.category || '').toLowerCase().includes(searchLower)
+    );
+  });
 
   return (
     <div className={styles.container}>
@@ -82,27 +83,38 @@ const TestCodesChecklist = ({ onClose }) => {
 
       {/* List of test codes */}
       <div className={styles.list}>
-        {testCodeOptions.map(option => (
-          <label
-            key={option.id}
-            className={`${styles.optionCard} ${selectedCodes.includes(option.id) ? styles.selected : ''}`}
-          >
-            <input
-              type="checkbox"
-              checked={selectedCodes.includes(option.id)}
-              onChange={() => handleCheckboxChange(option.id)}
-              className={styles.checkbox}
-            />
-            <div className={styles.optionContent}>
-              <div className={styles.grkCode}>{option.grkCode}</div>
-              <div className={styles.description}>{option.description}</div>
-              <div className={styles.meta}>
-                <span><strong>Category:</strong> {option.category}</span>
-                <span><strong>Extracted Basis:</strong> {option.extractedBasis}</span>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '20px' }}>Loading test codes...</div>
+        ) : filteredTestCodes.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            {searchTerm ? 'No test codes found matching your search' : 'No test codes available'}
+          </div>
+        ) : (
+          filteredTestCodes.map(option => (
+            <label
+              key={option._id}
+              className={`${styles.optionCard} ${selectedCodes.includes(option._id) ? styles.selected : ''}`}
+            >
+              <input
+                type="checkbox"
+                checked={selectedCodes.includes(option._id)}
+                onChange={() => handleCheckboxChange(option._id)}
+                className={styles.checkbox}
+              />
+              <div className={styles.optionContent}>
+                <div className={styles.grkCode}>{option.code || 'N/A'}</div>
+                <div className={styles.description}>
+                  {option.descriptionLong || option.descriptionShort || 'No description'}
+                </div>
+                <div className={styles.meta}>
+                  {option.category && <span><strong>Category:</strong> {option.category}</span>}
+                  {option.extractBased && <span><strong>Extract Based:</strong> {option.extractBased}</span>}
+                  {option.standard && <span><strong>Standard:</strong> {option.standard}</span>}
+                </div>
               </div>
-            </div>
-          </label>
-        ))}
+            </label>
+          ))
+        )}
       </div>
 
       <div className={styles.actions}>
