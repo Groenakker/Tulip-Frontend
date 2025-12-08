@@ -21,7 +21,7 @@ export default function InstanceDetail() {
   useEffect(() => {
     if (id) {
       // Fetch instance details
-      fetch(`http://localhost:5174/api/instances/${id}/movements`)
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances/${id}/movements`)
         .then((res) => res.json())
         .then((data) => {
           setInstance(data.instance);
@@ -44,7 +44,7 @@ export default function InstanceDetail() {
 
   const handleSave = async () => {
     try {
-      const response = await fetch(`http://localhost:5174/api/instances/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(instance),
@@ -64,7 +64,7 @@ export default function InstanceDetail() {
 
   const handleDelete = () => {
     if (window.confirm("Are you sure you want to delete this instance?")) {
-      fetch(`http://localhost:5174/api/instances/${id}`, {
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances/${id}`, {
         method: "DELETE",
       })
         .then(() => {
