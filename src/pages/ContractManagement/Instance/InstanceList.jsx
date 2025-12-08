@@ -3,10 +3,12 @@ import WhiteIsland from '../../../components/Whiteisland';
 import styles from './InstanceList.module.css';
 import { useState, useEffect } from 'react';
 import { FaSearch, FaPlus } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 
 
 export default function InstanceList() {
+    const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [inputValue, setInputValue] = useState('');
     const [pageSize, setPageSize] = useState(9);
@@ -134,7 +136,11 @@ export default function InstanceList() {
                                 </tr>
                             ) : (
                                 pagedData.map((instance) => (
-                                    <tr key={instance._id}>
+                                    <tr 
+                                        key={instance._id}
+                                        onClick={() => navigate(`/Instance/${instance._id}`)}
+                                        style={{ cursor: 'pointer' }}
+                                    >
                                         <td>{instance.instanceCode}</td>
                                         <td>{instance.sampleCode}</td>
                                         <td>{instance.lotNo}</td>
