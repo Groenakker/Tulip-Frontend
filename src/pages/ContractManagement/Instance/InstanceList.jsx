@@ -136,6 +136,8 @@ export default function InstanceList() {
                                 </tr>
                             ) : (
                                 pagedData.map((instance) => (
+                                    // Table row with click handler to navigate to instance detail page
+                                    // Navigates to /Instance/:id route which displays InstanceDetail component
                                     <tr 
                                         key={instance._id}
                                         onClick={() => navigate(`/Instance/${instance._id}`)}

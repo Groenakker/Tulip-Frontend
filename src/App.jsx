@@ -31,6 +31,7 @@ import SSDetail from "./pages/ContractManagement/SampleSubmission/SSDetails";
 import RecieveLog from "./pages/ContractManagement/RecieveLog/RecieveLog";
 import RecieveDetails from "./pages/ContractManagement/RecieveLog/RecieveDetails";
 import Instance from "./pages/ContractManagement/Instance/InstanceList";
+import InstanceDetail from "./pages/ContractManagement/Instance/InstanceDetail";
 import ShippingLog from "./pages/ContractManagement/ShippingLog/ShippingLog";
 import ShippingDetails from "./pages/ContractManagement/ShippingLog/ShippingDetails";
 import Warehouse from "./pages/Warehouse/Warehouse";
@@ -218,6 +219,15 @@ function AppContent() {
             element={
               <ProtectedRoute module="Instances">
                 <Instance />
+              </ProtectedRoute>
+            } 
+          />
+          {/* Instance Detail Route - handles navigation when clicking on an instance in the list */}
+          <Route 
+            path="/Instance/:id" 
+            element={
+              <ProtectedRoute module="Instances">
+                <InstanceDetail />
               </ProtectedRoute>
             } 
           />
