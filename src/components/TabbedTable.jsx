@@ -36,7 +36,10 @@ export default function TabbedTable({
       </div>
 
       <div className="tabContent">
-        <div className="row rowHeader">
+        <div 
+          className="row rowHeader"
+          style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}
+        >
           {columns.map((col) => (
             <div className="cell" key={col.key}>
               {col.label}
@@ -46,7 +49,11 @@ export default function TabbedTable({
 
         {rows.length > 0 ? (
           rows.map((entry, index) => (
-            <div className="row" key={index}>
+            <div 
+              className="row" 
+              key={index}
+              style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}
+            >
               {columns.map((col) => (
                 <div className="cell" key={col.key}>
                   {entry[col.key]}

@@ -39,9 +39,14 @@ export default function Pdetail() {
     zip: "",
     country: "",
     image: null,
+    contacts: [],
+    testCodes: []
   });
   const isEdit = Boolean(id);
   console.log("Is Edit Mode:", isEdit);
+
+  console.log("partner contacts:", partner.contacts);
+  
 
   const [related, setRelated] = useState(null);
   const [loadingRelated, setLoadingRelated] = useState(false);
@@ -55,6 +60,15 @@ export default function Pdetail() {
       );
       const data = await res.json();
       setRelated(data);
+      
+      // Also reload partner to get updated contacts
+      const partnerRes = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}`
+      );
+      if (partnerRes.ok) {
+        const partnerData = await partnerRes.json();
+        setPartner(partnerData);
+      }
     } catch (err) {
       console.error("Failed to fetch related data:", err);
     } finally {
@@ -85,6 +99,8 @@ export default function Pdetail() {
         zip: "",
         country: "",
         image: null,
+        contacts: [],
+        testCodes: [],
       });
       setRelated(null);
     }
@@ -176,18 +192,38 @@ export default function Pdetail() {
       if (!res.ok) {
         throw new Error("Failed to delete contact");
       }
-      setRelated((prev) => {
-        if (!prev?.contacts?.data) return prev;
-        return {
-          ...prev,
-          contacts: {
-            ...prev.contacts,
-            data: prev.contacts.data.filter((c) => c._id !== contactId),
-          },
-        };
-      });
+      // Update partner.contacts instead of related
+      setPartner((prev) => ({
+        ...prev,
+        contacts: (prev.contacts || []).filter((c) => c._id !== contactId),
+      }));
     } catch (err) {
       console.error("Error deleting contact:", err);
+    }
+  };
+
+  const handleDeleteTestCode = async (testCodeId) => {
+    if (!testCodeId || !isEdit) return;
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}/testcodes/${testCodeId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (!res.ok) {
+        throw new Error("Failed to delete test code");
+      }
+      // Update partner.testCodes - remove by relationship _id or testCodeId
+      setPartner((prev) => ({
+        ...prev,
+        testCodes: (prev.testCodes || []).filter((t) => {
+          // Handle both relationship _id and testCodeId reference
+          return t._id !== testCodeId && (t.testCodeId?._id || t.testCodeId) !== testCodeId;
+        }),
+      }));
+    } catch (err) {
+      console.error("Error deleting test code:", err);
     }
   };
   const handleDelete = () => {
@@ -216,11 +252,10 @@ export default function Pdetail() {
     const shipments = related?.shipments?.data || [];
     const samples = related?.samples?.data || [];
     const contacts =
-      related?.contacts?.data ||
-      related?.contacts ||
+      
       partner?.contacts ||
       [];
-    const testCodes = related?.testCodes?.data || [];
+    const testCodes = partner?.testCodes || [];
 
     return {
       Projects: {
@@ -284,10 +319,10 @@ export default function Pdetail() {
           actions: (
             <button
               className={styles.deleteButton}
-              style={{ padding: "4px 10px", fontSize: "12px" }}
+              style={{ padding: "4px 10px", fontSize: "12px", display: "inline-flex", float: "inline-end" }}
               onClick={() => handleDeleteContact(c._id)}
             >
-              Delete
+              <FaTrash />
             </button>
           ),
         })),
@@ -298,15 +333,30 @@ export default function Pdetail() {
           { label: "GRK Test Code", key: "id" },
           { label: "Description", key: "desc" },
           { label: "Category", key: "cate" },
+          { label: "", key: "actions" },
         ],
-        rows: testCodes.map((t) => ({
-          id: t.code || t._id || "",
-          desc: t.descriptionShort || "",
-          cate: t.category || "",
-        })),
+        rows: testCodes.map((t) => {
+          // Handle both populated test code objects and references
+          const testCode = t.testCodeId || t;
+          const relationshipId = t._id; // The relationship ID for deletion
+          return {
+            id: testCode.code || t.code || "",
+            desc: testCode.descriptionShort || t.descriptionShort || "",
+            cate: testCode.category || t.category || "",
+            actions: (
+              <button
+                className={styles.deleteButton}
+                style={{ padding: "4px 10px", fontSize: "12px", display: "inline-flex", float: "inline-end" }}
+                onClick={() => handleDeleteTestCode(relationshipId || t._id)}
+              >
+                <FaTrash />
+              </button>
+            ),
+          };
+        }),
       },
     };
-  }, [related]);
+  }, [related, partner]);
 
     const [activeModal, setActiveModal] = useState(null);
   const handleAddClick = (tab) => {
@@ -502,7 +552,12 @@ export default function Pdetail() {
                 />
               )}
               {activeModal === "testcodes" && (
-                <TestCodesChecklist onClose={handleOnClose} />
+                <TestCodesChecklist 
+                  onClose={handleOnClose}
+                  bPartnerID={id}
+                  onSaved={loadRelated}
+                  existingTestCodes={partner.testCodes || []}
+                />
               )}
             </Modal>
           )}

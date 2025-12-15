@@ -3,21 +3,34 @@ import styles from './TestCodeChecklist.module.css';
 import { FaSearch } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
-const TestCodesChecklist = ({ onClose, onTestSelected }) => {
+const TestCodesChecklist = ({ onClose, onTestSelected, bPartnerID, onSaved, existingTestCodes = [] }) => {
   //State for tracking every test code selected
   const [selectedCodes, setSelectedCodes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [testCodeOptions, setTestCodeOptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  // Fetch test codes from backend
+  // Fetch test codes from backend and pre-select existing ones
   useEffect(() => {
     const fetchTestCodes = async () => {
       try {
+        setLoading(true);
         const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/testcodes`);
         if (!res.ok) throw new Error('Failed to fetch test codes');
         const data = await res.json();
         setTestCodeOptions(data);
+        
+        // Pre-select test codes that are already associated with the business partner
+        if (existingTestCodes && existingTestCodes.length > 0) {
+          const existingIds = existingTestCodes.map(tc => {
+            // Handle both populated objects and references
+            const testCode = tc.testCodeId || tc;
+            return testCode._id || tc.testCodeId || tc._id;
+          }).filter(Boolean); // Remove any undefined/null values
+          
+          setSelectedCodes(existingIds);
+        }
       } catch (error) {
         console.error('Error fetching test codes:', error);
         toast.error('Failed to load test codes');
@@ -26,7 +39,7 @@ const TestCodesChecklist = ({ onClose, onTestSelected }) => {
       }
     };
     fetchTestCodes();
-  }, []);
+  }, [existingTestCodes]);
 
   const handleCheckboxChange = (id) => {
     setSelectedCodes(prev =>
@@ -37,17 +50,76 @@ const TestCodesChecklist = ({ onClose, onTestSelected }) => {
   };
 
   // Save to commit saved data to DB
-  const handleSave = () => {
-    if (selectedCodes.length === 0) {
-      toast.error('Please select at least one test code');
-      return;
-    }
-    
+  const handleSave = async () => {
     const selectedTests = testCodeOptions.filter(test => selectedCodes.includes(test._id));
-    if (onTestSelected) {
-      onTestSelected(selectedTests);
+    
+    // If bPartnerID is provided, save to backend
+    if (bPartnerID) {
+      setSaving(true);
+      try {
+        // Get existing test code IDs to determine what to add/remove
+        const existingIds = (existingTestCodes || []).map(tc => {
+          const testCode = tc.testCodeId || tc;
+          return testCode._id || tc.testCodeId || tc._id;
+        }).filter(Boolean);
+        
+        const selectedIds = selectedTests.map(test => test._id);
+        
+        // Find test codes to add (selected but not existing)
+        const toAdd = selectedIds.filter(id => !existingIds.includes(id));
+        
+        // Find test codes to remove (existing but not selected)
+        const toRemove = existingIds.filter(id => !selectedIds.includes(id));
+        
+        // Add new test codes
+        const addPromises = toAdd.map(testId => 
+          fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${bPartnerID}/testcodes`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ testCodeId: testId }),
+          })
+        );
+        
+        // Remove unselected test codes
+        const removePromises = toRemove.map(testId => {
+          // Find the relationship object - the relationship has its own _id
+          const relationship = existingTestCodes.find(tc => {
+            const testCode = tc.testCodeId || tc;
+            const id = testCode._id || tc.testCodeId || tc._id;
+            return id === testId;
+          });
+          // Use the relationship's _id (not the test code's _id) for deletion
+          const relationshipId = relationship?._id;
+          
+          if (!relationshipId) {
+            console.warn(`Could not find relationship ID for test code ${testId}`);
+            return Promise.resolve(); // Skip if relationship ID not found
+          }
+          
+          return fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${bPartnerID}/testcodes/${relationshipId}`, {
+            method: 'DELETE',
+          });
+        });
+        
+        await Promise.all([...addPromises, ...removePromises]);
+        toast.success('Test codes updated successfully');
+        onSaved?.();
+        onClose();
+      } catch (error) {
+        console.error('Error saving test codes:', error);
+        toast.error('Failed to save test codes');
+      } finally {
+        setSaving(false);
+      }
+    } else {
+      // Legacy callback support
+      if (onTestSelected) {
+        onTestSelected(selectedTests);
+      }
+      onClose();
     }
-    onClose(); // Close the modal after saving
   };
 
   // Filter test codes based on search term
@@ -118,8 +190,10 @@ const TestCodesChecklist = ({ onClose, onTestSelected }) => {
       </div>
 
       <div className={styles.actions}>
-        <button onClick={handleSave} className={styles.saveBtn}>Save</button>
-        <button onClick={onClose} className={styles.cancelBtn}>Cancel</button>
+        <button onClick={handleSave} className={styles.saveBtn} disabled={saving}>
+          {saving ? 'Saving...' : 'Save'}
+        </button>
+        <button onClick={onClose} className={styles.cancelBtn} disabled={saving}>Cancel</button>
       </div>
     </div>
   );
