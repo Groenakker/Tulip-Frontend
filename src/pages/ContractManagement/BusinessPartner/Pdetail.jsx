@@ -46,18 +46,29 @@ export default function Pdetail() {
   const [related, setRelated] = useState(null);
   const [loadingRelated, setLoadingRelated] = useState(false);
 
+  const loadRelated = async () => {
+    if (!isEdit) return;
+    setLoadingRelated(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}/related`
+      );
+      const data = await res.json();
+      setRelated(data);
+    } catch (err) {
+      console.error("Failed to fetch related data:", err);
+    } finally {
+      setLoadingRelated(false);
+    }
+  };
+
   useEffect(() => {
     if (isEdit) {
       fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}`)
         .then((res) => res.json())
         .then((data) => setPartner(data))
         .catch((err) => console.error("Failed to fetch partner:", err));
-      setLoadingRelated(true);
-      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}/related`)
-        .then((res) => res.json())
-        .then((data) => setRelated(data))
-        .catch((err) => console.error("Failed to fetch related data:", err))
-        .finally(() => setLoadingRelated(false));
+      loadRelated();
     } else {
       // Reset to empty for add mode
       setPartner({
@@ -153,6 +164,32 @@ export default function Pdetail() {
     alert(`Error: ${error.message}`);
   }
   };
+  const handleDeleteContact = async (contactId) => {
+    if (!contactId || !isEdit) return;
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}/contacts/${contactId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (!res.ok) {
+        throw new Error("Failed to delete contact");
+      }
+      setRelated((prev) => {
+        if (!prev?.contacts?.data) return prev;
+        return {
+          ...prev,
+          contacts: {
+            ...prev.contacts,
+            data: prev.contacts.data.filter((c) => c._id !== contactId),
+          },
+        };
+      });
+    } catch (err) {
+      console.error("Error deleting contact:", err);
+    }
+  };
   const handleDelete = () => {
     if (window.confirm("Are you sure you want to delete this partner?")) {
       fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}`, {
@@ -178,7 +215,11 @@ export default function Pdetail() {
     const projects = related?.projects?.data || [];
     const shipments = related?.shipments?.data || [];
     const samples = related?.samples?.data || [];
-    const contacts = related?.contacts?.data || [];
+    const contacts =
+      related?.contacts?.data ||
+      related?.contacts ||
+      partner?.contacts ||
+      [];
     const testCodes = related?.testCodes?.data || [];
 
     return {
@@ -232,11 +273,23 @@ export default function Pdetail() {
           { label: "Name", key: "name" },
           { label: "Email", key: "email" },
           { label: "Phone", key: "phone" },
+          { label: "Job Title", key: "jobTitle" },
+          { label: "", key: "actions" },
         ],
         rows: contacts.map((c) => ({
-          name: [c.firstName, c.lastName].filter(Boolean).join(" "),
+          name: c.name || "",
           email: c.email || "",
           phone: c.phone || "",
+          jobTitle: c.jobTitle || "",
+          actions: (
+            <button
+              className={styles.deleteButton}
+              style={{ padding: "4px 10px", fontSize: "12px" }}
+              onClick={() => handleDeleteContact(c._id)}
+            >
+              Delete
+            </button>
+          ),
         })),
       },
 
@@ -256,17 +309,17 @@ export default function Pdetail() {
   }, [related]);
 
     const [activeModal, setActiveModal] = useState(null);
-    const handleAddClick = (tab) => {
-      if (tab === "Contacts") {
-        setActiveModal("contacts");
-      } else if (tab === "Test Codes") {
-        setActiveModal("testcodes");
-      }
-    };
+  const handleAddClick = (tab) => {
+    if (tab === "Contacts") {
+      setActiveModal("contacts");
+    } else if (tab === "Test Codes") {
+      setActiveModal("testcodes");
+    }
+  };
 
-    const handleOnClose = () => {
-      setActiveModal(null);
-    };
+  const handleOnClose = () => {
+    setActiveModal(null);
+  };
   
   return (
     <>
@@ -442,7 +495,11 @@ export default function Pdetail() {
           {activeModal && (
             <Modal onClose={() => setActiveModal(null)}>
               {activeModal === "contacts" && (
-                <ContactsForm onClose={handleOnClose} bPartnerID={id} />
+                <ContactsForm
+                  onClose={handleOnClose}
+                  bPartnerID={id}
+                  onSaved={loadRelated}
+                />
               )}
               {activeModal === "testcodes" && (
                 <TestCodesChecklist onClose={handleOnClose} />

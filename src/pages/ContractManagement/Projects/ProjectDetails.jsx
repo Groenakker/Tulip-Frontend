@@ -11,6 +11,7 @@ export default function ProjectDetails() {
   const [project, setProject] = useState({
     projectID: "",
     bPartnerID: "",
+    bPartnerCode: "",
     name: "",
     description: "",
     startDate: "",
@@ -39,6 +40,7 @@ export default function ProjectDetails() {
       setProject({
         projectID: "",
         bPartnerID: "",
+        bPartnerCode: "",
         name: "",
         description: "",
         startDate: "",
@@ -156,7 +158,7 @@ export default function ProjectDetails() {
   };
   const handleDelete = () => {
         if (window.confirm("Are you sure you want to delete this project?")) {
-      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects${id}`, {
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects/${id}`, {
         method: "DELETE",
       })
         .then((response) => {
@@ -206,23 +208,24 @@ export default function ProjectDetails() {
                     ></input>
                   </div>
                   <div className={styles.info} style={{ width: "15%" }}>
-                    <div className={styles.infoDetail}>SAP Partner ID</div>{" "}
+                    <div className={styles.infoDetail}>SAP Partner Code</div>{" "}
                     <select
-                      name="bPartnerID"
-                      value={project.bPartnerID}
+                      name="bPartnerCode"
+                      value={project.bPartnerCode}
                       onChange={(e) => {
-                        const selectedId = e.target.value;
+                        const selectedCode = e.target.value;
                         const selectedPartner = partners.find(
-                          (p) => p.partnerNumber === selectedId
+                          (p) => p.partnerNumber === selectedCode
                         );
                         setProject((prev) => ({
                           ...prev,
-                          bPartnerID: selectedId,
+                          bPartnerCode: selectedCode,
+                          bPartnerID: selectedPartner ? selectedPartner._id : "",
                           name: selectedPartner ? selectedPartner.name : "",
                         }));
                       }}
                     >
-                      <option value="">{project.bPartnerID}</option>
+                      <option value="">{project.bPartnerCode || "Select Partner Code"}</option>
                       {partners.map((partner) => (
                         <option
                           key={partner.partnerNumber}
@@ -249,6 +252,20 @@ export default function ProjectDetails() {
                       value={project.contactID}
                       onChange={handleChange}
                     ></input>
+                  </div>
+                  <div className={styles.info} style={{ width: "15%" }}>
+                    <div className={styles.infoDetail}>Status</div>{" "}
+                    <select
+                      name="status"
+                      value={project.status}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select Status</option>
+                      <option value="Active">Active</option>
+                      <option value="Completed">Completed</option>
+                      <option value="On Hold">On Hold</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
                   </div>
                 </div>
                 <div className={styles.details2}>
@@ -303,7 +320,7 @@ export default function ProjectDetails() {
                     <input
                       style={{ height: "20px" }}
                       type="date"
-                      name="desired"
+                      name="endDate"
                       value={
                         project.endDate ? project.endDate.split("T")[0] : ""
                       }
@@ -341,11 +358,9 @@ export default function ProjectDetails() {
                     <input
                       style={{ height: "20px" }}
                       type="date"
-                      name="delivery"
+                      name="poDate"
                       value={
-                        project.commitDate
-                          ? project.commitDate.split("T")[0]
-                          : ""
+                        project.poDate ? project.poDate.split("T")[0] : ""
                       }
                       onChange={handleChange}
                     ></input>

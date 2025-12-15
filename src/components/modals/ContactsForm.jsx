@@ -1,7 +1,7 @@
 import { useState } from "react";
 import styles from "./ContactsForm.module.css";
 
-const ContactsForm = ({ onClose , bPartnerID }) => {
+const ContactsForm = ({ onClose , bPartnerID, onSaved }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -35,6 +35,7 @@ const ContactsForm = ({ onClose , bPartnerID }) => {
       }
 
       console.log("Form submitted:", formData); // replace with real save logic later
+      onSaved?.();
       onClose();
     } catch (error) {
       console.error("Error submitting form:", error);
