@@ -3,7 +3,7 @@ import WhiteIsland from '../../components/Whiteisland';
 import styles from './Warehouse.module.css';
 import { useState, useEffect } from 'react';
 import { FaSearch, FaPlus, FaEdit, FaSave, FaTimes, FaTrash } from 'react-icons/fa';
-import toast from 'react-hot-toast';
+import toast from '../../components/Toaster/toast';
 
 export default function Warehouse() {
     const [page, setPage] = useState(1);

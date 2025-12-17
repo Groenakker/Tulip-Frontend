@@ -5,6 +5,7 @@ import TabbedTable from "../../../components/TabbedTable";
 import { FaSave, FaTrash, FaImage } from "react-icons/fa";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
+import toast from "../../../components/Toaster/toast";
 
 export default function ProjectDetails() {
   const { id } = useParams();
@@ -13,6 +14,7 @@ export default function ProjectDetails() {
     bPartnerID: "",
     bPartnerCode: "",
     name: "",
+    contactID: "",
     description: "",
     startDate: "",
     endDate: "",
@@ -42,6 +44,7 @@ export default function ProjectDetails() {
         bPartnerID: "",
         bPartnerCode: "",
         name: "",
+        contactID: "",
         description: "",
         startDate: "",
         endDate: "",
@@ -125,7 +128,37 @@ export default function ProjectDetails() {
       reader.readAsDataURL(file);
     }
   };
+
+  const requiredFields = [
+    "projectID",
+    "bPartnerCode",
+    "bPartnerID",
+    "name",
+    "contactID",
+    "status",
+    "description",
+    "poNumber",
+    "quoteNumber",
+    "salesOrderNumber",
+    "startDate",
+    "endDate",
+    "estDate",
+    "commitDate",
+    "poDate",
+    "actDate",
+  ];
+
+  const isFormComplete = requiredFields.every((key) => {
+    const value = project?.[key];
+    if (typeof value === "string") return value.trim().length > 0;
+    return Boolean(value);
+  });
+
   const handleSave = async () => {
+    if (!isFormComplete) {
+      toast.warning("Please fill all fields before saving.");
+      return;
+    }
     if (isEdit) {
       // Update existing project
       try {
@@ -141,8 +174,10 @@ export default function ProjectDetails() {
         );
         if (!response.ok) throw new Error("Failed to update project");
         console.log("Project updated successfully");
+        toast.success("Project updated successfully");
       } catch (error) {
         console.error("Error updating project:", error);
+        toast.error("Failed to update project");
       }
     } else {
       // Create new project
@@ -154,6 +189,7 @@ export default function ProjectDetails() {
         body: JSON.stringify(project),
       });
       console.log("New project created successfully");
+      toast.success("Project created successfully");
     }
   };
   const handleDelete = () => {
@@ -163,11 +199,14 @@ export default function ProjectDetails() {
       })
         .then((response) => {
           if (!response.ok) throw new Error("Failed to delete project");
-          alert("Project deleted successfully");
+          toast.success("Project deleted successfully");
           window.location.href = "/projects"; // Redirect to projects list
           // Optionally redirect or reset state after deletion
         })
-        .catch((error) => console.error("Error deleting project:", error));
+        .catch((error) => {
+          console.error("Error deleting project:", error);
+          toast.error("Failed to delete project");
+        });
     }
   };
   console.log("Project Data:", project);
@@ -384,7 +423,11 @@ export default function ProjectDetails() {
               <button className={styles.deleteButton} onClick={handleDelete}>
                 <FaTrash /> Delete{" "}
               </button>
-              <button className={styles.saveButton} onClick={handleSave}>
+              <button
+                className={styles.saveButton}
+                onClick={handleSave}
+                disabled={!isFormComplete}
+              >
                 <FaSave /> Save{" "}
               </button>
             </div>

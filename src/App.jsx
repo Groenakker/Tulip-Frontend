@@ -4,14 +4,12 @@ import Sidebar from './components/Sidebar';
 import './App.css';
 import WhiteIsland from './components/Whiteisland.jsx';
 import React from 'react';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
+import { Toaster } from './components/Toaster';
 // import Dashboard from './pages/Dashboard';
 // import MaterialResearch from './pages/MaterialResearch';
 // import ConstituentResearch from './pages/ConstituentResearch';
@@ -296,7 +294,7 @@ function AppContent() {
           />
         </Routes>
       </main>
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="colored" />
+      <Toaster />
     </>
   );
 }

@@ -13,6 +13,7 @@ import { TbReportAnalytics } from "react-icons/tb";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ProfilePopup from './ProfilePopup';
+import toast from '../components/Toaster/toast';
 
 
 
@@ -203,7 +204,10 @@ const Sidebar = () => {
       </div>
       <div className="sidebarBottom">
 
-        <div className="sidebarOption" title={collapsed ? 'Refresh' : ''} style={{ cursor: 'pointer' }} onClick={() => window.location.reload()}><FaRedo /> {!collapsed && <span>Refresh</span>}</div>
+        <div className="sidebarOption" title={collapsed ? 'Refresh' : ''} style={{ cursor: 'pointer' }} onClick={() => {
+          window.location.reload();
+          toast.success('Refreshed successfully');
+        }}><FaRedo /> {!collapsed && <span>Refresh</span>}</div>
         {canAccessSettings && (
           <div 
             className={`sidebarOption ${isPathActive('/Settings') ? 'active' : ''}`}
@@ -221,7 +225,7 @@ const Sidebar = () => {
         onClick={() => setShowProfilePopup(!showProfilePopup)}
         style={{ cursor: 'pointer' }}
         >
-          <img src="https://i.pravatar.cc/40" alt="profile" />
+          <img src={user?.profilePicture || "https://i.pravatar.cc/40"} alt="profile" />
           {!collapsed && (
             <div>
               <p className="profileName">{user?.name || 'User'}</p>
