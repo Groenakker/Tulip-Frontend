@@ -1,9 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import WhiteIsland from "../../../components/Whiteisland";
 import styles from "./ProjectDetails.module.css";
 import TabbedTable from "../../../components/TabbedTable";
 import { FaSave, FaTrash, FaImage } from "react-icons/fa";
-import { useState } from "react";
 import { useParams } from "react-router-dom";
 import toast from "../../../components/Toaster/toast";
 
@@ -14,7 +13,7 @@ export default function ProjectDetails() {
     bPartnerID: "",
     bPartnerCode: "",
     name: "",
-    contactID: "",
+    contact: "",
     description: "",
     startDate: "",
     endDate: "",
@@ -44,7 +43,7 @@ export default function ProjectDetails() {
         bPartnerID: "",
         bPartnerCode: "",
         name: "",
-        contactID: "",
+        contact: "",
         description: "",
         startDate: "",
         endDate: "",
@@ -69,8 +68,18 @@ export default function ProjectDetails() {
       .then((data) => setPartners(data))
       .catch((err) => console.error("Failed to fetch partners:", err));
   }, []);
-        
-      
+
+  const selectedPartner = useMemo(() => {
+    return (
+      partners.find(
+        (p) =>
+          p._id === project.bPartnerID || p.partnerNumber === project.bPartnerCode
+      ) || null
+    );
+  }, [partners, project.bPartnerID, project.bPartnerCode]);
+
+  const contactOptions = selectedPartner?.contacts || [];
+
   const pdata = {
     Shipments: [
       {
@@ -134,7 +143,7 @@ export default function ProjectDetails() {
     "bPartnerCode",
     "bPartnerID",
     "name",
-    "contactID",
+    "contact",
     "status",
     "description",
     "poNumber",
@@ -199,9 +208,10 @@ export default function ProjectDetails() {
       })
         .then((response) => {
           if (!response.ok) throw new Error("Failed to delete project");
-          toast.success("Project deleted successfully");
+          
           window.location.href = "/projects"; // Redirect to projects list
           // Optionally redirect or reset state after deletion
+          toast.success("Project deleted successfully");
         })
         .catch((error) => {
           console.error("Error deleting project:", error);
@@ -253,15 +263,19 @@ export default function ProjectDetails() {
                       value={project.bPartnerCode}
                       onChange={(e) => {
                         const selectedCode = e.target.value;
-                        const selectedPartner = partners.find(
+                        const partnerMatch = partners.find(
                           (p) => p.partnerNumber === selectedCode
                         );
-                        setProject((prev) => ({
-                          ...prev,
-                          bPartnerCode: selectedCode,
-                          bPartnerID: selectedPartner ? selectedPartner._id : "",
-                          name: selectedPartner ? selectedPartner.name : "",
-                        }));
+                        setProject((prev) => {
+                          const partnerChanged = prev.bPartnerCode !== selectedCode;
+                          return {
+                            ...prev,
+                            bPartnerCode: selectedCode,
+                            bPartnerID: partnerMatch ? partnerMatch._id : "",
+                            name: partnerMatch ? partnerMatch.name : "",
+                            contact: partnerChanged ? "" : prev.contact,
+                          };
+                        });
                       }}
                     >
                       <option value="">{project.bPartnerCode || "Select Partner Code"}</option>
@@ -286,11 +300,38 @@ export default function ProjectDetails() {
                   </div>
                   <div className={styles.info} style={{ width: "15%" }}>
                     <div className={styles.infoDetail}>Sponsor</div>{" "}
-                    <input
-                      name="contactID"
-                      value={project.contactID}
+                    <select
+                      name="contact"
+                      value={project.contact}
                       onChange={handleChange}
-                    ></input>
+                      disabled={!contactOptions.length}
+                    >
+                      <option value="">
+                        {contactOptions.length
+                          ? "Select Contact"
+                          : "No contacts available"}
+                      </option>
+                      {contactOptions.map((contact) => {
+                        const optionLabel =
+                          contact.name ||
+                          contact.email ||
+                          "Unnamed Contact";
+                        const optionSuffix = contact.jobTitle
+                          ? ` - ${contact.jobTitle}`
+                          : "";
+                        return (
+                          <option
+                            key={contact._id || contact.name || contact.email}
+                            value={contact.name || contact.email || ""}
+                          >
+                            {`${optionLabel}${optionSuffix}`}
+                          </option>
+                        );
+                      })}
+                      {!contactOptions.length && project.contact ? (
+                        <option value={project.contact}>{project.contact}</option>
+                      ) : null}
+                    </select>
                   </div>
                   <div className={styles.info} style={{ width: "15%" }}>
                     <div className={styles.infoDetail}>Status</div>{" "}

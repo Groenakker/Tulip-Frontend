@@ -3,6 +3,7 @@ import styles from "./TestCodesDetails.module.css";
 import { FaSave, FaTrash, FaImage } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import toast from "../../../components/Toaster/toast";
 
 export default function TestCodesDetails() {
   const { id } = useParams();
@@ -70,7 +71,7 @@ export default function TestCodesDetails() {
         },
         body: JSON.stringify(Test),
       });
-      alert("Test code updated successfully!");
+      toast.success("Test code updated successfully");
     } else {
       // Create new test code
       await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/testcodes`, {
@@ -80,7 +81,7 @@ export default function TestCodesDetails() {
         },
         body: JSON.stringify(Test),
       });
-      alert("Test code created successfully!");
+      toast.success("Test code created successfully");
       console.log("Test details saved:", Test);
     }
     // Redirect or update state as needed
@@ -94,14 +95,17 @@ export default function TestCodesDetails() {
       })
         .then((response) => {
           if (response.ok) {
-            alert("Test code deleted successfully!");
+            toast.success("Test code deleted successfully");
             // Redirect or update state as needed
             // For now, just log the deletion
           } else {
-            alert("Failed to delete test code.");
+            toast.error("Failed to delete test code: " + response.statusText);
+            return;
           }
         })
-        .catch((error) => console.error("Error deleting test code:", error));
+        .catch((error) => {
+          toast.error("Failed to delete test code: " + error.message);
+        });
     }
     console.log("Test deleted:", Test.id);
   };
