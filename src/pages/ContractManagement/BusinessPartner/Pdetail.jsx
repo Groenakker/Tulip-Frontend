@@ -3,7 +3,7 @@ import WhiteIsland from "../../../components/Whiteisland";
 import styles from "./Pdetail.module.css";
 import TabbedTable from "../../../components/TabbedTable";
 import { FaSave, FaTrash, FaImage } from "react-icons/fa";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Modal from "../../../components/Modal";
 import TestCodesChecklist from "../../../components/modals/TestCodeChecklist";
 import ContactsForm from "../../../components/modals/ContactsForm";
@@ -24,6 +24,7 @@ import ContactsForm from "../../../components/modals/ContactsForm";
 //   });
 export default function Pdetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   console.log("ID from params:", id);
   const [partner, setPartner] = useState({
     partnerNumber: "",
@@ -256,8 +257,9 @@ export default function Pdetail() {
       partner?.contacts ||
       [];
     const testCodes = partner?.testCodes || [];
+    const isVendor = partner?.category === "Vendor";
 
-    return {
+    const nextData = {
       Projects: {
         columns: [
           { label: "ID", key: "id" },
@@ -327,8 +329,10 @@ export default function Pdetail() {
           ),
         })),
       },
+    };
 
-      "Test Codes": {
+    if (isVendor) {
+      nextData["Test Codes"] = {
         columns: [
           { label: "GRK Test Code", key: "id" },
           { label: "Description", key: "desc" },
@@ -346,7 +350,12 @@ export default function Pdetail() {
             actions: (
               <button
                 className={styles.deleteButton}
-                style={{ padding: "4px 10px", fontSize: "12px", display: "inline-flex", float: "inline-end" }}
+                style={{
+                  padding: "4px 10px",
+                  fontSize: "12px",
+                  display: "inline-flex",
+                  float: "inline-end",
+                }}
                 onClick={() => handleDeleteTestCode(relationshipId || t._id)}
               >
                 <FaTrash />
@@ -354,15 +363,27 @@ export default function Pdetail() {
             ),
           };
         }),
-      },
-    };
+      };
+    }
+
+    return nextData;
   }, [related, partner]);
 
     const [activeModal, setActiveModal] = useState(null);
   const handleAddClick = (tab) => {
-    if (tab === "Contacts") {
+    if (tab === "Projects") {
+      navigate("/Projects/ProjectDetails/add", {
+        state: {
+          prefillProject: {
+            bPartnerID: partner?._id || id || "",
+            bPartnerCode: partner?.partnerNumber || "",
+            name: partner?.name || "",
+          },
+        },
+      });
+    } else if (tab === "Contacts") {
       setActiveModal("contacts");
-    } else if (tab === "Test Codes") {
+    } else if (tab === "Test Codes" && partner?.category === "Vendor") {
       setActiveModal("testcodes");
     }
   };
@@ -538,7 +559,11 @@ export default function Pdetail() {
           {/* Table data passing with clicks and modalWindows */}
           <TabbedTable
             data={data}
-            showAddButtonForTabs={["Contacts", "Test Codes"]}
+            showAddButtonForTabs={
+              partner?.category === "Vendor"
+                ? ["Projects", "Contacts", "Test Codes"]
+                : ["Projects", "Contacts"]
+            }
             onAddClick={handleAddClick}
           />
           {loadingRelated && <div style={{ padding: 12 }}>Loading related data...</div>}
