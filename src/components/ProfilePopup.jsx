@@ -6,12 +6,16 @@ import { FaHeadphones } from 'react-icons/fa6';
 import { HiArrowRightOnRectangle } from 'react-icons/hi2';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import EditProfileModal from './modals/EditProfileModal';
+import ChangePasswordModal from './modals/ChangePasswordModal';
 
 const ProfilePopup = ({ onClose }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -26,7 +30,7 @@ const ProfilePopup = ({ onClose }) => {
         {/* User Info Header */}
         <div className="profilePopupHeader">
           <img 
-            src={"https://i.pravatar.cc/40" || user?.profilePicture} 
+            src={user?.profilePicture || "https://i.pravatar.cc/40"} 
             alt="profile" 
             className="profilePopupAvatar"
           />
@@ -43,7 +47,7 @@ const ProfilePopup = ({ onClose }) => {
             <span className="profilePopupText">Add Account</span>
             <FaChevronRight className="profilePopupChevron" />
           </div>
-          <div className="profilePopupItem" onClick={() => {/* TODO: Edit Profile */}}>
+          <div className="profilePopupItem" onClick={() => setShowEditProfileModal(true)}>
             <MdRefresh className="profilePopupIcon" />
             <span className="profilePopupText">Edit Profile</span>
             <FaChevronRight className="profilePopupChevron" />
@@ -52,7 +56,7 @@ const ProfilePopup = ({ onClose }) => {
 
         {/* Security & Privacy */}
         <div className="profilePopupSection">
-          <div className="profilePopupItem" onClick={() => {/* TODO: Change Password */}}>
+          <div className="profilePopupItem" onClick={() => setShowChangePasswordModal(true)}>
             <FaCog className="profilePopupIcon" />
             <span className="profilePopupText">Change Password</span>
             <FaChevronRight className="profilePopupChevron" />
@@ -107,6 +111,22 @@ const ProfilePopup = ({ onClose }) => {
           </div>
         </div>
       </div>
+
+      {showEditProfileModal && (
+        <EditProfileModal
+          onClose={() => {
+            setShowEditProfileModal(false);
+          }}
+        />
+      )}
+
+      {showChangePasswordModal && (
+        <ChangePasswordModal
+          onClose={() => {
+            setShowChangePasswordModal(false);
+          }}
+        />
+      )}
     </>
   );
 };

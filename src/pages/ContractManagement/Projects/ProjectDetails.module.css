@@ -145,6 +145,15 @@
   background-color:  rgb(1, 49, 126);
 }
 
+.saveButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.saveButton:disabled:hover {
+  background-color: rgb(69 112 182);
+}
+
 
 .table {
   margin: 0;

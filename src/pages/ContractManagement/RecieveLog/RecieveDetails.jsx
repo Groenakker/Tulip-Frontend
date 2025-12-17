@@ -8,7 +8,7 @@ import Modal from '../../../components/Modal';
 import SampleForm from '../../../components/modals/SampleModal';
 import SampleSelect from '../../../components/modals/SampleSelect'
 import InstanceList from '../../../components/modals/InstanceListModal';
-import toast from 'react-hot-toast';
+import toast from '../../../components/Toaster/toast';
 import SignatureCanvas from 'react-signature-canvas';
 
 export default function RecieveDetails() {
@@ -252,16 +252,7 @@ export default function RecieveDetails() {
         }
     };
     const handleSave = async () => {
-        toast.success("Details Saved!", {
-            style: {
-                background: "rgba(69, 182, 120, 1)",
-                color: "#fff",
-            },
-            iconTheme: {
-                primary: '#FFFAEE',
-                secondary: 'rgba(69, 182, 120, 1)',
-            },
-        })
+        toast.success("Details Saved!");
         try {
             const payload = {
                 ...log,
@@ -280,16 +271,7 @@ export default function RecieveDetails() {
         }
     }
     const handleDelete = async () => {
-        toast.error('Log deleted successfully!', {
-            style: {
-                background: "rgb(220, 38, 38)",
-                color: "#fff",
-            },
-            iconTheme: {
-                primary: '#FFFAEE',
-                secondary: 'rgb(220, 38, 38)',
-            },
-        });
+        toast.warning('Log deleted successfully!');
         try {
             const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Failed to delete');

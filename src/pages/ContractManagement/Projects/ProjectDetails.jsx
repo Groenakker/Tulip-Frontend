@@ -1,18 +1,23 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import WhiteIsland from "../../../components/Whiteisland";
 import styles from "./ProjectDetails.module.css";
 import TabbedTable from "../../../components/TabbedTable";
 import { FaSave, FaTrash, FaImage } from "react-icons/fa";
 import { useState } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import { useParams } from "react-router-dom";
+import toast from "../../../components/Toaster/toast";
 
 export default function ProjectDetails() {
   const { id } = useParams();
+  const location = useLocation();
+  const prefillProject = location?.state?.prefillProject;
   const [project, setProject] = useState({
     projectID: "",
     bPartnerID: "",
     bPartnerCode: "",
     name: "",
+    contact: "",
     description: "",
     startDate: "",
     endDate: "",
@@ -42,6 +47,7 @@ export default function ProjectDetails() {
         bPartnerID: "",
         bPartnerCode: "",
         name: "",
+        contact: "",
         description: "",
         startDate: "",
         endDate: "",
@@ -54,9 +60,10 @@ export default function ProjectDetails() {
         quoteNumber: "",
         salesOrderNumber: "",
         image: null,
+        ...(prefillProject || {}),
       });
     }
-  }, [id, isEdit]);
+  }, [id, isEdit, prefillProject]);
 
   const [partners, setPartners] = useState([]);
 
@@ -66,8 +73,18 @@ export default function ProjectDetails() {
       .then((data) => setPartners(data))
       .catch((err) => console.error("Failed to fetch partners:", err));
   }, []);
-        
-      
+
+  const selectedPartner = useMemo(() => {
+    return (
+      partners.find(
+        (p) =>
+          p._id === project.bPartnerID || p.partnerNumber === project.bPartnerCode
+      ) || null
+    );
+  }, [partners, project.bPartnerID, project.bPartnerCode]);
+
+  const contactOptions = selectedPartner?.contacts || [];
+
   const pdata = {
     Shipments: [
       {
@@ -125,7 +142,37 @@ export default function ProjectDetails() {
       reader.readAsDataURL(file);
     }
   };
+
+  const requiredFields = [
+    "projectID",
+    "bPartnerCode",
+    "bPartnerID",
+    "name",
+    "contact",
+    "status",
+    "description",
+    "poNumber",
+    "quoteNumber",
+    "salesOrderNumber",
+    "startDate",
+    "endDate",
+    "estDate",
+    "commitDate",
+    "poDate",
+    "actDate",
+  ];
+
+  const isFormComplete = requiredFields.every((key) => {
+    const value = project?.[key];
+    if (typeof value === "string") return value.trim().length > 0;
+    return Boolean(value);
+  });
+
   const handleSave = async () => {
+    if (!isFormComplete) {
+      toast.warning("Please fill all fields before saving.");
+      return;
+    }
     if (isEdit) {
       // Update existing project
       try {
@@ -141,8 +188,10 @@ export default function ProjectDetails() {
         );
         if (!response.ok) throw new Error("Failed to update project");
         console.log("Project updated successfully");
+        toast.success("Project updated successfully");
       } catch (error) {
         console.error("Error updating project:", error);
+        toast.error("Failed to update project");
       }
     } else {
       // Create new project
@@ -154,6 +203,7 @@ export default function ProjectDetails() {
         body: JSON.stringify(project),
       });
       console.log("New project created successfully");
+      toast.success("Project created successfully");
     }
   };
   const handleDelete = () => {
@@ -163,11 +213,15 @@ export default function ProjectDetails() {
       })
         .then((response) => {
           if (!response.ok) throw new Error("Failed to delete project");
-          alert("Project deleted successfully");
+          
           window.location.href = "/projects"; // Redirect to projects list
           // Optionally redirect or reset state after deletion
+          toast.success("Project deleted successfully");
         })
-        .catch((error) => console.error("Error deleting project:", error));
+        .catch((error) => {
+          console.error("Error deleting project:", error);
+          toast.error("Failed to delete project");
+        });
     }
   };
   console.log("Project Data:", project);
@@ -214,15 +268,19 @@ export default function ProjectDetails() {
                       value={project.bPartnerCode}
                       onChange={(e) => {
                         const selectedCode = e.target.value;
-                        const selectedPartner = partners.find(
+                        const partnerMatch = partners.find(
                           (p) => p.partnerNumber === selectedCode
                         );
-                        setProject((prev) => ({
-                          ...prev,
-                          bPartnerCode: selectedCode,
-                          bPartnerID: selectedPartner ? selectedPartner._id : "",
-                          name: selectedPartner ? selectedPartner.name : "",
-                        }));
+                        setProject((prev) => {
+                          const partnerChanged = prev.bPartnerCode !== selectedCode;
+                          return {
+                            ...prev,
+                            bPartnerCode: selectedCode,
+                            bPartnerID: partnerMatch ? partnerMatch._id : "",
+                            name: partnerMatch ? partnerMatch.name : "",
+                            contact: partnerChanged ? "" : prev.contact,
+                          };
+                        });
                       }}
                     >
                       <option value="">{project.bPartnerCode || "Select Partner Code"}</option>
@@ -247,11 +305,38 @@ export default function ProjectDetails() {
                   </div>
                   <div className={styles.info} style={{ width: "15%" }}>
                     <div className={styles.infoDetail}>Sponsor</div>{" "}
-                    <input
-                      name="contactID"
-                      value={project.contactID}
+                    <select
+                      name="contact"
+                      value={project.contact}
                       onChange={handleChange}
-                    ></input>
+                      disabled={!contactOptions.length}
+                    >
+                      <option value="">
+                        {contactOptions.length
+                          ? "Select Contact"
+                          : "No contacts available"}
+                      </option>
+                      {contactOptions.map((contact) => {
+                        const optionLabel =
+                          contact.name ||
+                          contact.email ||
+                          "Unnamed Contact";
+                        const optionSuffix = contact.jobTitle
+                          ? ` - ${contact.jobTitle}`
+                          : "";
+                        return (
+                          <option
+                            key={contact._id || contact.name || contact.email}
+                            value={contact.name || contact.email || ""}
+                          >
+                            {`${optionLabel}${optionSuffix}`}
+                          </option>
+                        );
+                      })}
+                      {!contactOptions.length && project.contact ? (
+                        <option value={project.contact}>{project.contact}</option>
+                      ) : null}
+                    </select>
                   </div>
                   <div className={styles.info} style={{ width: "15%" }}>
                     <div className={styles.infoDetail}>Status</div>{" "}
@@ -384,7 +469,11 @@ export default function ProjectDetails() {
               <button className={styles.deleteButton} onClick={handleDelete}>
                 <FaTrash /> Delete{" "}
               </button>
-              <button className={styles.saveButton} onClick={handleSave}>
+              <button
+                className={styles.saveButton}
+                onClick={handleSave}
+                disabled={!isFormComplete}
+              >
                 <FaSave /> Save{" "}
               </button>
             </div>

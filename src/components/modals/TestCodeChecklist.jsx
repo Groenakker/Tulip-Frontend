@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import styles from './TestCodeChecklist.module.css';
 import { FaSearch } from 'react-icons/fa';
-import toast from 'react-hot-toast';
+import toast from '../Toaster/toast';
 
 const TestCodesChecklist = ({ onClose, onTestSelected, bPartnerID, onSaved, existingTestCodes = [] }) => {
   //State for tracking every test code selected

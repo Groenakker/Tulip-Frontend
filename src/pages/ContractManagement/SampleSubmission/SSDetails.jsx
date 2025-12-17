@@ -4,7 +4,7 @@ import styles from './SSDetails.module.css';
 import { FaSave, FaTrash, FaImage, FaEdit, } from "react-icons/fa";
 import Modal from '../../../components/Modal';
 import SignatureCanvas from 'react-signature-canvas';
-import toast from 'react-hot-toast';
+import toast from '../../../components/Toaster/toast';
 import TestCodeChecklist from '../../../components/modals/TestCodeChecklist';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -152,7 +152,7 @@ export default function SSDetail() {
             if (!res.ok) throw new Error('Failed to save');
             
             const saved = await res.json();
-            toast.success('Sample saved!', { style: { background: 'rgba(69, 182, 120, 1)', color: '#fff' } });
+            toast.success('Sample saved!');
             
             // If it was a new sample, navigate to the saved sample's ID
             if (id === 'add' && saved._id) {
@@ -174,7 +174,7 @@ export default function SSDetail() {
         try {
             const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Failed to delete');
-            toast.error('Sample deleted!', { style: { background: 'rgb(220, 38, 38)', color: '#fff' } });
+            toast.warning('Sample deleted!');
             navigate('/SampleSubmission');
         } catch (e) {
             console.error('Error deleting sample:', e);

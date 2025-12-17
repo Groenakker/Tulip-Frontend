@@ -1,0 +1,109 @@
+.container {
+  z-index: 9999;
+}
+
+.toast {
+  --toast-accent: rgb(69 112 182);
+  --toast-bg: #ffffff;
+  --toast-border: #e6e6e6;
+
+  position: relative;
+  width: min(420px, calc(100vw - 48px));
+  padding: 14px 42px 14px 14px;
+  border-radius: 14px;
+  background: var(--toast-bg);
+  border: 1px solid var(--toast-border);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+
+  color: #1f2937;
+  overflow: hidden;
+}
+
+.default {
+  --toast-accent: rgb(69 112 182);
+}
+
+.success {
+  --toast-accent: rgba(69, 182, 120, 1);
+}
+
+.warning {
+  --toast-accent: rgb(245, 158, 11);
+}
+
+.error {
+  --toast-accent: rgb(220, 38, 38);
+}
+
+.timeBarTrack {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 3px;
+  width: 100%;
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.timeBarFill {
+  height: 100%;
+  width: 100%;
+  background: var(--toast-accent);
+  transform-origin: left center;
+  animation-name: toastProgress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes toastProgress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.closeBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  color: rgba(31, 41, 55, 0.7);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  line-height: 1;
+  font-size: 18px;
+}
+
+.closeBtn:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: rgba(31, 41, 55, 0.9);
+}
+
+.closeBtn:focus-visible {
+  outline: none;
+  border-color: rgba(69, 112, 182, 0.6);
+  box-shadow: 0 0 0 3px rgba(69, 112, 182, 0.18);
+}
+
+.body {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.message {
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  line-height: 1.35;
+  color: #1f2937;
+}
+
+

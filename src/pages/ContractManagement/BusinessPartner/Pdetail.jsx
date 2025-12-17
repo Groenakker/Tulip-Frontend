@@ -3,10 +3,11 @@ import WhiteIsland from "../../../components/Whiteisland";
 import styles from "./Pdetail.module.css";
 import TabbedTable from "../../../components/TabbedTable";
 import { FaSave, FaTrash, FaImage } from "react-icons/fa";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Modal from "../../../components/Modal";
 import TestCodesChecklist from "../../../components/modals/TestCodeChecklist";
 import ContactsForm from "../../../components/modals/ContactsForm";
+import toast from "../../../components/Toaster/toast";
 
 // export default function Pdetail() {
 //   const [partner, setPartner] = useState({
@@ -24,6 +25,7 @@ import ContactsForm from "../../../components/modals/ContactsForm";
 //   });
 export default function Pdetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   console.log("ID from params:", id);
   const [partner, setPartner] = useState({
     partnerNumber: "",
@@ -137,7 +139,7 @@ export default function Pdetail() {
     const missingFields = requiredFields.filter((field) => !partner[field]);
 
     if (missingFields.length > 0) {
-      alert(`Please fill in all required fields: ${missingFields.join(", ")}`);
+      toast.error("Please fill in all required fields: " + missingFields.join(", "));
       return;
     }
 
@@ -156,7 +158,7 @@ export default function Pdetail() {
         throw new Error(errorData.message || "Failed to update partner");
       }
 
-      alert("Partner updated successfully!");
+      toast.success("Partner updated successfully");
       
     } else {
       console.log("Creating new partner:", partnerData);
@@ -172,12 +174,11 @@ export default function Pdetail() {
       }
 
       // const data = await response.json();
-      alert("Partner created successfully!");
-      
+      toast.success("Partner created successfully");
     }
   } catch (error) {
     console.error("Error saving partner:", error);
-    alert(`Error: ${error.message}`);
+    toast.error("Failed to save partner: " + error.message);
   }
   };
   const handleDeleteContact = async (contactId) => {
@@ -191,6 +192,8 @@ export default function Pdetail() {
       );
       if (!res.ok) {
         throw new Error("Failed to delete contact");
+        toast.error("Failed to delete contact: " + res.statusText);
+        return;
       }
       // Update partner.contacts instead of related
       setPartner((prev) => ({
@@ -198,7 +201,8 @@ export default function Pdetail() {
         contacts: (prev.contacts || []).filter((c) => c._id !== contactId),
       }));
     } catch (err) {
-      console.error("Error deleting contact:", err);
+      //console.error("Error deleting contact:", err);
+      toast.error("Failed to delete contact: " + err.message);
     }
   };
 
@@ -213,6 +217,8 @@ export default function Pdetail() {
       );
       if (!res.ok) {
         throw new Error("Failed to delete test code");
+        toast.error("Failed to delete test code: " + res.statusText );
+        return;
       }
       // Update partner.testCodes - remove by relationship _id or testCodeId
       setPartner((prev) => ({
@@ -223,7 +229,8 @@ export default function Pdetail() {
         }),
       }));
     } catch (err) {
-      console.error("Error deleting test code:", err);
+      //console.error("Error deleting test code:", err);
+      toast.error("Failed to delete test code: " + err.message);  
     }
   };
   const handleDelete = () => {
@@ -232,10 +239,13 @@ export default function Pdetail() {
         method: "DELETE",
       })
         .then(() => {
-          alert("Partner deleted!");
+          
           window.location.href = "/BuisnessPartner";
+          toast.success("Partner deleted successfully");
         })
-        .catch((err) => console.error("Failed to delete partner:", err));
+        .catch((err) => {
+          toast.error("Failed to delete partner: " + err.message);
+        });
     }
   };
 
@@ -256,8 +266,9 @@ export default function Pdetail() {
       partner?.contacts ||
       [];
     const testCodes = partner?.testCodes || [];
+    const isVendor = partner?.category === "Vendor";
 
-    return {
+    const nextData = {
       Projects: {
         columns: [
           { label: "ID", key: "id" },
@@ -327,8 +338,10 @@ export default function Pdetail() {
           ),
         })),
       },
+    };
 
-      "Test Codes": {
+    if (isVendor) {
+      nextData["Test Codes"] = {
         columns: [
           { label: "GRK Test Code", key: "id" },
           { label: "Description", key: "desc" },
@@ -346,7 +359,12 @@ export default function Pdetail() {
             actions: (
               <button
                 className={styles.deleteButton}
-                style={{ padding: "4px 10px", fontSize: "12px", display: "inline-flex", float: "inline-end" }}
+                style={{
+                  padding: "4px 10px",
+                  fontSize: "12px",
+                  display: "inline-flex",
+                  float: "inline-end",
+                }}
                 onClick={() => handleDeleteTestCode(relationshipId || t._id)}
               >
                 <FaTrash />
@@ -354,15 +372,27 @@ export default function Pdetail() {
             ),
           };
         }),
-      },
-    };
+      };
+    }
+
+    return nextData;
   }, [related, partner]);
 
     const [activeModal, setActiveModal] = useState(null);
   const handleAddClick = (tab) => {
-    if (tab === "Contacts") {
+    if (tab === "Projects") {
+      navigate("/Projects/ProjectDetails/add", {
+        state: {
+          prefillProject: {
+            bPartnerID: partner?._id || id || "",
+            bPartnerCode: partner?.partnerNumber || "",
+            name: partner?.name || "",
+          },
+        },
+      });
+    } else if (tab === "Contacts") {
       setActiveModal("contacts");
-    } else if (tab === "Test Codes") {
+    } else if (tab === "Test Codes" && partner?.category === "Vendor") {
       setActiveModal("testcodes");
     }
   };
@@ -538,7 +568,11 @@ export default function Pdetail() {
           {/* Table data passing with clicks and modalWindows */}
           <TabbedTable
             data={data}
-            showAddButtonForTabs={["Contacts", "Test Codes"]}
+            showAddButtonForTabs={
+              partner?.category === "Vendor"
+                ? ["Projects", "Contacts", "Test Codes"]
+                : ["Projects", "Contacts"]
+            }
             onAddClick={handleAddClick}
           />
           {loadingRelated && <div style={{ padding: 12 }}>Loading related data...</div>}
