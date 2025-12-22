@@ -1,46 +1,103 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import styles from './InstanceListModal.module.css';
-import { FaPlus} from 'react-icons/fa';
+import { FaSave } from 'react-icons/fa';
 import { LuPrinter } from "react-icons/lu";
 import JsBarcode from 'jsbarcode';
 
 const InstanceList = ({ onClose, sample, receivingLine }) => {
     const [instances, setInstances] = useState([]);
     const [loading, setLoading] = useState(true);
-    
+    const [warehouses, setWarehouses] = useState([]);
+    const [warehouseChanges, setWarehouseChanges] = useState({}); // Track warehouse changes: { instanceId: warehouseId }
+    const [originalWarehouses, setOriginalWarehouses] = useState({}); // Track original warehouse values
+    const previousQuantityRef = useRef(null);
+    const isProcessingRef = useRef(false);
 
+    const loadInstances = useCallback(async () => {
+        try {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances`);
+            if (res.ok) {
+                const data = await res.json();
+                console.log('All instances from backend:', data);
+                console.log('Sample data for filtering:', sample);
+                console.log('Looking for sampleCode:', sample?.sampleCode || sample?.id);
+                
+                const filtered = data.filter(i => 
+                    i.sampleCode === (sample?.sampleCode || sample?.id) ||
+                    i.idSample === (sample?._id || sample?.id)
+                );
+                console.log('Filtered instances:', filtered);
+                setInstances(filtered);
+                
+                // Store original warehouse values
+                const original = {};
+                filtered.forEach(instance => {
+                    original[instance._id] = instance.warehouseID || null;
+                });
+                setOriginalWarehouses(original);
+                setWarehouseChanges({});
+                
+                return filtered;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+        return [];
+    }, [sample]);
+
+    // Fetch warehouses on component mount
     useEffect(() => {
-        const load = async () => {
+        const fetchWarehouses = async () => {
             try {
-                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances`);
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/warehouses`);
                 if (res.ok) {
                     const data = await res.json();
-                    console.log('All instances from backend:', data);
-                    console.log('Sample data for filtering:', sample);
-                    console.log('Looking for sampleCode:', sample?.sampleCode || sample?.id);
-                    
-                    const filtered = data.filter(i => 
-                        i.sampleCode === (sample?.sampleCode || sample?.id) ||
-                        i.idSample === (sample?._id || sample?.id)
-                    );
-                    console.log('Filtered instances:', filtered);
-                    setInstances(filtered);
+                    setWarehouses(data);
                 }
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching warehouses:', error);
             }
         };
-        load();
-    }, [sample, receivingLine]);
+        fetchWarehouses();
+    }, []);
 
-    const createInstancesForSample = useCallback(async () => {
+    const deleteAllInstancesForSample = useCallback(async (instancesToDelete) => {
+        if (!instancesToDelete || instancesToDelete.length === 0) {
+            return;
+        }
+        
+        console.log(`Deleting ${instancesToDelete.length} instances for sample...`);
+        
+        try {
+            const deletePromises = instancesToDelete.map(async (instance) => {
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances/${instance._id}`, {
+                    method: 'DELETE'
+                });
+                if (!res.ok) {
+                    console.error(`Failed to delete instance ${instance.instanceCode}:`, res.status);
+                    throw new Error(`Failed to delete instance: ${res.status}`);
+                }
+                return res;
+            });
+            
+            await Promise.all(deletePromises);
+            console.log(`Successfully deleted ${instancesToDelete.length} instances`);
+        } catch (error) {
+            console.error('Error deleting instances:', error);
+            throw error;
+        }
+    }, []);
+
+    const createInstancesForSample = useCallback(async (showAlert = true) => {
         try {
             const qty = Number(receivingLine?.quantity || 0);
-            alert(`Creating ${qty} instances for sample: ${sample?.sampleCode || sample?.id}`);
+            if (showAlert) {
+                alert(`Creating ${qty} instances for sample: ${sample?.sampleCode || sample?.id}`);
+            }
             if (qty <= 0) {
-                alert('Please set a quantity greater than 0 for this receiving line');
+                if (showAlert) {
+                    alert('Please set a quantity greater than 0 for this receiving line');
+                }
                 return;
             }
 
@@ -92,7 +149,8 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
                     idSample: sample?._id || sample?.id || null,
                     sampleCode: sample?.sampleCode || sample?.id || 'UNKNOWN-SAMPLE',
                     lotNo: receivingLine?.lot || 'DEFAULT-LOT',
-                    status: 'Pending'
+                    status: 'Pending',
+                    warehouseID: null
                 };
                 
                 console.log('Instance data:', instanceData);
@@ -118,39 +176,72 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
             const created = await Promise.all(creations);
             console.log('All instances created:', created);
             
-            // Refresh the instances list
-            const refreshRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances`);
-            if (refreshRes.ok) {
-                const allInstances = await refreshRes.json();
-                const filtered = allInstances.filter(i => 
-                    i.sampleCode === (sample?.sampleCode || sample?.id) ||
-                    i.idSample === (sample?._id || sample?.id)
-                );
-                setInstances(filtered);
-                console.log('Refreshed instances:', filtered);
-            }
+            // Refresh the instances list using loadInstances to properly track original warehouses
+            await loadInstances();
             
-            alert(`Successfully created ${created.length} instances!`);
+            if (showAlert) {
+                alert(`Successfully created ${created.length} instances!`);
+            }
         } catch (e) {
             console.error('Error creating instances:', e);
+            if (showAlert) {
+                alert('Error creating instances. Please check the console for details.');
+            }
+            throw e;
         }
-    }, [receivingLine, sample]);
+    }, [receivingLine, sample, loadInstances]);
 
-    // Auto-create instances if none exist
     useEffect(() => {
-        const autoCreate = async () => {
-            console.log('Auto-create check:', {
-                instancesLength: instances.length,
-                quantity: receivingLine?.quantity,
-                loading: loading
+        const load = async () => {
+            setLoading(true);
+            const loadedInstances = await loadInstances();
+            setLoading(false);
+            
+            // Check if quantity has changed
+            const currentQuantity = Number(receivingLine?.quantity || 0);
+            const existingCount = loadedInstances.length;
+            
+            console.log('Quantity check:', {
+                currentQuantity,
+                existingCount,
+                previousQuantity: previousQuantityRef.current,
+                isProcessing: isProcessingRef.current
             });
-            if (instances.length === 0 && receivingLine?.quantity > 0 && !loading) {
-                console.log('Auto-creating instances...');
-                await createInstancesForSample();
+            
+            // Skip if already processing or if quantity hasn't changed
+            if (isProcessingRef.current) {
+                return;
+            }
+            
+            // If quantity differs from existing instances count, delete and recreate
+            if (currentQuantity !== existingCount) {
+                console.log('Quantity mismatch detected. Deleting and recreating instances...');
+                previousQuantityRef.current = currentQuantity;
+                isProcessingRef.current = true;
+                
+                try {
+                    // Delete all existing instances for this sample
+                    await deleteAllInstancesForSample(loadedInstances);
+                    
+                    // If quantity > 0, create new instances (without alert)
+                    if (currentQuantity > 0) {
+                        await createInstancesForSample(false);
+                    } else {
+                        // Quantity is 0, just refresh the list
+                        await loadInstances();
+                    }
+                } catch (error) {
+                    console.error('Error in delete/recreate process:', error);
+                } finally {
+                    isProcessingRef.current = false;
+                }
+            } else {
+                // Quantity matches, just update the ref
+                previousQuantityRef.current = currentQuantity;
             }
         };
-        autoCreate();
-    }, [instances.length, receivingLine?.quantity, loading, createInstancesForSample]);
+        load();
+    }, [sample, receivingLine?.quantity, loadInstances, deleteAllInstancesForSample, createInstancesForSample]);
 
     const handlePrintLabel = (instance) => {
         const printWindow = window.open('', '_blank');
@@ -251,6 +342,79 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
         }, 100);
     };
 
+    const handleWarehouseChange = (instanceId, warehouseId) => {
+        setWarehouseChanges(prev => ({
+            ...prev,
+            [instanceId]: warehouseId || null
+        }));
+    };
+
+    const handleAssignToAll = (warehouseId) => {
+        if (!warehouseId) {
+            // If empty, clear all assignments
+            const allChanges = {};
+            instances.forEach(instance => {
+                allChanges[instance._id] = null;
+            });
+            setWarehouseChanges(allChanges);
+        } else {
+            // Assign the same warehouse to all instances
+            const allChanges = {};
+            instances.forEach(instance => {
+                allChanges[instance._id] = warehouseId;
+            });
+            setWarehouseChanges(allChanges);
+        }
+    };
+
+    const handleSaveWarehouses = async () => {
+        if (Object.keys(warehouseChanges).length === 0) {
+            return;
+        }
+
+        try {
+            const updatePromises = Object.entries(warehouseChanges).map(async ([instanceId, warehouseId]) => {
+                // Find the instance to get its current data
+                const instance = instances.find(i => i._id === instanceId);
+                if (!instance) return;
+
+                const updateData = {
+                    ...instance,
+                    warehouseID: warehouseId || null
+                };
+
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances/${instanceId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updateData)
+                });
+
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    throw new Error(`Failed to update instance ${instance.instanceCode}: ${errorText}`);
+                }
+
+                return await res.json();
+            });
+
+            await Promise.all(updatePromises);
+            
+            // Refresh instances and clear changes
+            await loadInstances();
+            alert('Warehouse assignments saved successfully!');
+        } catch (error) {
+            console.error('Error saving warehouse assignments:', error);
+            alert(`Error saving warehouse assignments: ${error.message}`);
+        }
+    };
+
+    const hasChanges = Object.keys(warehouseChanges).length > 0 && 
+        Object.entries(warehouseChanges).some(([instanceId, newWarehouseId]) => {
+            const original = originalWarehouses[instanceId] || null;
+            const changed = newWarehouseId || null;
+            return changed !== original;
+        });
+
     const generateLabelHTML = (instance) => {
         const generateBarcodeSVG = (code) => {
             try {
@@ -315,37 +479,82 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
                                 <th>Lot</th>
                                 <th>Status</th>
                                 <th>Actions</th>
+                                <th>
+                                    <div className={styles.warehouseHeader}>
+                                        {/* <span>Warehouse</span> */}
+                                        {!loading && instances.length > 0 && (
+                                            <select
+                                                onChange={(e) => handleAssignToAll(e.target.value)}
+                                                className={styles.headerWarehouseSelect}
+                                                defaultValue=""
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <option value="">Warehouse</option>
+                                                {warehouses.map((warehouse) => (
+                                                    <option key={warehouse._id} value={warehouse._id}>
+                                                        {warehouse.warehouseID}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        )}
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan="4" style={{textAlign:'center',padding:'10px'}}>Loading...</td></tr>
-                            ) : instances.map((instance) => (
-                                <tr key={instance._id}>
-                                    <td>{instance.instanceCode}</td>
-                                    <td>{instance.lotNo}</td>
-                                    <td>
-                                        <span className={`${styles.statusBadge} ${styles[instance.status.toLowerCase().replace(' ', '')]}`}>
-                                            {instance.status}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div className={styles.actionButtons}>
-                                            <button className={styles.printBtn} onClick={() => handlePrintLabel(instance)}>
-                                                <LuPrinter /> Print 
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                                <tr><td colSpan="5" style={{textAlign:'center',padding:'10px'}}>Loading...</td></tr>
+                            ) : instances.map((instance) => {
+                                const currentWarehouseId = warehouseChanges[instance._id] !== undefined 
+                                    ? warehouseChanges[instance._id] 
+                                    : (instance.warehouseID || '');
+                                
+                                return (
+                                    <tr key={instance._id}>
+                                        <td>{instance.instanceCode}</td>
+                                        <td>{instance.lotNo}</td>
+                                        <td>
+                                            <span className={`${styles.statusBadge} ${styles[instance.status.toLowerCase().replace(' ', '')]}`}>
+                                                {instance.status}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div className={styles.actionButtons}>
+                                                <button className={styles.printBtn} onClick={() => handlePrintLabel(instance)}>
+                                                    <LuPrinter /> Print 
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <select
+                                                value={currentWarehouseId}
+                                                onChange={(e) => handleWarehouseChange(instance._id, e.target.value)}
+                                                className={styles.warehouseSelect}
+                                            >
+                                                <option value="">Select Warehouse</option>
+                                                {warehouses.map((warehouse) => (
+                                                    <option key={warehouse._id} value={warehouse._id}>
+                                                        {warehouse.warehouseID}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
             </div>
 
             <div className={styles.buttonGroup}>
-                <button className={styles.addButton} onClick={createInstancesForSample}>
-                    <FaPlus /> Add Instance(s)
+                <button 
+                    className={styles.saveBtn} 
+                    onClick={handleSaveWarehouses}
+                    disabled={!hasChanges}
+                    style={{ opacity: hasChanges ? 1 : 0.5, cursor: hasChanges ? 'pointer' : 'not-allowed' }}
+                >
+                    <FaSave /> Save
                 </button>
                 <button className={styles.closeBtn} onClick={onClose}>
                     Close

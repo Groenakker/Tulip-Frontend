@@ -237,9 +237,46 @@ export default function RecieveDetails() {
     };
 
     const handleDeleteLineItem = async (lineId) => {
-        if (!window.confirm('Are you sure you want to delete this line item?')) return;
+        if (!window.confirm('Are you sure you want to delete this line item and all its related instances?')) return;
         
         try {
+            // Find the line item to get its sampleCode and id
+            const lineItem = items.find(item => (item._id === lineId || item.id === lineId));
+            if (!lineItem) {
+                throw new Error('Line item not found');
+            }
+
+            // Fetch all instances and find those related to this line item
+            const instancesRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances`);
+            if (instancesRes.ok) {
+                const allInstances = await instancesRes.json();
+                
+                // Filter instances that match this line item's sampleCode or idSample
+                const relatedInstances = allInstances.filter(instance => 
+                    instance.sampleCode === (lineItem.sampleCode || lineItem.id) ||
+                    instance.idSample === (lineItem._id || lineItem.id)
+                );
+
+                // Delete all related instances
+                if (relatedInstances.length > 0) {
+                    console.log(`Deleting ${relatedInstances.length} instances related to line item ${lineId}`);
+                    const deletePromises = relatedInstances.map(async (instance) => {
+                        const deleteRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances/${instance._id}`, {
+                            method: 'DELETE'
+                        });
+                        if (!deleteRes.ok) {
+                            console.error(`Failed to delete instance ${instance.instanceCode}:`, deleteRes.status);
+                            throw new Error(`Failed to delete instance: ${deleteRes.status}`);
+                        }
+                        return deleteRes;
+                    });
+                    
+                    await Promise.all(deletePromises);
+                    console.log(`Successfully deleted ${relatedInstances.length} instances`);
+                }
+            }
+
+            // Now delete the line item
             const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/lines/${lineId}`, {
                 method: 'DELETE'
             });
@@ -247,8 +284,11 @@ export default function RecieveDetails() {
             
             // Remove from local state
             setItems(prev => prev.filter(item => item._id !== lineId && item.id !== lineId));
+            
+            toast.success('Line item and related instances deleted successfully');
         } catch (e) {
-            console.error(e);
+            console.error('Error deleting line item:', e);
+            toast.error(`Failed to delete line item: ${e.message}`);
         }
     };
     const handleSave = async () => {
