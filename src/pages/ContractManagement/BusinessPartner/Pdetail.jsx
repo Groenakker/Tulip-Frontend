@@ -411,7 +411,7 @@ export default function Pdetail() {
             <div className={styles.main}>
               <div className={styles.picture}>
                 <img
-                  src={partner.image ? partner.image : "/SmallLogo.png"}
+                  src={partner.image ? partner.image : "https://www.svgrepo.com/show/508699/landscape-placeholder.svg"}
                   width={128}
                   height={128}
                   alt="Partner"
@@ -430,7 +430,7 @@ export default function Pdetail() {
                 {/* detail line 1 */}
                 <div className={styles.details}>
                   <div className={styles.info} style={{ width: "15%" }}>
-                    <div className={styles.infoDetail}>SAP Partner ID</div>
+                    <div className={styles.infoDetail}>SAP Partner ID <span style={{ color: "red" }}>*</span></div>
                     <input
                       name="partnerNumber"
                       value={partner.partnerNumber}
@@ -438,7 +438,7 @@ export default function Pdetail() {
                     />
                   </div>
                   <div className={styles.info} style={{ width: "60%" }}>
-                    <div className={styles.infoDetail}>Name</div>
+                    <div className={styles.infoDetail}>Name <span style={{ color: "red" }}>*</span></div>
                     <input
                       name="name"
                       value={partner.name}
@@ -446,7 +446,7 @@ export default function Pdetail() {
                     />
                   </div>
                   <div className={styles.info} style={{ width: "25%" }}>
-                    <div className={styles.infoDetail}>Category</div>
+                    <div className={styles.infoDetail}>Category <span style={{ color: "red" }}>*</span></div>
                     <select
                       className={styles.dropdown}
                       name="category"
@@ -465,7 +465,7 @@ export default function Pdetail() {
                 {/* details line 2 */}
                 <div className={styles.details2}>
                   <div className={styles.info} style={{ width: "15%" }}>
-                    <div className={styles.infoDetail}>Status</div>
+                    <div className={styles.infoDetail}>Status <span style={{ color: "red" }}>*</span></div>
                     <select
                       className={styles.dropdown}
                       name="status"
@@ -556,7 +556,11 @@ export default function Pdetail() {
                 <FaTrash />
                 Delete{" "}
               </button>
-              <button className={styles.saveButton} onClick={handleSave}>
+              <button 
+                className={styles.saveButton} 
+                onClick={handleSave}
+                disabled={!partner.partnerNumber || !partner.name}
+              >
                 <FaSave />
                 Save{" "}
               </button>

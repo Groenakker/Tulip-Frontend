@@ -147,8 +147,14 @@
   background-color: rgb(153, 27, 27);
 }
 
-.saveButton:hover {
+.saveButton:hover:not(:disabled) {
   background-color:  rgb(1, 49, 126);
+}
+
+.saveButton:disabled {
+  background-color: #9CA3AF;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 
