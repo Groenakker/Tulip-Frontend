@@ -388,7 +388,7 @@ export default function RecieveDetails() {
                                         <option value='' disabled>Loading...</option>
                                     ) : (
                                         projects.map(p => (
-                                            <option key={p._id} value={p._id}>{p.name || p.projectID}</option>
+                                            <option key={p._id} value={p._id}>{p.projectID || p.projectID}</option>
                                         ))
                                     )}
                                 </select>
@@ -590,6 +590,8 @@ export default function RecieveDetails() {
                     <SampleForm
                         onClose={cancelSampleForm}
                         sample={sampleModalState.selectedSample}
+                        projectId={log.projectId}
+                        project={projects.find(p => (p._id === log.projectId) || (p.projectID === log.projectId))}
                     />
                 </Modal>
             )}

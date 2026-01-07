@@ -1,9 +1,8 @@
 import { useState } from "react";
 import styles from "./SampleModal.module.css";
-// import { useNavigate } from "react-router-dom";
+import toast from "../Toaster/toast";
 
-const SampleForm = ({ onClose }) => {
-//   const navigate = useNavigate();
+const SampleForm = ({ onClose, projectId, project }) => {
   const [sampleData, setSampleData] = useState({
     id: "",
     description: "",
@@ -11,22 +10,113 @@ const SampleForm = ({ onClose }) => {
     dcu: "",
     notes: "",
     manufacturer: "",
-    sponsor: "",
-    testMethod: "",
-    exprie: "",
-    markets: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setSampleData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Sample data submitted:", sampleData);
-    onClose();
+    console.log("Button Clicked");
+    
+    // Validate required fields
+    if (!sampleData.id || !sampleData.description) {
+      toast.error("Please fill in Sample ID and Description");
+      //return;
+    }
+
+    // Check if project is selected
+    if (!projectId) {
+      toast.error("Please select a project in the receiving page first");
+     // return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Step 1: Fetch project details to get business partner ID
+      const projectRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects/${projectId}`);
+      if (!projectRes.ok) {
+        throw new Error('Failed to fetch project details');
+      }
+      const projectData = await projectRes.json();
+
+      // Step 2: Fetch business partner details from the project
+      let businessPartnerData = null;
+      if (projectData.bPartnerID) {
+        const bpRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${projectData.bPartnerID}`);
+        if (bpRes.ok) {
+          businessPartnerData = await bpRes.json();
+          console.log("BPartner Data:", businessPartnerData);
+        }
+        else {
+          throw new Error('Failed to fetch business partner details');
+        }
+      }
+
+      // Step 3: Create sample with form data and business partner details
+      const samplePayload = {
+        sampleCode: sampleData.id,
+        description: sampleData.description,
+        lot: sampleData.lot || '',
+        dcu: sampleData.dcu || '',
+        notes: sampleData.notes || '',
+        manufacturer: sampleData.manufacturer || '',
+        status: 'Draft',
+        // Include business partner details if available
+        ...(businessPartnerData && {
+          bPartnerID: businessPartnerData._id || projectData.bPartnerID,
+          client: businessPartnerData.name || '',
+          bPartnerCode: businessPartnerData.partnerNumber || '',
+          SAPid: businessPartnerData.SAPid || '',
+          address: businessPartnerData.address1 & businessPartnerData.city & businessPartnerData.state & businessPartnerData.zip & businessPartnerData.country || '',
+          
+          phone: businessPartnerData.phone || '',
+          email: businessPartnerData.email || '',
+        }),
+        // Include project reference
+        projectID: projectData.projectID,
+        projectName: projectData.name || projectData.projectID || '',
+        // Store form data
+        formData: {
+          ...sampleData,
+          projectId: projectData.projectId,
+          projectName: projectData.name || projectData.projectID || '',
+        }
+      };
+      console.log("Sample Payload:", samplePayload);
+      // Step 4: Create the sample via API
+      const createRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(samplePayload)
+      });
+
+      if (!createRes.ok) {
+        const errorData = await createRes.json().catch(() => ({ message: 'Failed to create sample' }));
+        throw new Error(errorData.message || 'Failed to create sample');
+      }
+
+      const createdSample = await createRes.json();
+      toast.success('Sample created successfully!');
+      onClose();
+      
+      // Optionally refresh the page or trigger a callback
+     // if (window.location.reload) {
+        // You might want to add a callback prop instead of reloading
+       // setTimeout(() => window.location.reload(), 500);
+     // }
+    } catch (error) {
+      console.error('Error creating sample:', error);
+      toast.error(error.message || 'Failed to create sample');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
 
   const viewFullListing = () => {
     window.open("/SampleSubmission/SSDetail", "_blank");
@@ -73,17 +163,6 @@ const SampleForm = ({ onClose }) => {
               />
             </div>
 
-            <div className={styles.field}>
-              <div className={styles.infoDetail}>Device Clinical Used</div>
-              <input
-                className={styles.input}
-                type="number"
-                name="dcu"
-                value={sampleData.dcu}
-                onChange={handleChange}
-                placeholder="Enter Device Clinical used"
-              />
-            </div>
           </div>
 
           <div className={styles.formSection}>
@@ -95,48 +174,6 @@ const SampleForm = ({ onClose }) => {
                 value={sampleData.manufacturer}
                 onChange={handleChange}
                 placeholder="Enter manufacturer"
-              />
-            </div>
-
-            <div className={styles.field}>
-              <div className={styles.infoDetail}>Sponsor</div>
-              <input
-                className={styles.input}
-                name="sponsor"
-                value={sampleData.sponsor}
-                onChange={handleChange}
-                placeholder="Enter sample Sponsor"
-              />
-            </div>
-
-            <div className={styles.field}>
-              <div className={styles.infoDetail}>Test Method</div>
-              <input
-                className={styles.input}
-                name="testMethod"
-                value={sampleData.testMethod}
-                onChange={handleChange}
-                placeholder="Enter test method"
-              />
-            </div>
-            <div className={styles.field}>
-              <div className={styles.infoDetail}>Expiration Date</div>
-              <input
-                className={styles.input}
-                name="expire"
-                value={sampleData.expire}
-                onChange={handleChange}
-                placeholder="Enter Expiration date"
-              />
-            </div>
-            <div className={styles.field}>
-              <div className={styles.infoDetail}>Desired Market</div>
-              <input
-                className={styles.input}
-                name="markets"
-                value={sampleData.markets}
-                onChange={handleChange}
-                placeholder="Enter desired market"
               />
             </div>
           </div>
@@ -160,8 +197,8 @@ const SampleForm = ({ onClose }) => {
             >
               Cancel
             </button>
-            <button type="submit" className={styles.saveBtn}>
-              Save
+            <button type="submit" className={styles.saveBtn} disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : 'Save'}
             </button>
           </div>
         </div>
