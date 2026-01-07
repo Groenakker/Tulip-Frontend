@@ -71,7 +71,7 @@ export default function SSDetail() {
         contactType: '',
         contactDuration: '',
         manufacturer: '',
-        desiredMarkets: 'U',
+        desiredMarkets: '',
         manufactureDate: '',
         expirationDate: '',
         wallThickness: '',
@@ -473,7 +473,7 @@ export default function SSDetail() {
                             <div className={styles.details2}>
                                 <div className={styles.info2} style={{ width: '100%' }}>
                                     <div className={styles.infoDetail}>Client</div>
-                                    <input name="client" value={sample.client} onChange={handleChange} />
+                                    <input name="bPartnerName" value={sample.bPartnerName} onChange={handleChange} />
                                 </div>
                             </div>
 
@@ -487,7 +487,7 @@ export default function SSDetail() {
                             <div className={styles.details}>
                                 <div className={styles.info} style={{ width: '33%' }}>
                                     <div className={styles.infoDetail}>Sponsor</div>
-                                    <input name="sponsor" value={sample.sponsor} onChange={handleChange} />
+                                    <input name="contactName" value={sample.contactName} onChange={handleChange} />
                                 </div>
                                 <div className={styles.info} style={{ width: '33%' }}>
                                     <div className={styles.infoDetail}>Email</div>

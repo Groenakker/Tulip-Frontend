@@ -275,7 +275,7 @@ export default function Pdetail() {
           { label: "Due Date", key: "due" },
         ],
         rows: projects.map((p) => ({
-          id: p._id || "",
+          id: p.projectID || "",
           desc: p.description || p.name || "",
           start: formatDate(p.startDate),
           due: formatDate(p.endDate),
@@ -304,12 +304,12 @@ export default function Pdetail() {
           { label: "Created On", key: "start" },
           { label: "Approved On", key: "due" },
         ],
-        rows: samples.map((s) => ({
-          id: s._id || "",
-          desc: s.description || s.name || "",
-          start: formatDate(s.startDate),
-          due: formatDate(s.endDate),
-        })),
+        //rows: samples.map((s) => ({
+          //id: s._id || "",
+          //desc: s.description || s.name || "",
+          //start: formatDate(s.startDate),
+          //due: formatDate(s.endDate),
+        //})),
       },
 
       Contacts: {

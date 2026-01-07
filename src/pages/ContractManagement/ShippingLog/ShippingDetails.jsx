@@ -333,6 +333,7 @@ export default function ShipmentDetails() {
     };
 
     const handleApplyScannedCodes = async () => {
+        // Step 1: Get unique scanned codes from the queue
         const uniqueCodes = Array.from(new Set(scanModalState.scannedCodes));
         if (uniqueCodes.length === 0) {
             setScanModalState(prev => ({
@@ -342,100 +343,247 @@ export default function ShipmentDetails() {
             return;
         }
 
-        const existingCodes = new Set(items.map(item => normalizeCode(item.sampleCode || item.id || '')));
-        const codesToAdd = uniqueCodes.filter(code => !existingCodes.has(code));
-
-        if (codesToAdd.length === 0) {
-            toast('All scanned samples are already in this shipment.');
-            closeScanModal();
-            return;
-        }
-
+        // Set submitting state to prevent multiple submissions
         setScanModalState(prev => ({
             ...prev,
             isSubmitting: true,
-            statusMessage: '',
+            statusMessage: 'Processing scanned instances...',
             missingCodes: []
         }));
 
         try {
-            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`);
-            if (!res.ok) throw new Error('Failed to load sample catalog.');
-
-            const samples = await res.json();
-            const sampleMap = new Map(
-                (samples || [])
-                    .filter(sample => sample?.sampleCode)
-                    .map(sample => [normalizeCode(sample.sampleCode), sample])
+            // Step 2: Fetch all instances from the database to find the scanned instance codes
+            const instancesRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances`);
+            if (!instancesRes.ok) throw new Error('Failed to load instances from database.');
+            
+            const allInstances = await instancesRes.json();
+            
+            // Create a map of instance codes to instance objects for quick lookup
+            const instanceMap = new Map(
+                (allInstances || [])
+                    .filter(instance => instance?.instanceCode)
+                    .map(instance => [normalizeCode(instance.instanceCode), instance])
             );
 
+            // Step 3: Find which scanned codes are valid instances
             const missingCodes = [];
-            const samplesToAdd = [];
-            codesToAdd.forEach(code => {
-                const sample = sampleMap.get(code);
-                if (!sample) {
+            const foundInstances = [];
+            
+            uniqueCodes.forEach(code => {
+                const instance = instanceMap.get(code);
+                if (!instance) {
+                    // Instance not found in database
                     missingCodes.push(code);
                 } else {
-                    samplesToAdd.push(sample);
+                    // Instance found - add to processing list
+                    foundInstances.push(instance);
                 }
             });
 
-            if (!samplesToAdd.length) {
+            // If no instances were found, show error and return
+            if (foundInstances.length === 0) {
                 setScanModalState(prev => ({
                     ...prev,
                     isSubmitting: false,
                     missingCodes,
                     statusMessage: missingCodes.length
-                        ? `No matches found for: ${missingCodes.join(', ')}`
-                        : 'No scanned samples could be matched.'
+                        ? `No instances found for: ${missingCodes.join(', ')}`
+                        : 'No matching instances found for the scanned barcodes.'
                 }));
-                toast.error('No matching samples found for the scanned barcodes.');
+                toast.error('No matching instances found for the scanned barcodes.');
                 return;
             }
 
-            const createdLines = [];
-            for (const sample of samplesToAdd) {
-                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sampleId: sample._id,
-                        sampleCode: sample.sampleCode,
-                        description: sample.description || sample.name || sample.formData?.sampleDescription || sample.sampleCode,
-                        lot: '',
-                        quantity: 1
-                    })
-                });
+            // Step 4: For each found instance, get its sample ID and fetch sample details
+            const samplesRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`);
+            if (!samplesRes.ok) throw new Error('Failed to load sample catalog.');
+            
+            const allSamples = await samplesRes.json();
+            const sampleMap = new Map(
+                (allSamples || [])
+                    .filter(sample => sample?._id)
+                    .map(sample => [sample._id, sample])
+            );
 
-                if (!response.ok) {
-                    throw new Error('Failed to add one or more samples to the shipment.');
+            // Step 5: Process each instance - find or create shipping line and add instance
+            const processedInstances = [];
+            const errors = [];
+
+            for (const instance of foundInstances) {
+                try {
+                    // Step 5a: Get the sample details using the instance's sample ID
+                    const sampleId = instance.idSample;
+                    if (!sampleId) {
+                        errors.push(`Instance ${instance.instanceCode} has no associated sample ID.`);
+                        continue;
+                    }
+
+                    const sample = sampleMap.get(sampleId);
+                    if (!sample) {
+                        errors.push(`Sample not found for instance ${instance.instanceCode}.`);
+                        continue;
+                    }
+
+                    // Extract sample details: sample code, description, and lot from instance
+                    const sampleCode = sample.sampleCode || instance.sampleCode || '';
+                    const description = sample.description || sample.name || sample.formData?.sampleDescription || sampleCode;
+                    const lot = instance.lotNo || '';
+
+                    // Step 5b: Check if this sample already exists in the shipping lines for current shipping
+                    const existingShippingLine = items.find(item => 
+                        (item.id === sampleId || item.sampleId === sampleId) ||
+                        normalizeCode(item.sampleCode || '') === normalizeCode(sampleCode)
+                    );
+
+                    let shippingLineId;
+                    let shippingLine;
+
+                    if (existingShippingLine) {
+                        // Step 5c: Sample exists in shipping line - use existing line
+                        shippingLineId = existingShippingLine._id || existingShippingLine.id;
+                        shippingLine = existingShippingLine;
+                    } else {
+                        // Step 5d: Sample doesn't exist - create a new shipping line for this sample
+                        const createLineRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                sampleId: sampleId,
+                                sampleCode: sampleCode,
+                                description: description,
+                                lot: lot,
+                                quantity: 1
+                            })
+                        });
+
+                        if (!createLineRes.ok) {
+                            throw new Error(`Failed to create shipping line for sample ${sampleCode}.`);
+                        }
+
+                        const newLine = await createLineRes.json();
+                        shippingLineId = newLine._id;
+                        shippingLine = {
+                            _id: newLine._id,
+                            id: newLine.sampleId,
+                            sampleCode: newLine.sampleCode || sampleCode,
+                            description: newLine.description || description,
+                            lot: newLine.lot || lot,
+                            quantity: newLine.quantity ?? 1
+                        };
+
+                        // Add the new shipping line to local state
+                        setItems(prev => [...prev, shippingLine]);
+                    }
+
+                    // Step 5e: Add the instance to the shipping line's instances array
+                    // First, try to add instance via dedicated API endpoint
+                    try {
+                        const addInstanceRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${shippingLineId}/instances`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                instanceId: instance._id,
+                                instanceCode: instance.instanceCode
+                            })
+                        });
+
+                        if (!addInstanceRes.ok) {
+                            // If dedicated endpoint doesn't exist, update the line with instances array
+                            // Get current instances array from the shipping line
+                            const currentInstances = shippingLine.instances || [];
+                            
+                            // Check if instance is already in the array to avoid duplicates
+                            if (!currentInstances.includes(instance._id) && !currentInstances.some(i => 
+                                (typeof i === 'object' && i._id === instance._id) || 
+                                (typeof i === 'string' && i === instance._id)
+                            )) {
+                                // Add instance to the array
+                                const updatedInstances = [...currentInstances, instance._id];
+                                
+                                const updateLineRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${shippingLineId}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        instances: updatedInstances
+                                    })
+                                });
+
+                                if (!updateLineRes.ok) {
+                                    console.warn(`Could not add instance ${instance.instanceCode} to shipping line ${shippingLineId}. API may need to be updated.`);
+                                }
+                            }
+                        }
+                    } catch (instanceError) {
+                        console.warn(`Error adding instance ${instance.instanceCode} to shipping line:`, instanceError);
+                        // Continue processing other instances even if one fails
+                    }
+
+                    processedInstances.push({
+                        instanceCode: instance.instanceCode,
+                        sampleCode: sampleCode,
+                        shippingLineId: shippingLineId
+                    });
+
+                } catch (instanceError) {
+                    console.error(`Error processing instance ${instance.instanceCode}:`, instanceError);
+                    errors.push(`Failed to process instance ${instance.instanceCode}: ${instanceError.message}`);
                 }
-
-                const line = await response.json();
-                createdLines.push({
-                    _id: line._id,
-                    id: line.sampleId,
-                    sampleCode: line.sampleCode || sample.sampleCode,
-                    description: line.description || sample.description || sample.name || '',
-                    lot: line.lot || '',
-                    quantity: line.quantity ?? 1
-                });
             }
 
-            setItems(prev => [...prev, ...createdLines]);
-
-            if (missingCodes.length) {
-                toast.error(`No match for: ${missingCodes.join(', ')}`);
+            // Refresh shipping lines to get updated data
+            try {
+                const linesRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`);
+                if (linesRes.ok) {
+                    const lines = await linesRes.json();
+                    setItems(lines.map(l => ({
+                        _id: l._id,
+                        id: l.sampleId,
+                        sampleCode: l.sampleCode,
+                        description: l.description,
+                        lot: l.lot || '',
+                        quantity: l.quantity || 0
+                    })));
+                }
+            } catch (refreshError) {
+                console.warn('Could not refresh shipping lines:', refreshError);
             }
-            toast.success(`Added ${createdLines.length} scanned sample${createdLines.length > 1 ? 's' : ''}.`);
-            closeScanModal();
+
+            // Show results to user
+            if (errors.length > 0) {
+                toast.error(`Some instances failed to process: ${errors.join('; ')}`);
+            }
+
+            if (missingCodes.length > 0) {
+                toast.error(`No instances found for: ${missingCodes.join(', ')}`);
+            }
+
+            if (processedInstances.length > 0) {
+                toast.success(`Successfully added ${processedInstances.length} instance${processedInstances.length > 1 ? 's' : ''} to shipment.`);
+            }
+
+            // Close modal if all instances were processed successfully
+            if (processedInstances.length === foundInstances.length && missingCodes.length === 0) {
+                closeScanModal();
+            } else {
+                setScanModalState(prev => ({
+                    ...prev,
+                    isSubmitting: false,
+                    missingCodes,
+                    statusMessage: missingCodes.length > 0 
+                        ? `Could not find instances: ${missingCodes.join(', ')}`
+                        : errors.length > 0
+                        ? `Some instances failed to process.`
+                        : 'Processing complete.'
+                }));
+            }
+
         } catch (error) {
-            console.error(error);
-            toast.error(error.message || 'Failed to add scanned samples.');
+            console.error('Error in handleApplyScannedCodes:', error);
+            toast.error(error.message || 'Failed to process scanned instances.');
             setScanModalState(prev => ({
                 ...prev,
                 isSubmitting: false,
-                statusMessage: error.message || 'Failed to add scanned samples.'
+                statusMessage: error.message || 'Failed to process scanned instances.'
             }));
         }
     };
@@ -850,6 +998,8 @@ export default function ShipmentDetails() {
                     <SampleForm
                         onClose={cancelSampleForm}
                         sample={sampleModalState.selectedSample}
+                        projectId={log.projectID}
+                        project={projects.find(p => (p._id === log.projectID) || (p.projectID === log.projectID))}
                     />
                 </Modal>
             )}
