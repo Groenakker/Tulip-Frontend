@@ -1,4 +1,4 @@
-import React, { useEffect , useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import WhiteIsland from "../../../components/Whiteisland";
 import styles from "./Pdetail.module.css";
 import TabbedTable from "../../../components/TabbedTable";
@@ -8,6 +8,7 @@ import Modal from "../../../components/Modal";
 import TestCodesChecklist from "../../../components/modals/TestCodeChecklist";
 import ContactsForm from "../../../components/modals/ContactsForm";
 import toast from "../../../components/Toaster/toast";
+import { useAuth } from "../../../context/AuthContext";
 
 // export default function Pdetail() {
 //   const [partner, setPartner] = useState({
@@ -27,6 +28,7 @@ export default function Pdetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   console.log("ID from params:", id);
+  const { user } = useAuth();
   const [partner, setPartner] = useState({
     partnerNumber: "",
     name: "",
@@ -42,13 +44,14 @@ export default function Pdetail() {
     country: "",
     image: null,
     contacts: [],
-    testCodes: []
+    testCodes: [],
+    company_id: user?.companyId || "",
   });
   const isEdit = Boolean(id);
   console.log("Is Edit Mode:", isEdit);
 
   console.log("partner contacts:", partner.contacts);
-  
+
 
   const [related, setRelated] = useState(null);
   const [loadingRelated, setLoadingRelated] = useState(false);
@@ -62,7 +65,7 @@ export default function Pdetail() {
       );
       const data = await res.json();
       setRelated(data);
-      
+
       // Also reload partner to get updated contacts
       const partnerRes = await fetch(
         `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}`
@@ -103,10 +106,11 @@ export default function Pdetail() {
         image: null,
         contacts: [],
         testCodes: [],
+        company_id: user?.companyId || "",
       });
       setRelated(null);
     }
-  }, [id, isEdit]);
+  }, [id, isEdit, user?.companyId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -130,56 +134,56 @@ export default function Pdetail() {
 
   const handleSave = async () => {
     try {
-    const partnerData = {
-      ...partner,
-      status: partner.status || "Active", // Default to "Active" if not set
-    };
-    // Validate required fields
-    const requiredFields = ["partnerNumber", "name", "category"];
-    const missingFields = requiredFields.filter((field) => !partner[field]);
+      const partnerData = {
+        ...partner,
+        status: partner.status || "Active", // Default to "Active" if not set
+      };
+      // Validate required fields
+      const requiredFields = ["partnerNumber", "name", "category"];
+      const missingFields = requiredFields.filter((field) => !partner[field]);
 
-    if (missingFields.length > 0) {
-      toast.error("Please fill in all required fields: " + missingFields.join(", "));
-      return;
-    }
+      if (missingFields.length > 0) {
+        toast.error("Please fill in all required fields: " + missingFields.join(", "));
+        return;
+      }
 
-    if (isEdit) {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}`,
-        {
-          method: "PUT",
+      if (isEdit) {
+        const response = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(partnerData),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to update partner");
+        }
+
+        toast.success("Partner updated successfully");
+
+      } else {
+        console.log("Creating new partner:", partnerData);
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners`, {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(partnerData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to create partner");
         }
-      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update partner");
+        // const data = await response.json();
+        toast.success("Partner created successfully");
       }
-
-      toast.success("Partner updated successfully");
-      
-    } else {
-      console.log("Creating new partner:", partnerData);
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(partnerData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create partner");
-      }
-
-      // const data = await response.json();
-      toast.success("Partner created successfully");
+    } catch (error) {
+      console.error("Error saving partner:", error);
+      toast.error("Failed to save partner: " + error.message);
     }
-  } catch (error) {
-    console.error("Error saving partner:", error);
-    toast.error("Failed to save partner: " + error.message);
-  }
   };
   const handleDeleteContact = async (contactId) => {
     if (!contactId || !isEdit) return;
@@ -217,7 +221,7 @@ export default function Pdetail() {
       );
       if (!res.ok) {
         throw new Error("Failed to delete test code");
-        toast.error("Failed to delete test code: " + res.statusText );
+        toast.error("Failed to delete test code: " + res.statusText);
         return;
       }
       // Update partner.testCodes - remove by relationship _id or testCodeId
@@ -230,7 +234,7 @@ export default function Pdetail() {
       }));
     } catch (err) {
       //console.error("Error deleting test code:", err);
-      toast.error("Failed to delete test code: " + err.message);  
+      toast.error("Failed to delete test code: " + err.message);
     }
   };
   const handleDelete = () => {
@@ -239,7 +243,7 @@ export default function Pdetail() {
         method: "DELETE",
       })
         .then(() => {
-          
+
           window.location.href = "/BuisnessPartner";
           toast.success("Partner deleted successfully");
         })
@@ -262,7 +266,7 @@ export default function Pdetail() {
     const shipments = related?.shipments?.data || [];
     const samples = related?.samples?.data || [];
     const contacts =
-      
+
       partner?.contacts ||
       [];
     const testCodes = partner?.testCodes || [];
@@ -378,7 +382,7 @@ export default function Pdetail() {
     return nextData;
   }, [related, partner]);
 
-    const [activeModal, setActiveModal] = useState(null);
+  const [activeModal, setActiveModal] = useState(null);
   const handleAddClick = (tab) => {
     if (tab === "Projects") {
       navigate("/Projects/ProjectDetails/add", {
@@ -400,7 +404,7 @@ export default function Pdetail() {
   const handleOnClose = () => {
     setActiveModal(null);
   };
-  
+
   return (
     <>
       <h2 className={styles.bHeading}>Business Partner Detail</h2>
@@ -453,8 +457,8 @@ export default function Pdetail() {
                       value={partner.category}
                       onChange={handleChange}
                     >
-                      <option value="Vendor">Vendor</option>
                       <option value="Client">Client</option>
+                      <option value="Vendor">Vendor</option>
                       <option value="Client & Vendor">
                         Client &amp; Vendor
                       </option>
@@ -556,8 +560,8 @@ export default function Pdetail() {
                 <FaTrash />
                 Delete{" "}
               </button>
-              <button 
-                className={styles.saveButton} 
+              <button
+                className={styles.saveButton}
                 onClick={handleSave}
                 disabled={!partner.partnerNumber || !partner.name}
               >
@@ -590,7 +594,7 @@ export default function Pdetail() {
                 />
               )}
               {activeModal === "testcodes" && (
-                <TestCodesChecklist 
+                <TestCodesChecklist
                   onClose={handleOnClose}
                   bPartnerID={id}
                   onSaved={loadRelated}
