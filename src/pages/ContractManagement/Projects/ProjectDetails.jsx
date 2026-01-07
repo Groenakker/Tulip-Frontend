@@ -3,11 +3,15 @@ import WhiteIsland from "../../../components/Whiteisland";
 import styles from "./ProjectDetails.module.css";
 import TabbedTable from "../../../components/TabbedTable";
 import { FaSave, FaTrash, FaImage } from "react-icons/fa";
+import { useState } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import toast from "../../../components/Toaster/toast";
 
 export default function ProjectDetails() {
   const { id } = useParams();
+  const location = useLocation();
+  const prefillProject = location?.state?.prefillProject;
   const [project, setProject] = useState({
     projectID: "",
     bPartnerID: "",
@@ -56,9 +60,10 @@ export default function ProjectDetails() {
         quoteNumber: "",
         salesOrderNumber: "",
         image: null,
+        ...(prefillProject || {}),
       });
     }
-  }, [id, isEdit]);
+  }, [id, isEdit, prefillProject]);
 
   const [partners, setPartners] = useState([]);
 

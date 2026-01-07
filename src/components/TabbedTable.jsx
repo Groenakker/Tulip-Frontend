@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./TabbedTable.css";
 
 export default function TabbedTable({
@@ -6,8 +6,19 @@ export default function TabbedTable({
   showAddButtonForTabs = [],
   onAddClick,
 }) {
-  const tabs = Object.keys(data);
-  const [activeTab, setActiveTab] = useState(tabs[0]);
+  const tabs = useMemo(() => Object.keys(data || {}), [data]);
+  const [activeTab, setActiveTab] = useState(() => tabs[0] || "");
+
+  // If the tab list changes (e.g. conditional tabs), ensure the active tab is still valid.
+  useEffect(() => {
+    if (!tabs.length) {
+      if (activeTab !== "") setActiveTab("");
+      return;
+    }
+    if (!tabs.includes(activeTab)) {
+      setActiveTab(tabs[0]);
+    }
+  }, [tabs, activeTab]);
 
   const columns = data[activeTab]?.columns || [];
   const rows = data[activeTab]?.rows || [];
@@ -36,33 +47,39 @@ export default function TabbedTable({
       </div>
 
       <div className="tabContent">
-        <div 
-          className="row rowHeader"
-          style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}
-        >
-          {columns.map((col) => (
-            <div className="cell" key={col.key}>
-              {col.label}
-            </div>
-          ))}
-        </div>
-
-        {rows.length > 0 ? (
-          rows.map((entry, index) => (
-            <div 
-              className="row" 
-              key={index}
+        {!tabs.length ? (
+          <div className="noData">No data available</div>
+        ) : (
+          <>
+            <div
+              className="row rowHeader"
               style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}
             >
               {columns.map((col) => (
                 <div className="cell" key={col.key}>
-                  {entry[col.key]}
+                  {col.label}
                 </div>
               ))}
             </div>
-          ))
-        ) : (
-          <div className="noData">No data available</div>
+
+            {rows.length > 0 ? (
+              rows.map((entry, index) => (
+                <div
+                  className="row"
+                  key={index}
+                  style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}
+                >
+                  {columns.map((col) => (
+                    <div className="cell" key={col.key}>
+                      {entry[col.key]}
+                    </div>
+                  ))}
+                </div>
+              ))
+            ) : (
+              <div className="noData">No data available</div>
+            )}
+          </>
         )}
       </div>
     </div>
