@@ -138,9 +138,11 @@ export default function InstanceList() {
                                 pagedData.map((instance) => (
                                     // Table row with click handler to navigate to instance detail page
                                     // Navigates to /Instance/:id route which displays InstanceDetail component
+                                    console.log('instance', instance),
                                     <tr 
+                                        
                                         key={instance._id}
-                                        onClick={() => navigate(`/Instance/${instance._id}`)}
+                                        onClick={() => navigate(`/instances/${instance._id}`)}
                                         style={{ cursor: 'pointer' }}
                                     >
                                         <td>{instance.instanceCode}</td>
