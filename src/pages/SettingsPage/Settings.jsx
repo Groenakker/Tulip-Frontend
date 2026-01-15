@@ -826,6 +826,7 @@ export default function Settings() {
         credentials: "include",
         body: JSON.stringify({
           name: roleForm.name.trim(),
+          companyId: user.companyId,
           description: roleForm.description.trim(),
           permissions: permissionsData,
         }),
