@@ -196,7 +196,11 @@ export default function RecieveDetails() {
         setInstanceModal({
             isOpen: true,
             selectedSample: receivingLineItem,
-            receivingLine: receivingLineItem
+            receivingLine: {
+                ...receivingLineItem,
+                receivingId: id, // Add receiving ID to the receiving line object
+                receivingCode: log.receivingCode
+            }
         });
     };
 

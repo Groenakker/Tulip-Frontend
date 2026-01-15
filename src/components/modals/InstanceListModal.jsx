@@ -176,6 +176,46 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
             const created = await Promise.all(creations);
             console.log('All instances created:', created);
             
+            // Create movement records for each instance (Receiving movement)
+            const movementPromises = created.map(async (instance) => {
+                try {
+                    // Get receiving ID and code from the receiving line
+                    const receivingId = receivingLine?.receivingId || receivingLine?._id || receivingLine?.id || null;
+                    const receivingCode = receivingLine?.receivingCode || null;
+                    
+                    const movementData = {
+                        instanceId: instance._id,
+                        movementType: 'Received',
+                        movementDate: new Date(),
+                        receivingId: receivingId,
+                        receivingCode: receivingCode,
+                        warehouseId: null, // Will be set when allocated
+                        location: null,
+                        notes: receivingCode 
+                            ? `Instance received via receiving log ${receivingCode}`
+                            : receivingId 
+                            ? `Instance received via receiving log ${receivingId}`
+                            : 'Instance received'
+                    };
+                    
+                    const movementRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instance-movements`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(movementData)
+                    });
+                    
+                    if (!movementRes.ok) {
+                        console.warn(`Failed to create movement record for instance ${instance.instanceCode}`);
+                    } else {
+                        console.log(`Created movement record for instance ${instance.instanceCode}`);
+                    }
+                } catch (movementError) {
+                    console.error(`Error creating movement for instance ${instance.instanceCode}:`, movementError);
+                }
+            });
+            
+            await Promise.all(movementPromises);
+            
             // Refresh the instances list using loadInstances to properly track original warehouses
             await loadInstances();
             
@@ -378,9 +418,17 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
                 const instance = instances.find(i => i._id === instanceId);
                 if (!instance) return;
 
+                const originalWarehouseId = originalWarehouses[instanceId] || null;
+                const newWarehouseId = warehouseId || null;
+
+                // Only update if warehouse actually changed
+                if (originalWarehouseId === newWarehouseId) {
+                    return instance;
+                }
+
                 const updateData = {
                     ...instance,
-                    warehouseID: warehouseId || null
+                    warehouseID: newWarehouseId
                 };
 
                 const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances/${instanceId}`, {
@@ -394,7 +442,37 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
                     throw new Error(`Failed to update instance ${instance.instanceCode}: ${errorText}`);
                 }
 
-                return await res.json();
+                const updatedInstance = await res.json();
+                
+                // Create movement record for warehouse allocation
+                if (newWarehouseId) {
+                    try {
+                        const movementData = {
+                            instanceId: instance._id,
+                            movementType: 'Allocated',
+                            movementDate: new Date(),
+                            warehouseId: newWarehouseId,
+                            location: null,
+                            notes: `Instance allocated to warehouse ${newWarehouseId}`
+                        };
+                        
+                        const movementRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instance-movements`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(movementData)
+                        });
+                        
+                        if (!movementRes.ok) {
+                            console.warn(`Failed to create movement record for instance ${instance.instanceCode}`);
+                        } else {
+                            console.log(`Created allocation movement for instance ${instance.instanceCode}`);
+                        }
+                    } catch (movementError) {
+                        console.error(`Error creating movement for instance ${instance.instanceCode}:`, movementError);
+                    }
+                }
+                
+                return updatedInstance;
             });
 
             await Promise.all(updatePromises);

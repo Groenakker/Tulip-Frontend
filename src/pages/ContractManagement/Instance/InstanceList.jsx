@@ -136,21 +136,19 @@ export default function InstanceList() {
                                 </tr>
                             ) : (
                                 pagedData.map((instance) => (
-                                    // Table row with click handler to navigate to instance detail page
-                                    // Navigates to /Instance/:id route which displays InstanceDetail component
-                                    console.log('instance', instance),
                                     <tr 
-                                        
                                         key={instance._id}
-                                        onClick={() => navigate(`/instances/${instance._id}`)}
+                                        onClick={() => navigate(`/Instance/${instance._id}`)}
                                         style={{ cursor: 'pointer' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ''}
                                     >
-                                        <td>{instance.instanceCode}</td>
-                                        <td>{instance.sampleCode}</td>
-                                        <td>{instance.lotNo}</td>
+                                        <td>{instance.instanceCode || '-'}</td>
+                                        <td>{instance.sampleCode || '-'}</td>
+                                        <td>{instance.lotNo || '-'}</td>
                                         <td>
-                                            <span className={`${styles.statusBadge} ${styles[instance.status.toLowerCase().replace(' ', '')]}`}>
-                                                {instance.status}
+                                            <span className={`${styles.statusBadge} ${styles[instance.status?.toLowerCase().replace(' ', '') || 'pending']}`}>
+                                                {instance.status || 'Pending'}
                                             </span>
                                         </td>
                                         <td>{formatDate(instance.createdAt)}</td>
