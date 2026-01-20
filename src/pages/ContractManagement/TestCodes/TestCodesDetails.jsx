@@ -2,7 +2,7 @@ import WhiteIsland from "../../../components/Whiteisland";
 import styles from "./TestCodesDetails.module.css";
 import { FaSave, FaTrash, FaImage } from "react-icons/fa";
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import toast from "../../../components/Toaster/toast";
 
 export default function TestCodesDetails() {
@@ -74,19 +74,30 @@ export default function TestCodesDetails() {
       toast.success("Test code updated successfully");
     } else {
       // Create new test code
-      await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/testcodes`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(Test),
-      });
-      toast.success("Test code created successfully");
-      console.log("Test details saved:", Test);
+      try {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/testcodes`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(Test),
+        });
+        
+        if (!response.ok) throw new Error("Failed to create test code");
+        
+        const data = await response.json();
+        toast.success("Test code created successfully");
+        console.log("Test details saved:", Test);
+        
+        // Navigate to the new test code's detail page
+        if (data._id) {
+          navigate(`/TestCodes/TestCodesDetails/${data._id}`);
+        }
+      } catch (error) {
+        console.error("Error creating test code:", error);
+        toast.error("Failed to create test code");
+      }
     }
-    // Redirect or update state as needed
-    // For now, just log the Test object
-    console.log("Test details saved:", Test);
   };
   const handleDelete = () => {
     if (window.confirm("Are you sure you want to delete this test code?")) {

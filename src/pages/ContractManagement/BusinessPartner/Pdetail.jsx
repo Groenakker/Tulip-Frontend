@@ -177,8 +177,13 @@ export default function Pdetail() {
           throw new Error(errorData.message || "Failed to create partner");
         }
 
-        // const data = await response.json();
+        const data = await response.json();
         toast.success("Partner created successfully");
+        
+        // Navigate to the new partner's detail page
+        if (data._id) {
+          navigate(`/BuisnessPartner/PartnerDetails/${data._id}`);
+        }
       }
     } catch (error) {
       console.error("Error saving partner:", error);

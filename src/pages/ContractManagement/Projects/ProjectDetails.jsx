@@ -3,11 +3,12 @@ import WhiteIsland from "../../../components/Whiteisland";
 import styles from "./ProjectDetails.module.css";
 import TabbedTable from "../../../components/TabbedTable";
 import { FaSave, FaTrash, FaImage } from "react-icons/fa";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import toast from "../../../components/Toaster/toast";
 
 export default function ProjectDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const location = useLocation();
   const prefillProject = location?.state?.prefillProject;
   const [project, setProject] = useState({
@@ -193,15 +194,29 @@ export default function ProjectDetails() {
       }
     } else {
       // Create new project
-      await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(project),
-      });
-      console.log("New project created successfully");
-      toast.success("Project created successfully");
+      try {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(project),
+        });
+        
+        if (!response.ok) throw new Error("Failed to create project");
+        
+        const data = await response.json();
+        console.log("New project created successfully");
+        toast.success("Project created successfully");
+        
+        // Navigate to the new project's detail page
+        if (data._id) {
+          navigate(`/Projects/ProjectDetails/${data._id}`);
+        }
+      } catch (error) {
+        console.error("Error creating project:", error);
+        toast.error("Failed to create project");
+      }
     }
   };
   const handleDelete = () => {
