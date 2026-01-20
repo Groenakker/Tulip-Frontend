@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import styles from './TestCodeChecklist.module.css';
 import { FaSearch } from 'react-icons/fa';
 import toast from '../Toaster/toast';
@@ -10,8 +10,18 @@ const TestCodesChecklist = ({ onClose, onTestSelected, bPartnerID, onSaved, exis
   const [testCodeOptions, setTestCodeOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const hasInitialized = useRef(false);
 
-  // Fetch test codes from backend and pre-select existing ones
+  // Create a stable reference for existing test code IDs
+  const existingIds = useMemo(() => {
+    if (!existingTestCodes || existingTestCodes.length === 0) return [];
+    return existingTestCodes.map(tc => {
+      const testCode = tc.testCodeId || tc;
+      return testCode._id || tc.testCodeId || tc._id;
+    }).filter(Boolean);
+  }, [existingTestCodes]);
+
+  // Fetch test codes from backend
   useEffect(() => {
     const fetchTestCodes = async () => {
       try {
@@ -20,17 +30,6 @@ const TestCodesChecklist = ({ onClose, onTestSelected, bPartnerID, onSaved, exis
         if (!res.ok) throw new Error('Failed to fetch test codes');
         const data = await res.json();
         setTestCodeOptions(data);
-        
-        // Pre-select test codes that are already associated with the business partner
-        if (existingTestCodes && existingTestCodes.length > 0) {
-          const existingIds = existingTestCodes.map(tc => {
-            // Handle both populated objects and references
-            const testCode = tc.testCodeId || tc;
-            return testCode._id || tc.testCodeId || tc._id;
-          }).filter(Boolean); // Remove any undefined/null values
-          
-          setSelectedCodes(existingIds);
-        }
       } catch (error) {
         console.error('Error fetching test codes:', error);
         toast.error('Failed to load test codes');
@@ -38,8 +37,19 @@ const TestCodesChecklist = ({ onClose, onTestSelected, bPartnerID, onSaved, exis
         setLoading(false);
       }
     };
-    fetchTestCodes();
-  }, [existingTestCodes]);
+    
+    if (!hasInitialized.current) {
+      fetchTestCodes();
+      hasInitialized.current = true;
+    }
+  }, []);
+
+  // Pre-select existing test codes after test codes are loaded
+  useEffect(() => {
+    if (testCodeOptions.length > 0 && existingIds.length > 0 && selectedCodes.length === 0) {
+      setSelectedCodes(existingIds);
+    }
+  }, [testCodeOptions, existingIds, selectedCodes.length]);
 
   const handleCheckboxChange = (id) => {
     setSelectedCodes(prev =>

@@ -14,6 +14,7 @@ import SignatureCanvas from 'react-signature-canvas';
 export default function RecieveDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const isEdit = Boolean(id);
 
     //Current LOg's data state
     const [log, setLog] = useState({
@@ -26,7 +27,8 @@ export default function RecieveDetails() {
         shippedDate: '',
         arrivedDate: '',
         estArrival: '',
-        signatureImage: ''
+        signatureImage: '',
+        duration: ''
     });
 
     //Sample items state
@@ -51,11 +53,24 @@ export default function RecieveDetails() {
                     setProjectsLoading(false);
                 }
 
-                if (id && id !== 'add') {
+                if (isEdit) {
                     try {
                         const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}`);
                         if (!res.ok) throw new Error('Failed to fetch receiving');
                         const data = await res.json();
+                        const shippedDate = data.shippedDate ? new Date(data.shippedDate).toISOString().slice(0,10) : '';
+                        const arrivedDate = data.arrivedDate ? new Date(data.arrivedDate).toISOString().slice(0,10) : '';
+                        
+                        // Calculate duration
+                        let duration = '';
+                        if (shippedDate && arrivedDate) {
+                            const shipped = new Date(shippedDate);
+                            const arrived = new Date(arrivedDate);
+                            const diffTime = Math.abs(arrived - shipped);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            duration = diffDays.toString();
+                        }
+                        
                         setLog({
                             receivingCode: data.receivingCode || '',
                             projectId: data.projectId || '',
@@ -63,10 +78,11 @@ export default function RecieveDetails() {
                             destination: data.destination || '',
                             tracking: data.tracking || '',
                             projectDesc: data.projectDesc || '',
-                            shippedDate: data.shippedDate ? new Date(data.shippedDate).toISOString().slice(0,10) : '',
-                            arrivedDate: data.arrivedDate ? new Date(data.arrivedDate).toISOString().slice(0,10) : '',
+                            shippedDate: shippedDate,
+                            arrivedDate: arrivedDate,
                             estArrival: data.estArrival ? new Date(data.estArrival).toISOString().slice(0,10) : '',
-                            signatureImage: data.signatureImage || ''
+                            signatureImage: data.signatureImage || '',
+                            duration: duration
                         });
                         
                         const linesRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}/lines`);
@@ -216,7 +232,24 @@ export default function RecieveDetails() {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setLog(prev => ({ ...prev, [name]: value }));
+        setLog(prev => {
+            const updated = { ...prev, [name]: value };
+            
+            // Calculate duration when shippedDate or arrivedDate changes
+            if (name === 'shippedDate' || name === 'arrivedDate') {
+                if (updated.shippedDate && updated.arrivedDate) {
+                    const shipped = new Date(updated.shippedDate);
+                    const arrived = new Date(updated.arrivedDate);
+                    const diffTime = Math.abs(arrived - shipped);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    updated.duration = diffDays.toString();
+                } else {
+                    updated.duration = '';
+                }
+            }
+            
+            return updated;
+        });
     };
 
     const handleLineItemChange = async (lineId, field, value) => {
@@ -296,7 +329,6 @@ export default function RecieveDetails() {
         }
     };
     const handleSave = async () => {
-        toast.success("Details Saved!");
         try {
             const payload = {
                 ...log,
@@ -304,14 +336,32 @@ export default function RecieveDetails() {
                 arrivedDate: log.arrivedDate ? new Date(log.arrivedDate) : undefined,
                 estArrival: log.estArrival ? new Date(log.estArrival) : undefined,
             };
-            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (!res.ok) throw new Error('Failed to save');
+            
+            if (isEdit) {
+                // Update existing record using PUT
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Failed to save');
+                toast.success("Details Saved!");
+            } else {
+                // Create new record using POST
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) throw new Error('Failed to create receiving');
+                const newReceiving = await res.json();
+                toast.success("Receiving created successfully!");
+                // Navigate to the new record
+                navigate(`/RecieveLog/RecieveDetails/${newReceiving._id}`);
+            }
         } catch (e) {
             console.error(e);
+            toast.error('Failed to save receiving');
         }
     }
     const handleDelete = async () => {
@@ -335,7 +385,7 @@ export default function RecieveDetails() {
         setSignatureData({ signature: dataURL });
         setLog(prev => ({ ...prev, signatureImage: dataURL }));
 
-        if (id && id !== 'add') {
+        if (isEdit) {
             try {
                 const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}`, {
                     method: 'PUT',
@@ -360,7 +410,7 @@ export default function RecieveDetails() {
         setSignatureData({ signature: null });
         setLog(prev => ({ ...prev, signatureImage: '' }));
 
-        if (id && id !== 'add') {
+        if (isEdit) {
             try {
                 const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}`, {
                     method: 'PUT',
@@ -408,12 +458,14 @@ export default function RecieveDetails() {
                             <div className={styles.info} style={{ width: '25%' }}><div className={styles.infoDetail}>Shipped</div>    <input type='date' name='shippedDate' value={log.shippedDate} onChange={handleChange}></input></div>
                             <div className={styles.info} style={{ width: '25%' }}><div className={styles.infoDetail}>Arrived</div>     <input type='date' name='arrivedDate' value={log.arrivedDate} onChange={handleChange}></input></div>
                             <div className={styles.info} style={{ width: '25%' }}><div className={styles.infoDetail}>Est. Arrival</div>      <input type='date' name='estArrival' value={log.estArrival} onChange={handleChange}></input></div>
-                            <div className={styles.info} style={{ width: '25%' }}><div className={styles.infoDetail}>Duration</div>       <input type='text' name='duration' value={log.duration} onChange={handleChange}></input></div>
+                            <div className={styles.info} style={{ width: '25%' }}><div className={styles.infoDetail}>Duration</div>       <input type='text' name='duration' value={log.duration ? log.duration + ' Day(s)' : ''} readOnly placeholder='Days'></input></div>
                         </div>
                     </div>
                 </div>
                 <div className={styles.saves}>
-                    <button className={styles.deleteButton} onClick={handleDelete}><FaTrash />Delete </button>
+                    {isEdit && (
+                        <button className={styles.deleteButton} onClick={handleDelete}><FaTrash />Delete </button>
+                    )}
                     <button className={styles.saveButton} onClick={handleSave}><FaSave />Save </button>
                 </div>
             </WhiteIsland>
@@ -423,11 +475,13 @@ export default function RecieveDetails() {
             <WhiteIsland className={styles.bigIsland}>
                 <div className={styles.headings}>
                     <h3 style={{ border: 'none' }}>Sample Information</h3>
-                    <div className={styles.tableActions}>
-                        <button className={styles.addButton} onClick={openSampleList}>
-                            + Add
-                        </button>
-                    </div>
+                    {isEdit && (
+                        <div className={styles.tableActions}>
+                            <button className={styles.addButton} onClick={openSampleList}>
+                                + Add
+                            </button>
+                        </div>
+                    )}
                 </div>
                 <div className={styles.main}>
                     <div className={styles.detailContainer}>
@@ -512,7 +566,7 @@ export default function RecieveDetails() {
                                 <textarea
                                     className={styles.notesTextarea}
                                     placeholder="Enter notes about this shipment..."
-                                    defaultValue="Eakin Healthcare Samples shipped from Element to Groenakker in 17 large overpacked boxes."
+                                    defaultValue=""
                                 />
                             </div>
                             <div className={styles.signatureSection}>
@@ -520,7 +574,7 @@ export default function RecieveDetails() {
                                     <div className={styles.infoDetail}>Completed By</div>
                                     <input
                                         className={styles.signatureInput}
-                                        defaultValue="Michael R Groendyk"
+                                        defaultValue=""
                                     />
                                 </div>
                                 <div className={styles.signatureField}>
@@ -558,6 +612,10 @@ export default function RecieveDetails() {
                         onSelectSample={async (sample) => {
                             // Add receiving line for selected sample
                             try {
+                                if (!isEdit) {
+                                    toast.error('Please save the receiving record first before adding samples');
+                                    return;
+                                }
                                 const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}/lines`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },

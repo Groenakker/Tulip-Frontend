@@ -21,17 +21,31 @@ export default function InstanceDetail() {
   useEffect(() => {
     if (id) {
       // Fetch instance details
-      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances/${id}/movements`)
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances/${id}`)
         .then((res) => res.json())
         .then((data) => {
-          setInstance(data.instance);
-          setMovements(data.movements || []);
+          setInstance(data.instance || data);
           setLoading(false);
-          setLoadingMovements(false);
+          console.log('instance data' , data);
         })
         .catch((err) => {
           console.error("Failed to fetch instance:", err);
           setLoading(false);
+        });
+
+      // Fetch movements separately
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instance-movements/instance/${id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          // Handle both array response and object with movements array
+          const movementsData = Array.isArray(data) ? data : (data.movements || []);
+          setMovements(movementsData);
+          setLoadingMovements(false);
+          console.log('movements data' , movementsData);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch movements:", err);
+          setMovements([]);
           setLoadingMovements(false);
         });
     }
@@ -81,7 +95,8 @@ export default function InstanceDetail() {
     if (isNaN(d.getTime())) return "";
     return d.toLocaleDateString() + " " + d.toLocaleTimeString();
   };
-
+  console.log(instance);
+  
   if (loading) {
     return <div>Loading instance details...</div>;
   }

@@ -16,6 +16,49 @@ export default function SSDetail() {
     const [viewingImage, setViewingImage] = useState(null);
     const [showTestCodeModal, setShowTestCodeModal] = useState(false);
 
+    // Contact type options - default options + custom values from localStorage
+    const getContactTypeOptions = () => {
+        const defaultOptions = ['Tissue / Bone', 'Blood', 'Skin'];
+        const storedOptions = localStorage.getItem('contactTypeOptions');
+        if (storedOptions) {
+            try {
+                const parsed = JSON.parse(storedOptions);
+                // Merge and remove duplicates
+                return [...new Set([...defaultOptions, ...parsed])];
+            } catch (e) {
+                return defaultOptions;
+            }
+        }
+        return defaultOptions;
+    };
+
+    const [contactTypeOptions, setContactTypeOptions] = useState(getContactTypeOptions());
+    const [showContactTypeDropdown, setShowContactTypeDropdown] = useState(false);
+    const contactTypeInputRef = useRef(null);
+    const contactTypeDropdownRef = useRef(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                contactTypeDropdownRef.current &&
+                !contactTypeDropdownRef.current.contains(event.target) &&
+                contactTypeInputRef.current &&
+                !contactTypeInputRef.current.contains(event.target)
+            ) {
+                setShowContactTypeDropdown(false);
+            }
+        };
+
+        if (showContactTypeDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showContactTypeDropdown]);
+
     const sigCanvas = useRef({});
     const [signatureData, setSignatureData] = useState({
         signature: null
@@ -127,8 +170,38 @@ export default function SSDetail() {
         setSample(prev => ({ ...prev, [name]: value }));
     };
 
+    // Handle contact type change
+    const handleContactTypeChange = (e) => {
+        const value = e.target.value;
+        setSample(prev => ({ ...prev, contactType: value }));
+        setShowContactTypeDropdown(false);
+    };
+
+    // Handle contact type input change
+    const handleContactTypeInputChange = (e) => {
+        const value = e.target.value;
+        setSample(prev => ({ ...prev, contactType: value }));
+        setShowContactTypeDropdown(true);
+    };
+
+    // Filter options based on input
+    const filteredContactTypeOptions = contactTypeOptions.filter(option =>
+        option.toLowerCase().includes((sample.contactType || '').toLowerCase())
+    );
+
     const handleSave = async () => {
         try {
+            // If contactType has a custom value not in options, add it to options
+            if (sample.contactType && !contactTypeOptions.includes(sample.contactType)) {
+                const updatedOptions = [...contactTypeOptions, sample.contactType];
+                setContactTypeOptions(updatedOptions);
+                // Store in localStorage for persistence
+                const customOptions = updatedOptions.filter(opt => 
+                    !['Tissue / Bone', 'Blood', 'Skin'].includes(opt)
+                );
+                localStorage.setItem('contactTypeOptions', JSON.stringify(customOptions));
+            }
+
             const payload = {
                 ...sample,
                 status: sample.formStatus || 'Draft',
@@ -222,6 +295,25 @@ export default function SSDetail() {
                             sampleImages: formData.sampleImages || data.sampleImages || { general: null, labeling: null }
                         };
                         
+                        // Load contact type options and add loaded contactType if it's custom
+                        const loadedContactType = mergedData.contactType || '';
+                        if (loadedContactType) {
+                            const currentOptions = getContactTypeOptions();
+                            if (!currentOptions.includes(loadedContactType)) {
+                                const updatedOptions = [...currentOptions, loadedContactType];
+                                setContactTypeOptions(updatedOptions);
+                                // Store in localStorage
+                                const customOptions = updatedOptions.filter(opt => 
+                                    !['Tissue / Bone', 'Blood', 'Skin'].includes(opt)
+                                );
+                                localStorage.setItem('contactTypeOptions', JSON.stringify(customOptions));
+                            } else {
+                                setContactTypeOptions(currentOptions);
+                            }
+                        } else {
+                            setContactTypeOptions(getContactTypeOptions());
+                        }
+                        
                         // Set sample state with defaults for missing fields
                         setSample(prev => ({
                             SAPid: '',
@@ -244,7 +336,7 @@ export default function SSDetail() {
                             countryOrigin: '',
                             sampleMass: '',
                             surfaceArea: '',
-                            contactType: '',
+                            contactType: loadedContactType || '',
                             contactDuration: '',
                             manufacturer: '',
                             desiredMarkets: 'U',
@@ -573,11 +665,46 @@ export default function SSDetail() {
                             <div className={styles.details}>
                                 <div className={styles.info} style={{ width: '20%' }}>
                                     <div className={styles.infoDetail}>Type of Contact</div>
-                                    <select className={styles.dropdown} name="contactType" value={sample.contactType} onChange={handleChange}>
-                                        <option value="Tissue / Bone">Tissue / Bone</option>
-                                        <option value="Blood">Blood</option>
-                                        <option value="Skin">Skin</option>
-                                    </select>
+                                    <div className={styles.customDropdownContainer}>
+                                        <input
+                                            ref={contactTypeInputRef}
+                                            type="text"
+                                            className={styles.dropdown}
+                                            name="contactType"
+                                            value={sample.contactType}
+                                            onChange={handleContactTypeInputChange}
+                                            onFocus={() => setShowContactTypeDropdown(true)}
+                                            placeholder="Select or type custom value"
+                                            style={{
+                                                backgroundColor: '#ffffff',
+                                                background: '#ffffff',
+                                                color: '#000000',
+                                                WebkitAppearance: 'none',
+                                                MozAppearance: 'none',
+                                                appearance: 'none'
+                                            }}
+                                        />
+                                        {showContactTypeDropdown && filteredContactTypeOptions.length > 0 && (
+                                            <div 
+                                                ref={contactTypeDropdownRef}
+                                                className={styles.customDropdownList}
+                                            >
+                                                {filteredContactTypeOptions.map((option, index) => (
+                                                    <button
+                                                        key={index}
+                                                        type="button"
+                                                        className={styles.customDropdownOption}
+                                                        onClick={() => {
+                                                            setSample(prev => ({ ...prev, contactType: option }));
+                                                            setShowContactTypeDropdown(false);
+                                                        }}
+                                                    >
+                                                        {option}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className={styles.info} style={{ width: '20%' }}>
                                     <div className={styles.infoDetail}>Duration of Contact</div>
@@ -932,7 +1059,7 @@ export default function SSDetail() {
                                             <tr key={test.id}>
                                                 <td>{test.grkCode}</td>
                                                 <td>{test.description}</td>
-                                                <td className={styles.centerAlign}>
+                                                <td className={styles.centerAlign} style={{ textAlign: 'left' }}>
                                                     <input 
                                                         type="text" 
                                                         value={test.samplesSubmitted}
@@ -1066,7 +1193,7 @@ export default function SSDetail() {
                             <div className={styles.approvalRow}>
                                 <div className={styles.approvalLabel}>Groenakker Acceptance: </div>
                                 <div className={styles.approvalName}>
-                                    <input className={styles.mainText} defaultValue="Michael R Groendyk" />
+                                    <input className={styles.mainText} defaultValue='' />
                                     <div className={styles.subText}>Name</div>
                                 </div>
                                 <div className={styles.approvalSignature}>
