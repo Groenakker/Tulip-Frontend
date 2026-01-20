@@ -420,6 +420,7 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
 
                 const originalWarehouseId = originalWarehouses[instanceId] || null;
                 const newWarehouseId = warehouseId || null;
+                const newWarehouseName = warehouses.find(w => w._id === warehouseId)?.warehouseID || null;
 
                 // Only update if warehouse actually changed
                 if (originalWarehouseId === newWarehouseId) {
@@ -452,8 +453,8 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
                             movementType: 'Allocated',
                             movementDate: new Date(),
                             warehouseId: newWarehouseId,
-                            location: null,
-                            notes: `Instance allocated to warehouse ${newWarehouseId}`
+                            location: newWarehouseName,
+                            notes: `Instance allocated to warehouse ${newWarehouseName}`
                         };
                         
                         const movementRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instance-movements`, {
