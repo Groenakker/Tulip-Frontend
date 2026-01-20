@@ -311,10 +311,10 @@ export default function Pdetail() {
           { label: "Approved On", key: "due" },
         ],
         //rows: samples.map((s) => ({
-          //id: s._id || "",
-          //desc: s.description || s.name || "",
-          //start: formatDate(s.startDate),
-          //due: formatDate(s.endDate),
+        //id: s._id || "",
+        //desc: s.description || s.name || "",
+        //start: formatDate(s.startDate),
+        //due: formatDate(s.endDate),
         //})),
       },
 
@@ -454,9 +454,10 @@ export default function Pdetail() {
                     <select
                       className={styles.dropdown}
                       name="category"
-                      value={partner.category}
+                      value={partner.category || ""}
                       onChange={handleChange}
                     >
+                      <option value="" disabled>Select Category</option>
                       <option value="Client">Client</option>
                       <option value="Vendor">Vendor</option>
                       <option value="Client & Vendor">
@@ -563,7 +564,7 @@ export default function Pdetail() {
               <button
                 className={styles.saveButton}
                 onClick={handleSave}
-                disabled={!partner.partnerNumber || !partner.name}
+                disabled={!partner.partnerNumber || !partner.name || !partner.category}
               >
                 <FaSave />
                 Save{" "}
