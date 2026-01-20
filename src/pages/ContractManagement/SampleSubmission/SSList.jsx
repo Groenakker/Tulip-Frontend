@@ -65,14 +65,15 @@ export default function SSList() {
     console.log("Search submitted:", inputValue);
   };
   const HandleAddSample = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Draft' })
-      });
-      if (!res.ok) throw new Error('Failed to create');
-      const created = await res.json();
-      navigate(`/SampleSubmission/SSDetail/${created._id}`);
-    } catch (e) { console.error(e); }
+    // try {
+    //   const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`, {
+    //     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Draft' })
+    //   });
+    //   if (!res.ok) throw new Error('Failed to create');
+    //   const created = await res.json();
+    //   navigate(`/SampleSubmission/SSDetail/${created._id}`);
+    // } catch (e) { console.error(e); }
+    navigate('/SampleSubmission/SSDetail/add');
   };
 
   return (
