@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import './Sidebar.css';
 import { FaWallet, FaRedo, FaHome, FaCog, FaQuestionCircle, FaChevronDown, FaShippingFast, FaWarehouse, FaFile } from 'react-icons/fa';
-import { HiArrowLeftEndOnRectangle } from "react-icons/hi2";
+import { GoSidebarExpand } from "react-icons/go";
 import { GiRolledCloth, GiTestTubes } from "react-icons/gi";
 import { RiHexagonFill } from "react-icons/ri";
 import { IoLibrary, IoBusiness } from "react-icons/io5";
@@ -123,7 +123,7 @@ const Sidebar = () => {
         <div className="logoContainer">
           {!collapsed && <h2 className="logoImg"><img src="/BigLogo.png" height={69} width={150} /></h2>}
           <button className="toggleButton" onClick={() => setCollapsed(!collapsed)}>
-            {collapsed ? <img src='/SmallLogo.png' className='toggleIcon' /> : <HiArrowLeftEndOnRectangle />}
+            {collapsed ? <img src='/SmallLogo.png' className='toggleIcon' /> : <GoSidebarExpand />}
           </button>
         </div>
         {/* MENU PART   */}
@@ -137,9 +137,8 @@ const Sidebar = () => {
               <div key={item.label}>
                 <li
                   title={collapsed ? item.label : ''}
-                  className={`menuItem ${
-                    isItemActive(item) ? 'active' : ''
-                  }`}
+                  className={`menuItem ${isItemActive(item) ? 'active' : ''
+                    }`}
                   onClick={() => {
                     if (collapsed) setCollapsed(false);
                     if (item.path) {
@@ -179,9 +178,8 @@ const Sidebar = () => {
                     {item.submenu.map((subItem) => (
                       <li
                         key={subItem.name}
-                        className={`submenuItem ${
-                          isPathActive(subItem.path) ? 'active' : ''
-                        }`}
+                        className={`submenuItem ${isPathActive(subItem.path) ? 'active' : ''
+                          }`}
                         onClick={(event) => {
                           event.stopPropagation();
                           if (subItem.path) {
@@ -210,7 +208,7 @@ const Sidebar = () => {
           toast.success('Refreshed successfully');
         }}><FaRedo /> {!collapsed && <span>Refresh</span>}</div>
         {canAccessSettings && (
-          <div 
+          <div
             className={`sidebarOption ${isPathActive('/Settings') ? 'active' : ''}`}
             title={collapsed ? 'Settings' : ''}
             onClick={() => navigate('/Settings')}
@@ -221,10 +219,10 @@ const Sidebar = () => {
         )}
         <div className="sidebarOption" title={collapsed ? 'Help Center' : ''}><FaQuestionCircle /> {!collapsed && <span>Help Center</span>}
         </div>
-        <div 
-        className="profile"
-        onClick={() => setShowProfilePopup(!showProfilePopup)}
-        style={{ cursor: 'pointer' }}
+        <div
+          className="profile"
+          onClick={() => setShowProfilePopup(!showProfilePopup)}
+          style={{ cursor: 'pointer' }}
         >
           <img src={user?.profilePicture || "https://i.pravatar.cc/40"} alt="profile" />
           {!collapsed && (

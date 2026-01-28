@@ -4,6 +4,7 @@ import styles from "./DocumentList.module.css";
 import { useState, useEffect } from "react";
 import { FaSearch, FaPlus, FaFile, FaEllipsisV } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import Header from "../../components/Header";
 
 export default function DocumentList() {
   const [page, setPage] = useState(1);
@@ -42,7 +43,7 @@ export default function DocumentList() {
     //     setFilteredDocuments(data);
     //   })
     //   .catch((error) => console.error("Error fetching document data:", error));
-    
+
     // For now, use sample data
     setDocumentData(sampleData);
     setFilteredDocuments(sampleData);
@@ -115,7 +116,8 @@ export default function DocumentList() {
 
   return (
     <>
-      <h2 className={styles.title}>Document Registry</h2>
+      {/* <h2 className={styles.title}>Document Registry</h2> */}
+      <Header title="Document Registry" />
       <WhiteIsland className="WhiteIsland">
         <div className={styles.documentsPage}>
           <div className={styles.sectionHeader}>

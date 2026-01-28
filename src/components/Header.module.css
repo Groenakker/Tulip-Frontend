@@ -1,0 +1,30 @@
+.header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.backButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border: none;
+    background: transparent;
+    color: #1f2937;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 1.5rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.backButton:hover {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+.title {
+    color: #1f2937;
+    margin: 0;
+}
