@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import './Sidebar.css';
-import { FaWallet, FaRedo, FaHome, FaCog, FaQuestionCircle, FaChevronDown, FaShippingFast, FaWarehouse } from 'react-icons/fa';
+import { FaWallet, FaRedo, FaHome, FaCog, FaQuestionCircle, FaChevronDown, FaShippingFast, FaWarehouse, FaFile } from 'react-icons/fa';
 import { HiArrowLeftEndOnRectangle } from "react-icons/hi2";
 import { GiRolledCloth, GiTestTubes } from "react-icons/gi";
 import { RiHexagonFill } from "react-icons/ri";
@@ -23,6 +23,7 @@ const menuItems = [
   { label: 'Constituent Research', icon: <RiHexagonFill />, path: '/ConstituentResearch', permission: { module: 'Constituent Research', actions: 'read' } },
   { label: 'Library', icon: <IoLibrary />, path: '/Library', permission: { module: 'Library', actions: 'read' } },
   { label: 'Warehouse', icon: <FaWarehouse />, path: '/Warehouse', permission: { module: 'Warehouse', actions: 'read' } },
+  { label: 'Document Management', icon: <FaFile />, path: '/DocumentManagement', permission: { module: 'Document Management', actions: 'read' } },
   {
     label: 'Contract Management',
     icon: <FaWallet />,

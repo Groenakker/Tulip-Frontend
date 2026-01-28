@@ -35,6 +35,8 @@ import ShippingDetails from "./pages/ContractManagement/ShippingLog/ShippingDeta
 import Warehouse from "./pages/Warehouse/Warehouse";
 import Settings from "./pages/SettingsPage/Settings";
 import Unauthorized from "./pages/Unauthorized";
+import DocumentList from "./pages/DocumentManagement/DocumentList";
+import DocumentDetails from "./pages/DocumentManagement/DocumentDetails";
 // import Projects from './pages/Projects';
 // import ShippingLog from './pages/ShippingLog';
 // import RecieveLog from './pages/RecieveLog';
@@ -258,6 +260,30 @@ function AppContent() {
             element={
               <ProtectedRoute module="Warehouse">
                 <Warehouse />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/DocumentManagement" 
+            element={
+              <ProtectedRoute module="Document Management">
+                <DocumentList />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/DocumentManagement/DocumentDetails/:id" 
+            element={
+              <ProtectedRoute module="Document Management">
+                <DocumentDetails />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/DocumentManagement/DocumentDetails/add" 
+            element={
+              <ProtectedRoute module="Document Management">
+                <DocumentDetails />
               </ProtectedRoute>
             } 
           />

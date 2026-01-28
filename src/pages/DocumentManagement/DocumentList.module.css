@@ -1,0 +1,190 @@
+.whiteIsland {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 64px);
+    justify-content: space-around;
+}
+
+.title {
+    color: #1f2937;
+    margin-bottom: 16px;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.sectionHeader {
+    margin-bottom: 16px;
+}
+
+.sectionTitle {
+    color: #1f2937;
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.addbtn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.searchBar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40%;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.searchInput {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    width: 100%;
+    font-size: 12px;
+}
+
+.searchButton {
+    display: flex;
+    align-items: center;
+    background: none;
+    color: rgb(69 112 182);
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 5px 12px;
+}
+
+.searchButton:hover {
+    color: rgb(1, 49, 126);
+}
+
+.addButton {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgb(69 112 182);
+    color: #fff;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    font-size: 12px;
+}
+
+.addButton:hover {
+    background: rgb(1, 49, 126);
+}
+
+.documentTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 24px;
+    font-size: 14px;
+}
+
+.documentTable th {
+    text-align: left;
+    font-weight: 600;
+    background: #f9fafb;
+    padding: 10px;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.documentTable td {
+    padding: 10px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.documentTable tr {
+    cursor: pointer;
+}
+
+.documentTable tbody tr:hover {
+    background-color: #e9f0fe;
+}
+
+.titleCell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.documentIcon {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.statusBadge {
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+    text-transform: uppercase;
+}
+
+.statusPublished {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.statusReview {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.statusDraft {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.statusDefault {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.actionButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 4px 8px;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+.actionButton:hover {
+    color: rgb(69 112 182);
+}
+
+.pagination {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 24px;
+}
+
+.pagination button {
+    padding: 6px 12px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.pagination button.active {
+    background: rgb(69 112 182);
+    color: #fff;
+}
+
+.pagination button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
