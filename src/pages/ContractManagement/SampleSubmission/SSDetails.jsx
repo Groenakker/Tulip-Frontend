@@ -8,7 +8,7 @@ import toast from '../../../components/Toaster/toast';
 import TestCodeChecklist from '../../../components/modals/TestCodeChecklist';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
-
+import Header from '../../../components/Header';
 export default function SSDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -721,7 +721,8 @@ export default function SSDetail() {
     return (
         <div style={{ paddingBottom: '20px' }}>
             <div className={styles.bHeading}>
-                <h2>Sample Submission Detail</h2>
+                {/* <h2>Sample Submission Detail</h2> */}
+                <Header title="Sample Submission Detail" />
                 <div className={styles.savesTop}>
                     {id !== 'add' && (
                         <button className={styles.deleteButton} onClick={handleDelete}><FaTrash />Delete</button>

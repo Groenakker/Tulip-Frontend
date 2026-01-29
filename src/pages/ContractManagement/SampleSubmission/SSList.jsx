@@ -3,7 +3,7 @@ import styles from "./SSList.module.css";
 import { useState, useEffect } from "react";
 import { FaSearch, FaPlus } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
-
+import Header from '../../../components/Header';
 const SampleData = [];
 
 export default function SSList() {
@@ -77,8 +77,9 @@ export default function SSList() {
   };
 
   return (
-    <>
-      <h2 className={styles.title}>Sample Submission List</h2>
+    <>  
+      {/* <h2 className={styles.title}>Sample Submission List</h2> */}
+      <Header title="Sample Submission List" />
       <WhiteIsland className="WhiteIsland">
         <div className={styles.samplePage}>
           <header className={styles.addbtn}>

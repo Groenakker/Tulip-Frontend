@@ -9,7 +9,7 @@ import TestCodesChecklist from "../../../components/modals/TestCodeChecklist";
 import ContactsForm from "../../../components/modals/ContactsForm";
 import toast from "../../../components/Toaster/toast";
 import { useAuth } from "../../../context/AuthContext";
-
+import Header from "../../../components/Header";
 // export default function Pdetail() {
 //   const [partner, setPartner] = useState({
 //     id: "C00030",
@@ -412,7 +412,8 @@ export default function Pdetail() {
 
   return (
     <>
-      <h2 className={styles.bHeading}>Business Partner Detail</h2>
+      {/* <h2 className={styles.bHeading}>Business Partner Detail</h2> */}
+      <Header title="Business Partner Detail" />
       <div className={styles.detailPage}>
         <div className={styles.leftGrid}>
           <WhiteIsland className={styles.bigIsland}>

@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
 import WhiteIsland from "../../components/Whiteisland";
 import styles from "./DocumentDetails.module.css";
-import { FaSave, FaUpload, FaFile, FaPlus } from "react-icons/fa";
+import { FaSave, FaUpload, FaFile, FaPlus, FaTimes, FaTrash } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "../../components/Toaster/toast";
 import Modal from "../../components/Modal";
-import ReviewsForm from "../../components/modals/ReviewsForm";
 import VersionsForm from "../../components/modals/VersionsForm";
 import VersionDetailsModal from "../../components/modals/VersionDetailsModal";
-
+import Header from '../../components/Header';
 export default function DocumentDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -25,9 +24,18 @@ export default function DocumentDetails() {
     fileName: "",
   });
 
-  const [activeTab, setActiveTab] = useState("Reviews");
   const [activeModal, setActiveModal] = useState(null);
   const [selectedVersion, setSelectedVersion] = useState(null);
+
+  // Initial stakeholders for new document creation
+  const [initialStakeholders, setInitialStakeholders] = useState([]);
+  const [showAddStakeholder, setShowAddStakeholder] = useState(false);
+  const [newStakeholder, setNewStakeholder] = useState({
+    name: "",
+    email: "",
+    role: "",
+    status: "Pending",
+  });
 
   // Lifecycle stages
   const lifecycleStages = [
@@ -38,7 +46,7 @@ export default function DocumentDetails() {
     { step: 5, label: "Published", value: "Published", description: "Document is published" },
   ];
 
-  // Sample versions data with stakeholders
+  // Sample versions data with stakeholders and reviews
   const [versions, setVersions] = useState([
     {
       id: 1,
@@ -67,6 +75,22 @@ export default function DocumentDetails() {
           avatar: "https://i.pravatar.cc/40?img=2",
         },
       ],
+      reviews: [
+        {
+          id: 1,
+          reviewer: "Sarah Chen",
+          date: "2024-01-18",
+          comment: "Looks good, approved for publication",
+          status: "Approved",
+        },
+        {
+          id: 2,
+          reviewer: "Marcus Miller",
+          date: "2024-01-19",
+          comment: "Final approval granted",
+          status: "Approved",
+        },
+      ],
     },
     {
       id: 2,
@@ -87,24 +111,7 @@ export default function DocumentDetails() {
           avatar: "https://i.pravatar.cc/40?img=3",
         },
       ],
-    },
-  ]);
-
-  // Sample reviews data
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      reviewer: "Sarah Chen",
-      date: "2024-01-18",
-      comment: "Looks good, approved for publication",
-      status: "Approved",
-    },
-    {
-      id: 2,
-      reviewer: "Marcus Miller",
-      date: "2024-01-19",
-      comment: "Final approval granted",
-      status: "Approved",
+      reviews: [],
     },
   ]);
 
@@ -157,6 +164,16 @@ export default function DocumentDetails() {
       return;
     }
 
+    if (!isEdit && !document.file) {
+      toast.error("Please upload a document file");
+      return;
+    }
+
+    if (!isEdit && initialStakeholders.length === 0) {
+      toast.warning("Consider adding at least one stakeholder for the initial draft");
+      // Allow saving without stakeholders, just show warning
+    }
+
     try {
       if (isEdit) {
         // TODO: Update existing document
@@ -167,12 +184,18 @@ export default function DocumentDetails() {
         // });
         toast.success("Document updated successfully");
       } else {
-        // TODO: Create new document
+        // TODO: Create new document with initial stakeholders
+        // const documentData = {
+        //   ...document,
+        //   stakeholders: initialStakeholders
+        // };
         // await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/documents`, {
         //   method: "POST",
         //   headers: { "Content-Type": "application/json" },
-        //   body: JSON.stringify(document),
+        //   body: JSON.stringify(documentData),
         // });
+        
+        console.log("Creating document with stakeholders:", initialStakeholders);
         toast.success("Document created successfully");
         navigate("/DocumentManagement");
       }
@@ -206,18 +229,6 @@ export default function DocumentDetails() {
   };
 
   // Handle saved data from modals
-  const handleReviewSaved = (reviewData) => {
-    const review = {
-      id: reviews.length + 1,
-      reviewer: reviewData.reviewer,
-      date: new Date().toISOString().split("T")[0],
-      comment: reviewData.comment,
-      status: reviewData.status,
-    };
-    setReviews([...reviews, review]);
-    toast.success("Review added successfully");
-  };
-
   const handleVersionSaved = (versionData) => {
     const version = {
       id: versions.length + 1,
@@ -229,6 +240,7 @@ export default function DocumentDetails() {
       file: versionData.file,
       fileName: versionData.file?.name || "",
       stakeholders: versionData.stakeholders || [],
+      reviews: [],
     };
     setVersions([version, ...versions]);
     toast.success("Version created successfully");
@@ -258,14 +270,45 @@ export default function DocumentDetails() {
     setSelectedVersion(version);
   };
 
+  // Stakeholder management functions for initial document creation
+  const handleStakeholderChange = (e) => {
+    const { name, value } = e.target;
+    setNewStakeholder((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddStakeholder = () => {
+    if (!newStakeholder.name || !newStakeholder.email || !newStakeholder.role) {
+      toast.warning("Please fill all stakeholder fields");
+      return;
+    }
+
+    const stakeholder = {
+      id: initialStakeholders.length + 1,
+      ...newStakeholder,
+      avatar: `https://i.pravatar.cc/40?img=${initialStakeholders.length + 10}`,
+    };
+
+    setInitialStakeholders([...initialStakeholders, stakeholder]);
+    setNewStakeholder({ name: "", email: "", role: "", status: "Pending" });
+    setShowAddStakeholder(false);
+    toast.success("Stakeholder added");
+  };
+
+  const handleRemoveStakeholder = (id) => {
+    setInitialStakeholders(initialStakeholders.filter(s => s.id !== id));
+    toast.success("Stakeholder removed");
+  };
+
   const currentStageIndex = getCurrentStageIndex();
 
   return (
     <>
-      <h2 className={styles.bHeading}>Document Management</h2>
+      {/* <h2 className={styles.bHeading}>{isEdit ? "Document Management" : "Create New Document"}</h2> */}
+      <Header title={isEdit ? "Document Management" : "Create New Document"} />
       <div className={styles.detailPage}>
-        {/* Lifecycle Status Sidebar */}
-        <div className={styles.lifecycleSidebar}>
+        {/* Lifecycle Status Sidebar - Only show for existing documents */}
+        {isEdit && (
+          <div className={styles.lifecycleSidebar}>
           <WhiteIsland>
             <div className={styles.lifecycleStages}>
               {lifecycleStages.map((stage, index) => {
@@ -318,6 +361,7 @@ export default function DocumentDetails() {
             </div>
           </WhiteIsland>
         </div>
+        )}
 
         {/* Main Content */}
         <div className={styles.mainContent}>
@@ -433,43 +477,33 @@ export default function DocumentDetails() {
 
             {/* Action Buttons */}
             <div className={styles.actionButtons}>
-              <button className={styles.rejectButton} onClick={handleReject}>
-                Reject
-              </button>
-              <button className={styles.saveButton} onClick={handleSave}>
-                <FaSave /> Save Changes
-              </button>
+              {isEdit && (
+                <button className={styles.rejectButton} onClick={handleReject}>
+                  <FaTrash /> Delete
+                </button>
+              )}
+              {/* <button className={styles.saveButton} onClick={handleSave}>
+                <FaSave /> {isEdit ? "Save Changes" : "Create Document"}
+              </button> */}
             </div>
           </WhiteIsland>
 
-          {/* Tabs Section */}
-          <WhiteIsland className={styles.tabsSection}>
-            <div className={styles.tabHeader}>
-              <div className={styles.tabs}>
-                <button
-                  className={`${styles.tab} ${activeTab === "Reviews" ? styles.activeTab : ""}`}
-                  onClick={() => setActiveTab("Reviews")}
-                >
-                  Reviews
-                </button>
-                <button
-                  className={`${styles.tab} ${activeTab === "Versions" ? styles.activeTab : ""}`}
-                  onClick={() => setActiveTab("Versions")}
-                >
+          {/* Versions Section (for existing documents) or Stakeholders Section (for new documents) */}
+          {isEdit ? (
+            <WhiteIsland className={styles.tabsSection}>
+              <div className={styles.tabHeader}>
+                <h3 style={{ margin: 20, fontSize: "18px", fontWeight: "600", color: "#374151" }}>
                   Versions
+                </h3>
+                <button
+                  className={styles.addTabButton}
+                  onClick={() => setActiveModal("versions")}
+                >
+                  <FaPlus /> Add Version
                 </button>
               </div>
-              <button
-                className={styles.addTabButton}
-                onClick={() => setActiveModal(activeTab.toLowerCase())}
-              >
-                <FaPlus /> Add {activeTab === "Versions" ? "Version" : "Review"}
-              </button>
-            </div>
 
-            <div className={styles.tabContent}>
-              {/* Versions Tab */}
-              {activeTab === "Versions" && (
+              <div className={styles.tabContent}>
                 <div className={styles.versionsContent}>
                   <table className={styles.versionsTable}>
                     <thead>
@@ -502,58 +536,218 @@ export default function DocumentDetails() {
                     </tbody>
                   </table>
                 </div>
-              )}
-
-              {/* Reviews Tab */}
-              {activeTab === "Reviews" && (
-                <div className={styles.reviewsContent}>
-                  {reviews.map((review) => (
-                    <div key={review.id} className={styles.reviewCard}>
-                      <div className={styles.reviewHeader}>
-                        <div>
-                          <strong>{review.reviewer}</strong>
-                          <span className={styles.reviewDate}> • {review.date}</span>
-                        </div>
-                        <span
-                          className={`${styles.reviewStatus} ${
-                            review.status === "Approved"
-                              ? styles.statusApproved
-                              : review.status === "Rejected"
-                              ? styles.statusRejected
-                              : styles.statusPending
-                          }`}
-                        >
-                          {review.status}
-                        </span>
-                      </div>
-                      <div className={styles.reviewComment}>{review.comment}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </WhiteIsland>
+          ) : (
+            /* Stakeholders Section for New Document */
+            <WhiteIsland className={styles.stakeholdersSection}>
+              <div className={styles.stakeholdersSectionHeader}>
+                <h3 className={styles.stakeholdersSectionTitle}>
+                  Initial Stakeholders
+                </h3>
+                {!showAddStakeholder && (
+                  <button
+                    className={styles.addTabButton}
+                    onClick={() => setShowAddStakeholder(true)}
+                  >
+                    <FaPlus /> Add Stakeholder
+                  </button>
+                )}
+              </div>
+
+              <p className={styles.stakeholdersSectionDescription}>
+                Add stakeholders who will review and approve this initial document draft.
+              </p>
+
+              {/* Add Stakeholder Form */}
+              {showAddStakeholder && (
+                <div className={styles.stakeholderFormContainer}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '40px', rowGap: '20px', marginBottom: '20px' }}>
+                    {/* Column 1 - Name */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label className={styles.stakeholderFormLabel}>
+                        Name <span className={styles.required}>*</span>
+                      </label>
+                      <input
+                        name="name"
+                        value={newStakeholder.name}
+                        onChange={handleStakeholderChange}
+                        placeholder="Enter name"
+                        style={{ 
+                          width: '100%',
+                          padding: '10px 14px',
+                          borderRadius: '20px',
+                          border: '1px solid #D0D5DD',
+                          fontSize: '0.95rem',
+                          outline: 'none',
+                          background: 'white',
+                          fontFamily: 'inherit',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+                    {/* Column 2 - Email */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label className={styles.stakeholderFormLabel}>
+                        Email <span className={styles.required}>*</span>
+                      </label>
+                      <input
+                        name="email"
+                        type="email"
+                        value={newStakeholder.email}
+                        onChange={handleStakeholderChange}
+                        placeholder="Enter email"
+                        style={{ 
+                          width: '100%',
+                          padding: '10px 14px',
+                          borderRadius: '20px',
+                          border: '1px solid #D0D5DD',
+                          fontSize: '0.95rem',
+                          outline: 'none',
+                          background: 'white',
+                          fontFamily: 'inherit',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+                    {/* Column 1 - Role */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label className={styles.stakeholderFormLabel}>
+                        Role <span className={styles.required}>*</span>
+                      </label>
+                      <select
+                        name="role"
+                        value={newStakeholder.role}
+                        onChange={handleStakeholderChange}
+                        style={{ 
+                          width: '100%',
+                          padding: '10px 14px',
+                          borderRadius: '20px',
+                          border: '1px solid #D0D5DD',
+                          fontSize: '0.95rem',
+                          outline: 'none',
+                          background: 'white',
+                          fontFamily: 'inherit',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <option value="">Select Role</option>
+                        <option value="REVIEWER">Reviewer</option>
+                        <option value="APPROVER">Approver</option>
+                        <option value="OBSERVER">Observer</option>
+                        <option value="EDITOR">Editor</option>
+                      </select>
+                    </div>
+                    {/* Column 2 - Status */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label className={styles.stakeholderFormLabel}>
+                        Status
+                      </label>
+                      <select
+                        name="status"
+                        value={newStakeholder.status}
+                        onChange={handleStakeholderChange}
+                        style={{ 
+                          width: '100%',
+                          padding: '10px 14px',
+                          borderRadius: '20px',
+                          border: '1px solid #D0D5DD',
+                          fontSize: '0.95rem',
+                          outline: 'none',
+                          background: 'white',
+                          fontFamily: 'inherit',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className={styles.stakeholderFormActions}>
+                    <button
+                      onClick={handleAddStakeholder}
+                      className={styles.saveButton}
+                    >
+                      <FaSave /> Add
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAddStakeholder(false);
+                        setNewStakeholder({ name: "", email: "", role: "", status: "Pending" });
+                      }}
+                      className={styles.rejectButton}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Stakeholders List */}
+              <div className={styles.stakeholdersList}>
+                {initialStakeholders.length === 0 ? (
+                  <div className={styles.stakeholderEmptyState}>
+                    <p className={styles.stakeholderEmptyTitle}>No stakeholders added yet</p>
+                    <p className={styles.stakeholderEmptyDescription}>
+                      Click "Add Stakeholder" to add reviewers for this document
+                    </p>
+                  </div>
+                ) : (
+                  initialStakeholders.map((stakeholder) => (
+                    <div key={stakeholder.id} className={styles.stakeholderListItem}>
+                      <div className={styles.stakeholderListInfo}>
+                        <img
+                          src={stakeholder.avatar}
+                          alt={stakeholder.name}
+                          className={styles.stakeholderListAvatar}
+                        />
+                        <div className={styles.stakeholderListDetails}>
+                          <div className={styles.stakeholderListName}>
+                            {stakeholder.name}
+                          </div>
+                          <div className={styles.stakeholderListEmail}>
+                            {stakeholder.email}
+                          </div>
+                          <div className={styles.stakeholderListRole}>
+                            {stakeholder.role}
+                          </div>
+                        </div>
+                      </div>
+                      <div className={styles.stakeholderListActions}>
+                        <span
+                          className={styles.stakeholderStatusBadge}
+                          data-status={stakeholder.status}
+                        >
+                          {stakeholder.status}
+                        </span>
+                        <button
+                          onClick={() => handleRemoveStakeholder(stakeholder.id)}
+                          title="Remove stakeholder"
+                          className={styles.removeStakeholderButton}
+                        >
+                          <FaTimes />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </WhiteIsland>
+          )}
         </div>
       </div>
 
       {/* Modals */}
-      {activeModal && (
+      {activeModal === "versions" && (
         <Modal onClose={() => setActiveModal(null)}>
-          {activeModal === "reviews" && (
-            <ReviewsForm
-              onClose={() => setActiveModal(null)}
-              documentID={id}
-              onSaved={handleReviewSaved}
-            />
-          )}
-          {activeModal === "versions" && (
-            <VersionsForm
-              onClose={() => setActiveModal(null)}
-              documentID={id}
-              currentVersionNumber={versions.length}
-              onSaved={handleVersionSaved}
-            />
-          )}
+          <VersionsForm
+            onClose={() => setActiveModal(null)}
+            documentID={id}
+            currentVersionNumber={versions.length}
+            onSaved={handleVersionSaved}
+          />
         </Modal>
       )}
 

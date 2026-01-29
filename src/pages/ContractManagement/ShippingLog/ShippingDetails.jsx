@@ -11,7 +11,7 @@ import InstanceList from '../../../components/modals/InstanceListModal';
 import toast from '../../../components/Toaster/toast';
 import SignatureCanvas from 'react-signature-canvas';
 import { useAuth } from '../../../context/AuthContext';  
-
+import Header from '../../../components/Header';    
 export default function ShipmentDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -962,7 +962,8 @@ export default function ShipmentDetails() {
 
     return (
         <div className={styles.pageContainer}>
-            <h2 className={styles.bHeading}>Shipping Details</h2>
+            {/* <h2 className={styles.bHeading}>Shipping Details</h2> */}
+            <Header title="Shipping Details" />
             <WhiteIsland className={styles.bigIsland}>
                 <h3>Shipping : {log.shippingCode || (id && id !== 'add' ? id : '(unsaved)')}</h3>
                 <div className={styles.main}>

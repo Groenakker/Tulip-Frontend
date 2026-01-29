@@ -1,0 +1,594 @@
+/* Main Container */
+.container {
+  min-height: 100vh;
+  width: 100vw;
+  background: #f3f4f6;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Header */
+.header {
+  background: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  max-width: 1200px;
+  margin: 0 auto 24px auto;
+  color: #111827;
+}
+
+.header h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #111827;
+}
+
+.header p {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Content Container */
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Card Styles */
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.cardHeader svg {
+  font-size: 20px;
+  color: rgb(69 112 182);
+}
+
+.cardHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+/* Stakeholder Info */
+.stakeholderInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 3px solid rgb(69 112 182);
+  object-fit: cover;
+}
+
+.stakeholderDetails {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stakeholderName {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.stakeholderEmail {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.stakeholderRole,
+.stakeholderStatus {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.roleLabel,
+.statusLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.roleBadge,
+.statusBadge {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.roleBadge {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.statusBadge {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.statusBadge[data-status="Pending"] {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.statusBadge[data-status="Approved"] {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.statusBadge[data-status="Rejected"] {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Document Info */
+.documentInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.infoRow {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.infoLabel {
+  font-weight: 600;
+  color: #374151;
+  min-width: 150px;
+}
+
+.infoValue {
+  color: #6b7280;
+  flex: 1;
+}
+
+/* Document Viewer */
+.documentViewer {
+  width: 100%;
+  height: 600px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f9fafb;
+}
+
+.documentFrame {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Action Section */
+.actionSection {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.actionMessage {
+  font-size: 0.95rem;
+  color: #374151;
+  margin-bottom: 16px;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.approveButton,
+.rejectButton {
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  min-width: 180px;
+  justify-content: center;
+}
+
+.approveButton {
+  background: #10b981;
+  color: white;
+}
+
+.approveButton:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.rejectButton {
+  background: #ef4444;
+  color: white;
+}
+
+.rejectButton:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+/* Status Messages */
+.statusMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+}
+
+.statusMessage[data-type="approved"] svg {
+  color: #10b981;
+}
+
+.statusMessage[data-type="rejected"] svg {
+  color: #ef4444;
+}
+
+.statusMessage h3 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.statusMessage p {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.signatureDisplay {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+}
+
+.signatureDisplay p {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+
+.signatureDisplay img {
+  max-width: 250px;
+  height: auto;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+}
+
+.rejectionReason {
+  margin-top: 16px;
+  padding: 16px;
+  background: #fee2e2;
+  border-radius: 8px;
+  border: 2px solid #fecaca;
+  text-align: left;
+  width: 100%;
+  max-width: 500px;
+}
+
+.rejectionReason p {
+  color: #991b1b;
+  margin: 4px 0;
+  font-size: 0.9rem;
+}
+
+/* Modals */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.modal h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.modal p {
+  color: #6b7280;
+  margin: 0 0 24px 0;
+}
+
+/* Signature Canvas */
+.signatureContainer {
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: white;
+  overflow: hidden;
+}
+
+.signatureCanvas {
+  width: 100%;
+  height: 200px;
+  touch-action: none;
+}
+
+.signatureActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
+
+.clearButton {
+  padding: 8px 16px;
+  background: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+
+.clearButton:hover {
+  background: #4b5563;
+}
+
+/* Rejection Textarea */
+.rejectionTextarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 24px;
+  outline: none;
+}
+
+.rejectionTextarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Modal Buttons */
+.modalButtons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.submitButton,
+.submitRejectButton {
+  padding: 12px 24px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-2px);
+}
+
+.submitButton:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.submitRejectButton {
+  background: #ef4444;
+}
+
+.submitRejectButton:hover:not(:disabled) {
+  background: #dc2626;
+  transform: translateY(-2px);
+}
+
+.submitRejectButton:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  padding: 12px 24px;
+  background: #e5e7eb;
+  color: #374151;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: #d1d5db;
+}
+
+.cancelButton:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+}
+
+/* Loading State */
+.loadingContainer,
+.errorContainer {
+  min-height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  color: #111827;
+  padding: 40px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.errorContainer h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 16px 0 8px 0;
+  color: #111827;
+}
+
+.errorContainer p {
+  font-size: 1.1rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Spinner */
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e5e7eb;
+  border-top-color: rgb(69 112 182);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .header {
+    padding: 12px 16px;
+  }
+
+  .header h1 {
+    font-size: 1.35rem;
+  }
+
+  .header p {
+    font-size: 0.875rem;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .stakeholderInfo {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .avatar {
+    width: 60px;
+    height: 60px;
+  }
+
+  .stakeholderName {
+    font-size: 1.1rem;
+  }
+
+  .documentViewer {
+    height: 400px;
+  }
+
+  .actionButtons {
+    flex-direction: column;
+  }
+
+  .approveButton,
+  .rejectButton {
+    width: 100%;
+  }
+
+  .modal {
+    padding: 24px;
+  }
+
+  .modalButtons {
+    flex-direction: column;
+  }
+
+  .submitButton,
+  .submitRejectButton,
+  .cancelButton {
+    width: 100%;
+  }
+}

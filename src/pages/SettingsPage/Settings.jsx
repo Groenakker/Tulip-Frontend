@@ -16,7 +16,7 @@ import styles from "./Settings.module.css";
 import UserEditModal from "../../components/modals/UserEditModal";
 import { useAuth } from "../../context/AuthContext";
 import Modal from "../../components/Modal";
-
+import Header from "../../components/Header"; 
 const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 const DEFAULT_COMPANY_IMAGE =
   "https://via.placeholder.com/120x120.png?text=Company";
@@ -1363,7 +1363,9 @@ export default function Settings() {
 
   return (
     <>
-      <h2 className={styles.title}>Settings</h2>
+      {/* <h2 className={styles.title}>Settings</h2> */}
+      
+      <Header title="Settings" />
       <WhiteIsland className="WhiteIsland">
         <div className={styles.settingsContainer}>
           <div className={styles.sidebar}>

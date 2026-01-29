@@ -4,7 +4,7 @@ import styles from './ShippingLog.module.css';
 import { useState, useEffect } from 'react';
 import { FaSearch, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-
+import Header from '../../../components/Header';
 // const shipData = [
 //   { id: 'GRK-25035-01', destination: 'Element Material Technology - Cincinnati', project: 'Eakin Healthcare ISO 18562 Gas Pathway Remediation', departure: '2/21/2025' },
 //   { id: 'GRK-25035-02', destination: 'Element Material Technology - Cincinnati', project: 'Eakin Healthcare ISO 18562 Gas Pathway Remediation', departure: '2/21/2025' },
@@ -91,7 +91,8 @@ export default function ShippingLog() {
 
   return (
     <>
-      <h2 className={styles.title}>Shipping Log</h2>
+      {/* <h2 className={styles.title}>Shipping Log</h2> */}
+      <Header title="Shipping Log" />
       <WhiteIsland className='WhiteIsland'>
         <div className={styles.shippingPage}>
 

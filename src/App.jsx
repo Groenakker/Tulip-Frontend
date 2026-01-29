@@ -4,7 +4,7 @@ import Sidebar from './components/Sidebar';
 import './App.css';
 import WhiteIsland from './components/Whiteisland.jsx';
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -37,6 +37,7 @@ import Settings from "./pages/SettingsPage/Settings";
 import Unauthorized from "./pages/Unauthorized";
 import DocumentList from "./pages/DocumentManagement/DocumentList";
 import DocumentDetails from "./pages/DocumentManagement/DocumentDetails";
+import StakeholderApproval from "./pages/StakeholderApproval/StakeholderApproval";
 // import Projects from './pages/Projects';
 // import ShippingLog from './pages/ShippingLog';
 // import RecieveLog from './pages/RecieveLog';
@@ -58,12 +59,20 @@ function App() {
 
 function AppContent() {
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  const isApprovalPage = location.pathname.startsWith('/approval/');
 
   return (
     <>
-      {isAuthenticated && <Sidebar />}
-      <main className={isAuthenticated ? "mainContentArea" : ""}>
+      {!isApprovalPage && isAuthenticated && <Sidebar />}
+      <main className={!isApprovalPage && isAuthenticated ? "mainContentArea" : ""}>
         <Routes>
+          {/* Stakeholder Approval - Public route (no authentication required, no layout) */}
+          <Route
+            path="/approval/:token"
+            element={<StakeholderApproval />}
+          />
+
           {/* Public Routes - Only accessible when not authenticated */}
           <Route 
             path="/login" 

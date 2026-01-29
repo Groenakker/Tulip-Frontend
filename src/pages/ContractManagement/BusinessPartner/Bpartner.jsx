@@ -3,6 +3,7 @@ import { FaPlus, FaSearch } from "react-icons/fa";
 import WhiteIsland from "../../../components/Whiteisland";
 import styles from "./Bpartner.module.css";
 import { useNavigate } from "react-router-dom";
+import Header from "../../../components/Header";
 
 
 
@@ -121,9 +122,10 @@ export default function Bpartner() {
 
   return (
     <>
-      <h2 className={styles.title}>
+      {/* <h2 className={styles.title}>
         Business Partner List
-      </h2>
+      </h2> */}
+      <Header title="Business Partner List" />
       <WhiteIsland className="WhiteIsland">
         <div className={styles.partnerPage}>
           <header className={styles.addbtn}>

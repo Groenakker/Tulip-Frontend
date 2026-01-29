@@ -3,7 +3,7 @@ import WhiteIsland from "../../../components/Whiteisland";
 import styles from "./InstanceDetail.module.css";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaSave, FaTrash } from "react-icons/fa";
-
+import Header from "../../../components/Header";
 export default function InstanceDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -103,7 +103,8 @@ export default function InstanceDetail() {
 
   return (
     <>
-      <h2 className={styles.bHeading}>Instance Detail</h2>
+      {/* <h2 className={styles.bHeading}>Instance Detail</h2> */}
+      <Header title="Instance Detail" />
       <div className={styles.detailPage}>
         <div className={styles.leftGrid}>
           <WhiteIsland className={styles.bigIsland}>
