@@ -145,8 +145,8 @@ export default function ProjectList() {
                 >
                   <td>{project.projectID}</td>
                   <td>{project.description}</td>
-                  <td>{project.startDate ? project.startDate.split("T")[0] : "" }</td>
-                  <td>{project.endDate ? project.endDate.split("T")[0] : "" }</td>
+                  <td>{project.startDate ? project.startDate.split("T")[0] : ""}</td>
+                  <td>{project.endDate ? project.endDate.split("T")[0] : ""}</td>
                 </tr>
               ))}
             </tbody>

@@ -84,3 +84,31 @@
   border-radius: 6px;
   cursor: pointer;
 }
+
+.cancelBtn:hover {
+  background: #d1d5db;
+}
+
+.fileUploadLabel {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  background: white;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  transition: all 0.2s ease;
+}
+
+.fileUploadLabel:hover {
+  border-color: rgb(69 112 182);
+  background: #f9fafb;
+  color: rgb(69 112 182);
+}
+
+.saveBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
