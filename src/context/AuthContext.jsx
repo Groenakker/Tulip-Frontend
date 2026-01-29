@@ -165,7 +165,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check if user is authenticated on mount
     checkAuth();
-    
+
     // Setup automatic token refresh (check every 10 minutes)
     refreshIntervalRef.current = setInterval(() => {
       if (isAuthenticated && !isRefreshingRef.current) {
@@ -305,22 +305,33 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const originalFetch = window.fetch;
     let isIntercepting = false;
-    
+
     window.fetch = async (...args) => {
       const [url, options = {}] = args;
-      const isApiCall = typeof url === 'string' && url.includes(API_BASE_URL);
+      // Check if this is an API call by checking if URL includes the API base path
+      const apiBasePath = '/api';
+      const isApiCall = typeof url === 'string' && (
+        url.includes(API_BASE_URL) ||
+        url.includes(apiBasePath)
+      );
 
       // console.log("ENV FROM CONTEXT:", import.meta.env);
       // console.log('API_BASE_URL: ', API_BASE_URL);
-      
-      
+
+
       // Only intercept API calls, and avoid intercepting the refresh endpoint itself
-      if (!isApiCall || url.includes('/auth/refresh')) {
+      if (!isApiCall || (typeof url === 'string' && url.includes('/auth/refresh'))) {
         return originalFetch(...args);
       }
 
-      const response = await originalFetch(...args);
-      
+      // Ensure credentials are included for all API calls
+      const fetchOptions = {
+        ...options,
+        credentials: 'include',
+      };
+
+      const response = await originalFetch(url, fetchOptions);
+
       // Check if response is 401 (Unauthorized) and we're authenticated
       if (response.status === 401 && isAuthenticated && !isIntercepting) {
         isIntercepting = true;
@@ -332,14 +343,14 @@ export const AuthProvider = ({ children }) => {
             handleAutoLogout();
             return response; // Return original 401 response
           } else {
-            // Retry the original request with new token
-            return originalFetch(...args);
+            // Retry the original request with new token (with credentials)
+            return originalFetch(url, fetchOptions);
           }
         } finally {
           isIntercepting = false;
         }
       }
-      
+
       return response;
     };
 

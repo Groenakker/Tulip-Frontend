@@ -10,16 +10,18 @@ import SampleSelect from '../../../components/modals/SampleSelect'
 import InstanceList from '../../../components/modals/InstanceListModal';
 import toast from '../../../components/Toaster/toast';
 import SignatureCanvas from 'react-signature-canvas';
+import { useAuth } from '../../../context/AuthContext';  
 
 export default function ShipmentDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
-
+    const { user } = useAuth();
     //Current Log's data state
     const [log, setLog] = useState({
         shippingCode: '',
         projectID: '',
         projectDesc: '',
+        projectCode: '',
         shipmentOrigin: '',
         shipmentDestination: '',
         logisticsProvider: '',
@@ -35,6 +37,73 @@ export default function ShipmentDetails() {
     const [loading, setLoading] = useState(true);
     const [projects, setProjects] = useState([]);
     const [projectsLoading, setProjectsLoading] = useState(true);
+
+    //Instance data state
+    const [instanceData, setInstanceData] = useState([]);
+    const [selectedRowId, setSelectedRowId] = useState(null);
+
+    //Handle instance toggle function
+    const handleInstanceToggle = async (itemId) => {
+        if (selectedRowId === itemId) {
+            // If clicking the same row, close it
+            setSelectedRowId(null);
+            setInstanceData([]);
+        } else {
+            // Find the selected item
+            const selectedItem = items.find(item => (item._id === itemId) || (item.id === itemId));
+            
+            if (selectedItem) {
+                setSelectedRowId(itemId);
+                
+                // Get instances from the item's instances array
+                const instances = selectedItem.instances || [];
+                
+                // If instances array exists and has data, use it directly
+                if (Array.isArray(instances) && instances.length > 0) {
+                    // Map instances to the format needed for the table
+                    const mappedInstances = instances.map(instance => ({
+                        instanceID: instance.instanceCode || instance.instanceId || '',
+                        sampleID: instance.sampleCode || '',
+                        lot: instance.lotNo || instance.lot || ''
+                    }));
+                    setInstanceData(mappedInstances);
+                } else {
+                    // If no instances in the item, try to fetch from the shipping line
+                    try {
+                        const lineId = selectedItem._id || selectedItem.id;
+                        if (lineId && id && id !== 'add') {
+                            const lineRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${lineId}`);
+                            if (lineRes.ok) {
+                                const lineData = await lineRes.json();
+                                const lineInstances = lineData.instances || [];
+                                
+                                if (Array.isArray(lineInstances) && lineInstances.length > 0) {
+                                    const mappedInstances = lineInstances.map(instance => ({
+                                        instanceID: instance.instanceCode || instance.instanceId || '',
+                                        sampleID: instance.sampleCode || '',
+                                        lot: instance.lotNo || instance.lot || ''
+                                    }));
+                                    setInstanceData(mappedInstances);
+                                } else {
+                                    setInstanceData([]);
+                                }
+                            } else {
+                                setInstanceData([]);
+                            }
+                        } else {
+                            setInstanceData([]);
+                        }
+                    } catch (error) {
+                        console.error('Error fetching instances for shipping line:', error);
+                        setInstanceData([]);
+                    }
+                }
+            } else {
+                setSelectedRowId(itemId);
+                setInstanceData([]);
+            }
+        }
+    };
 
     useEffect(() => {
         const load = async () => {
@@ -61,6 +130,7 @@ export default function ShipmentDetails() {
                             shippingCode: data.shippingCode || '',
                             projectID: data.projectID || '',
                             projectDesc: data.projectDesc || '',
+                            projectCode: data.projectCode || '',
                             shipmentOrigin: data.shipmentOrigin || '',
                             shipmentDestination: data.shipmentDestination || '',
                             logisticsProvider: data.logisticsProvider || '',
@@ -74,14 +144,22 @@ export default function ShipmentDetails() {
                         const linesRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`);
                         if (linesRes.ok) {
                             const lines = await linesRes.json();
-                            setItems(lines.map(l => ({
-                                _id: l._id,
-                                id: l.sampleId,
-                                sampleCode: l.sampleCode,
-                                description: l.description,
-                                lot: l.lot || '',
-                                quantity: l.quantity || 0
-                            })));
+                            console.log('Loaded shipping lines:', lines);
+                            setItems(lines.map(l => {
+                                // Handle instances - could be array of objects or array of IDs
+                                const instances = l.instances || [];
+                                const instanceCount = Array.isArray(instances) ? instances.length : 0;
+                                console.log(`Line ${l._id}: instances =`, instances, 'count =', instanceCount);
+                                return {
+                                    _id: l._id,
+                                    id: l.sampleId,
+                                    sampleCode: l.sampleCode,
+                                    description: l.description,
+                                    lot: l.lot || '',
+                                    quantity: instanceCount > 0 ? instanceCount : (l.quantity || 0),
+                                    instances: instances
+                                };
+                            }));
                         }
                     } catch (fetchError) {
                         console.error('Error loading shipping data:', fetchError);
@@ -100,11 +178,32 @@ export default function ShipmentDetails() {
     }, [id]);
 
     const onProjectChange = async (e) => {
-        const selectedId = e.target.value;
-        const selected = projects.find(p => (p._id === selectedId) || (p.projectID === selectedId));
-        const next = { ...log, projectID: selectedId };
+        const selectedValue = e.target.value;
+        console.log('selectedValue from dropdown:', selectedValue);
+        console.log('Available projects:', projects);
+        
+        // Find project by projectCode, projectID, or _id
+        const selected = projects.find(p => 
+            p.projectCode === selectedValue || 
+            p.projectID === selectedValue ||
+            p._id === selectedValue
+        );
+        
+        console.log('Found project:', selected);
+        
+        const next = { ...log };
+        
         if (selected) {
-            next.projectDesc = selected.description || '';
+            // Set all three fields: projectCode, projectID, and projectDesc
+            // If projectCode doesn't exist, use projectID as projectCode
+            next.projectCode = selected.projectCode || selected.projectID || selectedValue || '';
+            next.projectID = selected._id || selected.projectID || '';
+            next.projectDesc = selected.description || selected.projectDesc || selected.name || '';
+            
+            console.log('Setting projectCode to:', next.projectCode);
+            console.log('Setting projectID to:', next.projectID);
+            console.log('Setting projectDesc to:', next.projectDesc);
+            
             if (selected.bPartnerID) {
                 try {
                     const bpRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${selected.bPartnerID}`);
@@ -114,8 +213,15 @@ export default function ShipmentDetails() {
                     }
                 } catch (_) {}
             }
+        } else {
+            // If no project selected, clear all fields
+            next.projectCode = '';
+            next.projectID = '';
+            next.projectDesc = '';
         }
+        
         setLog(next);
+        console.log('log updated:', next);
     };
 
     const sigCanvas = useRef(null);
@@ -154,7 +260,8 @@ export default function ShipmentDetails() {
 
     const buildInitialScanState = () => ({
         isOpen: false,
-        scannedCodes: [],
+        scannedCodes: [], // For display purposes
+        scannedInstances: [], // Store full instance objects
         pendingCode: '',
         statusMessage: '',
         isSubmitting: false,
@@ -277,38 +384,85 @@ export default function ShipmentDetails() {
         }));
     };
 
-    const queueScannedCode = (rawCode) => {
-        setScanModalState(prev => {
-            const value = normalizeCode(rawCode ?? prev.pendingCode);
-            if (!value) {
-                return {
-                    ...prev,
-                    statusMessage: 'Scan a barcode to add it to the queue.'
-                };
+    const queueScannedCode = async (rawCode) => {
+        const value = normalizeCode(rawCode ?? scanModalState.pendingCode);
+        if (!value) {
+            setScanModalState(prev => ({
+                ...prev,
+                statusMessage: 'Scan a barcode to add it to the queue.'
+            }));
+            return;
+        }
+        console.log('value', value);
+
+        // Search for the instance directly from the database by instance code
+        try {
+            // Try to fetch the specific instance by code using query parameter
+            const instanceRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances/instance-code/${encodeURIComponent(value)}`);
+            if (!instanceRes.ok) {
+                throw new Error('Failed to search instance in database.');
+            }
+            
+            const instances = await instanceRes.json();
+            console.log('instanceRes', instances);
+            // Handle both array response and single object response
+            // If backend returns all instances (query param not supported), filter by code
+            let foundInstance = null;
+            if (Array.isArray(instances)) {
+                foundInstance = instances.find(instance => 
+                    instance?.instanceCode && normalizeCode(instance.instanceCode) === value
+                );
+            } else if (instances && instances.instanceCode) {
+                foundInstance = normalizeCode(instances.instanceCode) === value ? instances : null;
             }
 
+            if (!foundInstance) {
+                setScanModalState(prev => ({
+                    ...prev,
+                    pendingCode: '',
+                    statusMessage: `Instance ${value} not found in database.`
+                }));
+                toast.error(`Instance ${value} not found in database.`);
+                return;
+            }
+
+            // Instance found - proceed with validation
             const alreadyInShipment = items.some(item => normalizeCode(item.sampleCode || item.id || '') === value);
             if (alreadyInShipment) {
                 toast.error(`Sample ${value} is already part of this shipment.`);
-                return { ...prev, pendingCode: '', statusMessage: '' };
+                setScanModalState(prev => ({ ...prev, pendingCode: '', statusMessage: '' }));
+                return;
             }
 
-            if (prev.scannedCodes.includes(value)) {
+            setScanModalState(prev => {
+                // Check if instance is already queued (by code)
+                if (prev.scannedCodes.includes(value)) {
+                    return {
+                        ...prev,
+                        pendingCode: '',
+                        statusMessage: `Instance ${value} is already queued.`
+                    };
+                }
+
+                // Store both the code (for display) and the full instance object
                 return {
                     ...prev,
+                    scannedCodes: [...prev.scannedCodes, value],
+                    scannedInstances: [...prev.scannedInstances, foundInstance],
                     pendingCode: '',
-                    statusMessage: `Sample ${value} is already queued.`
+                    statusMessage: `Instance ${value} found and queued.`,
+                    missingCodes: prev.missingCodes.filter(code => code !== value)
                 };
-            }
-
-            return {
+            });
+        } catch (error) {
+            console.error('Error searching for instance:', error);
+            setScanModalState(prev => ({
                 ...prev,
-                scannedCodes: [...prev.scannedCodes, value],
                 pendingCode: '',
-                statusMessage: '',
-                missingCodes: prev.missingCodes.filter(code => code !== value)
-            };
-        });
+                statusMessage: `Error searching for instance: ${error.message}`
+            }));
+            toast.error(`Failed to search for instance ${value}.`);
+        }
     };
 
     const handleScanKeyDown = (event) => {
@@ -319,147 +473,161 @@ export default function ShipmentDetails() {
     };
 
     const removeQueuedCode = (codeToRemove) => {
-        setScanModalState(prev => ({
-            ...prev,
-            scannedCodes: prev.scannedCodes.filter(code => code !== codeToRemove)
-        }));
+        setScanModalState(prev => {
+            const codeIndex = prev.scannedCodes.indexOf(codeToRemove);
+            const newCodes = prev.scannedCodes.filter(code => code !== codeToRemove);
+            const newInstances = prev.scannedInstances.filter((_, index) => index !== codeIndex);
+            
+            return {
+                ...prev,
+                scannedCodes: newCodes,
+                scannedInstances: newInstances
+            };
+        });
     };
 
     const clearQueuedCodes = () => {
         setScanModalState(prev => ({
             ...prev,
-            scannedCodes: []
+            scannedCodes: [],
+            scannedInstances: []
         }));
     };
 
     const handleApplyScannedCodes = async () => {
-        // Step 1: Get unique scanned codes from the queue
-        const uniqueCodes = Array.from(new Set(scanModalState.scannedCodes));
-        if (uniqueCodes.length === 0) {
+        console.log('scannedInstances', scanModalState.scannedInstances);
+        
+        const foundInstances = scanModalState.scannedInstances || [];
+        
+        if (foundInstances.length === 0) {
             setScanModalState(prev => ({
                 ...prev,
                 statusMessage: 'Scan at least one barcode before continuing.'
             }));
             return;
         }
-
-        // Set submitting state to prevent multiple submissions
+    
         setScanModalState(prev => ({
             ...prev,
             isSubmitting: true,
             statusMessage: 'Processing scanned instances...',
             missingCodes: []
         }));
-
+    
         try {
-            // Step 2: Fetch all instances from the database to find the scanned instance codes
-            const instancesRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances`);
-            if (!instancesRes.ok) throw new Error('Failed to load instances from database.');
-            
-            const allInstances = await instancesRes.json();
-            
-            // Create a map of instance codes to instance objects for quick lookup
-            const instanceMap = new Map(
-                (allInstances || [])
-                    .filter(instance => instance?.instanceCode)
-                    .map(instance => [normalizeCode(instance.instanceCode), instance])
+            // Validate instances - check for instanceCode and sampleCode
+            const validInstances = foundInstances.filter(instance => 
+                instance && instance.instanceCode && instance.sampleCode
             );
-
-            // Step 3: Find which scanned codes are valid instances
-            const missingCodes = [];
-            const foundInstances = [];
-            
-            uniqueCodes.forEach(code => {
-                const instance = instanceMap.get(code);
-                if (!instance) {
-                    // Instance not found in database
-                    missingCodes.push(code);
-                } else {
-                    // Instance found - add to processing list
-                    foundInstances.push(instance);
-                }
-            });
-
-            // If no instances were found, show error and return
-            if (foundInstances.length === 0) {
+    
+            console.log('Valid instances after filtering:', validInstances);
+    
+            if (validInstances.length === 0) {
                 setScanModalState(prev => ({
                     ...prev,
                     isSubmitting: false,
-                    missingCodes,
-                    statusMessage: missingCodes.length
-                        ? `No instances found for: ${missingCodes.join(', ')}`
-                        : 'No matching instances found for the scanned barcodes.'
+                    statusMessage: 'No valid instances found in the queue.'
                 }));
-                toast.error('No matching instances found for the scanned barcodes.');
+                toast.error('No valid instances found in the queue.');
                 return;
             }
-
-            // Step 4: For each found instance, get its sample ID and fetch sample details
+    
+            // Fetch all samples to build a map by sampleCode
             const samplesRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`);
             if (!samplesRes.ok) throw new Error('Failed to load sample catalog.');
             
             const allSamples = await samplesRes.json();
-            const sampleMap = new Map(
+            console.log('Fetched samples:', allSamples?.length);
+            
+            // Create two maps: one by normalized sampleCode, one by _id (for fallback)
+            const sampleMapByCode = new Map(
+                (allSamples || [])
+                    .filter(sample => sample?.sampleCode)
+                    .map(sample => [normalizeCode(sample.sampleCode), sample])
+            );
+            console.log('sampleMapByCode', sampleMapByCode);
+            const sampleMapById = new Map(
                 (allSamples || [])
                     .filter(sample => sample?._id)
-                    .map(sample => [sample._id, sample])
+                    .map(sample => [sample._id.toString(), sample])
             );
-
-            // Step 5: Process each instance - find or create shipping line and add instance
+            console.log('Sample Map by Code created with', sampleMapByCode.size, 'samples');
+            console.log('Sample Map by ID created with', sampleMapById.size, 'samples');
+    
             const processedInstances = [];
             const errors = [];
-
-            for (const instance of foundInstances) {
+    
+            for (const instance of validInstances) {
                 try {
-                    // Step 5a: Get the sample details using the instance's sample ID
-                    const sampleId = instance.idSample;
-                    if (!sampleId) {
-                        errors.push(`Instance ${instance.instanceCode} has no associated sample ID.`);
-                        continue;
+                    console.log('Processing instance:', instance.instanceCode, 'with sampleCode:', instance.sampleCode, 'idSample:', instance.idSample);
+                    
+                    let sample = null;
+                    
+                    // Try to find sample by sampleCode first
+                    if (instance.sampleCode) {
+                        const normalizedSampleCode = normalizeCode(instance.sampleCode);
+                        sample = sampleMapByCode.get(normalizedSampleCode);
+                        console.log('Sample lookup by code:', normalizedSampleCode, 'found:', !!sample);
                     }
-
-                    const sample = sampleMap.get(sampleId);
+                    
+                    // Fallback: try to find sample by idSample if sampleCode lookup failed
+                    if (!sample && instance.idSample) {
+                        sample = sampleMapById.get(instance.idSample.toString());
+                        console.log('Sample lookup by ID:', instance.idSample, 'found:', !!sample);
+                    }
+                    
                     if (!sample) {
-                        errors.push(`Sample not found for instance ${instance.instanceCode}.`);
+                        const errorMsg = `Sample not found for instance ${instance.instanceCode}. ` +
+                            `Tried sampleCode: ${instance.sampleCode || 'N/A'}, idSample: ${instance.idSample || 'N/A'}`;
+                        errors.push(errorMsg);
+                        console.error(errorMsg);
                         continue;
                     }
-
-                    // Extract sample details: sample code, description, and lot from instance
-                    const sampleCode = sample.sampleCode || instance.sampleCode || '';
-                    const description = sample.description || sample.name || sample.formData?.sampleDescription || sampleCode;
+    
+                    // Assign variables after validation
+                    const sampleId = sample._id;
+                    const sampleCode = sample.sampleCode || instanceSampleCode;
+                    const description = sample.description || sample.sampleDescription || sample.projectName || sampleCode;
                     const lot = instance.lotNo || '';
-
-                    // Step 5b: Check if this sample already exists in the shipping lines for current shipping
+    
+                    console.log(`Found sample: ID=${sampleId}, Code=${sampleCode}, Description=${description}`);
+    
+                    // Check if shipping line already exists for this sample
                     const existingShippingLine = items.find(item => 
                         (item.id === sampleId || item.sampleId === sampleId) ||
                         normalizeCode(item.sampleCode || '') === normalizeCode(sampleCode)
                     );
-
+                    
                     let shippingLineId;
                     let shippingLine;
-
+    
                     if (existingShippingLine) {
-                        // Step 5c: Sample exists in shipping line - use existing line
+                        // Use existing shipping line
                         shippingLineId = existingShippingLine._id || existingShippingLine.id;
                         shippingLine = existingShippingLine;
+                        console.log(`Found existing shipping line ${shippingLineId} for sample ${sampleCode}`);
                     } else {
-                        // Step 5d: Sample doesn't exist - create a new shipping line for this sample
+                        // Create new shipping line for this sample
+                        console.log(`Creating new shipping line for sample ${sampleCode}`);
                         const createLineRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 sampleId: sampleId,
+                                shippingId: id,
+                                company_id:user.company_id,
                                 sampleCode: sampleCode,
                                 description: description,
                                 lot: lot,
-                                quantity: 1
+                                quantity: 0
                             })
                         });
-
+    
                         if (!createLineRes.ok) {
-                            throw new Error(`Failed to create shipping line for sample ${sampleCode}.`);
+                            const errorText = await createLineRes.text();
+                            throw new Error(`Failed to create shipping line for sample ${sampleCode}: ${errorText}`);
                         }
-
+    
                         const newLine = await createLineRes.json();
                         shippingLineId = newLine._id;
                         shippingLine = {
@@ -468,115 +636,166 @@ export default function ShipmentDetails() {
                             sampleCode: newLine.sampleCode || sampleCode,
                             description: newLine.description || description,
                             lot: newLine.lot || lot,
-                            quantity: newLine.quantity ?? 1
+                            quantity: (newLine.instances && Array.isArray(newLine.instances)) ? newLine.instances.length : (newLine.quantity ?? 0),
+                            instances: newLine.instances || []
                         };
-
-                        // Add the new shipping line to local state
+    
+                        // Add to local state
                         setItems(prev => [...prev, shippingLine]);
+                        console.log(`Created new shipping line ${shippingLineId}`);
                     }
-
-                    // Step 5e: Add the instance to the shipping line's instances array
-                    // First, try to add instance via dedicated API endpoint
+    
+                    // Prepare instance data for shipping line according to schema
+                    const instanceData = {
+                        instanceId: instance._id,
+                        instanceCode: instance.instanceCode,
+                        sampleCode: instance.sampleCode,
+                        lotNo: instance.lotNo || '',
+                        status: instance.status || 'Pending'
+                    };
+    
+                    console.log('Attempting to add instance:', instanceData);
+    
+                    // Add instance to shipping line's instances array
                     try {
-                        const addInstanceRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${shippingLineId}/instances`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                instanceId: instance._id,
-                                instanceCode: instance.instanceCode
-                            })
-                        });
-
-                        if (!addInstanceRes.ok) {
-                            // If dedicated endpoint doesn't exist, update the line with instances array
-                            // Get current instances array from the shipping line
-                            const currentInstances = shippingLine.instances || [];
-                            
-                            // Check if instance is already in the array to avoid duplicates
-                            if (!currentInstances.includes(instance._id) && !currentInstances.some(i => 
-                                (typeof i === 'object' && i._id === instance._id) || 
-                                (typeof i === 'string' && i === instance._id)
-                            )) {
-                                // Add instance to the array
-                                const updatedInstances = [...currentInstances, instance._id];
+                        // Fetch current shipping line to get existing instances
+                        const getLineRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${shippingLineId}`);
+                        if (!getLineRes.ok) {
+                            throw new Error(`Failed to fetch current shipping line data: ${getLineRes.status} ${getLineRes.statusText}`);
+                        }
+                        
+                        const currentLine = await getLineRes.json();
+                        const currentInstances = currentLine.instances || [];
+                        
+                        // Check if instance already exists
+                        const instanceExists = currentInstances.some(i => 
+                            (i.instanceId && i.instanceId.toString() === instance._id.toString()) ||
+                            (i.instanceCode && normalizeCode(i.instanceCode) === normalizeCode(instance.instanceCode))
+                        );
+    
+                        if (!instanceExists) {
+                                // Add new instance to array
+                                const updatedInstances = [...currentInstances, instanceData];
+                                const newQuantity = updatedInstances.length;
                                 
                                 const updateLineRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${shippingLineId}`, {
                                     method: 'PUT',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
-                                        instances: updatedInstances
+                                        instances: updatedInstances,
+                                        quantity: newQuantity
                                     })
                                 });
-
+    
                                 if (!updateLineRes.ok) {
-                                    console.warn(`Could not add instance ${instance.instanceCode} to shipping line ${shippingLineId}. API may need to be updated.`);
+                                    const errorText = await updateLineRes.text();
+                                    throw new Error(`Failed to update shipping line: ${updateLineRes.status} ${updateLineRes.statusText} - ${errorText}`);
                                 }
+                                
+                                console.log(`Successfully added instance ${instance.instanceCode} to shipping line ${shippingLineId}. Quantity updated to ${newQuantity}`);
+                                
+                                // Create movement record for shipping
+                                try {
+                                    const movementData = {
+                                        instanceId: instance._id,
+                                        movementType: 'Shipped',
+                                        movementDate: new Date(),
+                                        shippingId: id,
+                                        shippingCode: log.shippingCode || null,
+                                        warehouseId: instance.warehouseID || null,
+                                        location: null,
+                                        notes: `Instance shipped via shipping log ${log.shippingCode || id}`
+                                    };
+                                    
+                                    const movementRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instance-movements`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(movementData)
+                                    });
+                                    
+                                    if (!movementRes.ok) {
+                                        console.warn(`Failed to create movement record for instance ${instance.instanceCode}`);
+                                    } else {
+                                        console.log(`Created shipping movement for instance ${instance.instanceCode}`);
+                                    }
+                                } catch (movementError) {
+                                    console.error(`Error creating movement for instance ${instance.instanceCode}:`, movementError);
+                                    // Don't fail the whole operation if movement creation fails
+                                }
+                            } else {
+                                console.log(`Instance ${instance.instanceCode} already exists in shipping line, skipping`);
                             }
-                        }
                     } catch (instanceError) {
-                        console.warn(`Error adding instance ${instance.instanceCode} to shipping line:`, instanceError);
-                        // Continue processing other instances even if one fails
+                        console.error(`Error adding instance ${instance.instanceCode} to shipping line:`, instanceError);
+                        errors.push(`Failed to add instance ${instance.instanceCode}: ${instanceError.message}`);
+                        continue;
                     }
-
+    
                     processedInstances.push({
                         instanceCode: instance.instanceCode,
                         sampleCode: sampleCode,
                         shippingLineId: shippingLineId
                     });
-
+    
                 } catch (instanceError) {
-                    console.error(`Error processing instance ${instance.instanceCode}:`, instanceError);
-                    errors.push(`Failed to process instance ${instance.instanceCode}: ${instanceError.message}`);
+                    console.error(`Error processing instance:`, instanceError);
+                    const errorMsg = `Failed to process instance ${instance.instanceCode}: ${instanceError.message}`;
+                    errors.push(errorMsg);
                 }
             }
-
-            // Refresh shipping lines to get updated data
+    
+            // Refresh shipping lines to get updated data with new instances
             try {
                 const linesRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`);
                 if (linesRes.ok) {
                     const lines = await linesRes.json();
-                    setItems(lines.map(l => ({
-                        _id: l._id,
-                        id: l.sampleId,
-                        sampleCode: l.sampleCode,
-                        description: l.description,
-                        lot: l.lot || '',
-                        quantity: l.quantity || 0
-                    })));
+                    console.log('Refreshed shipping lines:', lines);
+                    setItems(lines.map(l => {
+                        // Handle instances - could be array of objects or array of IDs
+                        const instances = l.instances || [];
+                        const instanceCount = Array.isArray(instances) ? instances.length : 0;
+                        console.log(`Line ${l._id}: instances =`, instances, 'count =', instanceCount, 'quantity field =', l.quantity);
+                        return {
+                            _id: l._id,
+                            id: l.sampleId,
+                            sampleCode: l.sampleCode,
+                            description: l.description,
+                            lot: l.lot || '',
+                            quantity: instanceCount > 0 ? instanceCount : (l.quantity || 0),
+                            instances: instances
+                        };
+                    }));
+                    console.log('Refreshed shipping lines with updated quantities');
                 }
             } catch (refreshError) {
                 console.warn('Could not refresh shipping lines:', refreshError);
             }
-
+    
+            console.log('Processing complete. Processed:', processedInstances.length, 'Errors:', errors.length);
+    
             // Show results to user
             if (errors.length > 0) {
-                toast.error(`Some instances failed to process: ${errors.join('; ')}`);
+                console.error('Errors encountered:', errors);
+                toast.error(`Some instances failed: ${errors.slice(0, 2).join('; ')}${errors.length > 2 ? `... and ${errors.length - 2} more` : ''}`);
             }
-
-            if (missingCodes.length > 0) {
-                toast.error(`No instances found for: ${missingCodes.join(', ')}`);
-            }
-
+    
             if (processedInstances.length > 0) {
                 toast.success(`Successfully added ${processedInstances.length} instance${processedInstances.length > 1 ? 's' : ''} to shipment.`);
             }
-
-            // Close modal if all instances were processed successfully
-            if (processedInstances.length === foundInstances.length && missingCodes.length === 0) {
+    
+            // Close modal if all processed successfully
+            if (processedInstances.length === validInstances.length && errors.length === 0) {
                 closeScanModal();
             } else {
                 setScanModalState(prev => ({
                     ...prev,
                     isSubmitting: false,
-                    missingCodes,
-                    statusMessage: missingCodes.length > 0 
-                        ? `Could not find instances: ${missingCodes.join(', ')}`
-                        : errors.length > 0
-                        ? `Some instances failed to process.`
+                    statusMessage: errors.length > 0
+                        ? `Processed ${processedInstances.length} of ${validInstances.length} instances. ${errors.length} failed.`
                         : 'Processing complete.'
                 }));
             }
-
+    
         } catch (error) {
             console.error('Error in handleApplyScannedCodes:', error);
             toast.error(error.message || 'Failed to process scanned instances.');
@@ -587,7 +806,6 @@ export default function ShipmentDetails() {
             }));
         }
     };
-
     const handleChange = (e) => {
         const { name, value } = e.target;
         setLog(prev => ({ ...prev, [name]: value }));
@@ -641,7 +859,7 @@ export default function ShipmentDetails() {
                 estimatedArrivalDate: log.estimatedArrivalDate ? new Date(log.estimatedArrivalDate) : undefined,
                 estDate: log.estimatedArrivalDate ? new Date(log.estimatedArrivalDate) : undefined,
             };
-
+            console.log(payload);
             let res;
             if (id && id !== 'add') {
                 // Update existing
@@ -740,6 +958,8 @@ export default function ShipmentDetails() {
         }
     }
 
+    
+
     return (
         <div className={styles.pageContainer}>
             <h2 className={styles.bHeading}>Shipping Details</h2>
@@ -750,13 +970,15 @@ export default function ShipmentDetails() {
                         <div className={styles.details}>
                             <div className={styles.info} style={{ width: '25%' }}>
                                 <div className={styles.infoDetail}>Project</div>
-                                <select name='projectID' value={log.projectID} onChange={onProjectChange}>
+                                <select name='projectCode' value={log.projectCode || ''} onChange={onProjectChange}>
                                     <option value=''>Select project...</option>
                                     {projectsLoading ? (
                                         <option value='' disabled>Loading...</option>
                                     ) : (
                                         projects.map(p => (
-                                            <option key={p._id} value={p._id}>{p.name || p.projectID}</option>
+                                            <option key={p._id || p.projectID} value={p.projectCode || p.projectID}>
+                                                {p.projectCode || p.projectID || p.name}
+                                            </option>
                                         ))
                                     )}
                                 </select>
@@ -828,7 +1050,8 @@ export default function ShipmentDetails() {
                 </div>
                 <div className={styles.main}>
                     <div className={styles.detailContainer}>
-                        <div className={styles.tableContainer}>
+                    <div className={styles.multiTable}>
+                        <div className={`${styles.tableContainer}  ${selectedRowId ? styles.leftTable : styles.fullTable}`}>
                             <table className={styles.itemsTable}>
                                 <thead>
                                     <tr>
@@ -861,16 +1084,31 @@ export default function ShipmentDetails() {
                                                 />
                                             </td>
                                             <td>
-                                                <input 
-                                                    type="number" 
-                                                    value={item.quantity || ''} 
-                                                    onChange={(e) => handleLineItemChange(item._id || item.id, 'quantity', parseInt(e.target.value) || 0)}
-                                                    className={styles.tableInput}
-                                                />
+                                                {(() => {
+                                                    const instances = item.instances || [];
+                                                    const instanceCount = Array.isArray(instances) ? instances.length : 0;
+                                                    const displayQuantity = instanceCount > 0 ? instanceCount : (item.quantity || 0);
+                                                    return (
+                                                        <input 
+                                                            type="number" 
+                                                            value={displayQuantity} 
+                                                            readOnly
+                                                            className={styles.tableInput}
+                                                            style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+                                                            title="Quantity is automatically calculated from the number of instances"
+                                                        />
+                                                    );
+                                                })()}
                                             </td>
                                             <td>
                                                 <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
                                                     <button
+                                                        className={`${styles.addButton} ${selectedRowId === (item._id || item.id) ? styles.activeButton : ''}`}
+                                                        onClick={() => handleInstanceToggle(item._id || item.id)}
+                                                    >
+                                                        <TfiAlignJustify />
+                                                    </button>
+                                                    {/* <button
                                                         className={styles.addButton}
                                                         onClick={() => openInstanceModal(item)}
                                                         style={{
@@ -883,7 +1121,7 @@ export default function ShipmentDetails() {
                                                         title={(!item.lot || item.lot.trim() === '') ? 'Please enter a lot number first' : 'Open instance modal'}
                                                     >
                                                         <TfiAlignJustify />
-                                                    </button>
+                                                    </button> */}
                                                     {id && id !== 'add' && (
                                                         <button
                                                             className={styles.deleteButton}
@@ -899,6 +1137,39 @@ export default function ShipmentDetails() {
                                 </tbody>
                             </table>
                         </div>
+
+                                    {/* instance talbe for selected row */}
+                        {selectedRowId && (
+                                <div className={styles.rightTable}>
+                                    <table className={styles.itemsTable}>
+                                        <thead>
+                                            <tr>
+                                                <th>Instance ID</th>
+                                                <th>Sample ID</th>
+                                                <th>Lot</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {instanceData.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="3" style={{textAlign:'center',padding:'10px'}}>
+                                                        No instances found for this shipping line
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                instanceData.map((instanceItem, index) => (
+                                                    <tr key={instanceItem.instanceID || index}>
+                                                        <td>{instanceItem.instanceID || '-'}</td>
+                                                        <td>{instanceItem.sampleID || '-'}</td>
+                                                        <td>{instanceItem.lot || '-'}</td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                    </div>
                     </div>
                 </div>
             </WhiteIsland>

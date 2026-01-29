@@ -67,20 +67,8 @@ export default function RecieveLog() {
   const handleSubmit = () => {
     console.log('Search submitted:', inputValue);
   };
-  const HandleAddrecieve = async () => {
-    // Create a minimal receiving then navigate to detail
-    try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ origin: 'Unknown' })
-      });
-      if (!res.ok) throw new Error('Failed to create receiving');
-      const created = await res.json();
-      navigate(`/RecieveLog/RecieveDetails/${created._id}`);
-    } catch (e) {
-      console.error(e);
-    }
+  const HandleAddrecieve = () => {
+    navigate('/RecieveLog/RecieveDetails/add');
   };
 
   const handleRowClick = (row) => {

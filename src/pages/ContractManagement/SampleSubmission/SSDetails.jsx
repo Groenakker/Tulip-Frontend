@@ -7,14 +7,60 @@ import SignatureCanvas from 'react-signature-canvas';
 import toast from '../../../components/Toaster/toast';
 import TestCodeChecklist from '../../../components/modals/TestCodeChecklist';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function SSDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const isEdit = Boolean(id && id !== 'add');
 
     //image modal
     const [viewingImage, setViewingImage] = useState(null);
     const [showTestCodeModal, setShowTestCodeModal] = useState(false);
+
+    // Contact type options - default options + custom values from localStorage
+    const getContactTypeOptions = () => {
+        const defaultOptions = ['Tissue / Bone', 'Blood', 'Skin'];
+        const storedOptions = localStorage.getItem('contactTypeOptions');
+        if (storedOptions) {
+            try {
+                const parsed = JSON.parse(storedOptions);
+                // Merge and remove duplicates
+                return [...new Set([...defaultOptions, ...parsed])];
+            } catch (e) {
+                return defaultOptions;
+            }
+        }
+        return defaultOptions;
+    };
+
+    const [contactTypeOptions, setContactTypeOptions] = useState(getContactTypeOptions());
+    const [showContactTypeDropdown, setShowContactTypeDropdown] = useState(false);
+    const contactTypeInputRef = useRef(null);
+    const contactTypeDropdownRef = useRef(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                contactTypeDropdownRef.current &&
+                !contactTypeDropdownRef.current.contains(event.target) &&
+                contactTypeInputRef.current &&
+                !contactTypeInputRef.current.contains(event.target)
+            ) {
+                setShowContactTypeDropdown(false);
+            }
+        };
+
+        if (showContactTypeDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showContactTypeDropdown]);
 
     const sigCanvas = useRef({});
     const [signatureData, setSignatureData] = useState({
@@ -46,20 +92,27 @@ export default function SSDetail() {
         setTests(prev => prev.filter(t => t.id !== testId));
     };
 
+    // Partners and Projects state
+    const [partners, setPartners] = useState([]);
+    const [projects, setProjects] = useState([]);
+    const [filteredProjects, setFilteredProjects] = useState([]);
+
     //Sample info data
     const [sample, setSample] = useState({
-        SAPid: '',
-        bPartnerCode: '', // Add bPartnerCode field
-        projectId: '',
+        company_id: user?.companyId || '',
+        bPartnerCode: '',
+        bPartnerID: '',
+        projectID: '',
         projectName: '',
-        formStatus: '',
-        client: '',
+        status: '',
+        bPartnerName: '',
         address: '',
-        sponsor: '',
+        contactName: '',
         email: '',
         phone: '',
         image: null,
-        sampleId: '',
+        sampleCode: '',
+        name: '',
         sampleDescription: '',
         intendedUse: '',
         partNumber: '',
@@ -90,7 +143,20 @@ export default function SSDetail() {
         sampleImages: {
             general: null,
             labeling: null
-        }
+        },
+        
+        // Additional fields from schema
+        SAPid: '',
+        poNumber: '',
+        poDate: '',
+        quoteNumber: '',
+        salesOrderNumber: '',
+        signatureImage: '',
+        startDate: '',
+        endDate: '',
+        actDate: '',
+        estDate: '',
+        commitDate: ''
     });
 
 
@@ -127,36 +193,158 @@ export default function SSDetail() {
         setSample(prev => ({ ...prev, [name]: value }));
     };
 
+    // Handle partner code change
+    const handlePartnerChange = async (e) => {
+        const selectedCode = e.target.value;
+        const selectedPartner = partners.find(p => p.partnerNumber === selectedCode);
+        
+        setSample(prev => ({
+            ...prev,
+            bPartnerCode: selectedCode,
+            bPartnerID: selectedPartner ? selectedPartner._id : '',
+            bPartnerName: selectedPartner ? selectedPartner.name : '',
+            // Clear project when partner changes
+            projectID: '',
+            projectName: ''
+        }));
+    };
+
+    // Handle project change
+    const handleProjectChange = async (e) => {
+        const selectedProjectId = e.target.value;
+        const selectedProject = filteredProjects.find(p => 
+            p._id === selectedProjectId || 
+            p.projectID === selectedProjectId ||
+            p.projectCode === selectedProjectId
+        );
+        
+        if (selectedProject) {
+            // Fetch partner details if bPartnerID exists
+            let partnerData = null;
+            if (selectedProject.bPartnerID) {
+                try {
+                    const partnerRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${selectedProject.bPartnerID}`);
+                    if (partnerRes.ok) {
+                        partnerData = await partnerRes.json();
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch partner:', err);
+                }
+            }
+            
+            // Build address from partner data
+            let address = '';
+            if (partnerData) {
+                const addrParts = [
+                    partnerData.address1,
+                    partnerData.address2,
+                    partnerData.city,
+                    partnerData.state,
+                    partnerData.zip,
+                    partnerData.country
+                ].filter(Boolean);
+                address = addrParts.join(', ');
+            }
+            
+            // Get contact/sponsor from project or partner
+            let sponsor = '';
+            if (selectedProject.contact) {
+                sponsor = selectedProject.contact;
+            } else if (partnerData?.contacts && partnerData.contacts.length > 0) {
+                sponsor = partnerData.contacts[0].name || partnerData.contacts[0].email || '';
+            }
+            
+            setSample(prev => ({
+                ...prev,
+                projectID: selectedProject._id || selectedProject.projectID || selectedProject.projectCode || '',
+                projectName: selectedProject.description || selectedProject.name || '',
+                bPartnerCode: selectedProject.bPartnerCode || (partnerData ? partnerData.partnerNumber : prev.bPartnerCode),
+                bPartnerID: selectedProject.bPartnerID || (partnerData ? partnerData._id : prev.bPartnerID),
+                bPartnerName: partnerData ? partnerData.name : prev.bPartnerName,
+                address: address || prev.address,
+                email: partnerData ? (partnerData.email || prev.email) : prev.email,
+                phone: partnerData ? (partnerData.phone || prev.phone) : prev.phone,
+                contactName: sponsor || prev.contactName
+            }));
+        } else {
+            setSample(prev => ({
+                ...prev,
+                projectID: selectedProjectId,
+                projectName: ''
+            }));
+        }
+    };
+
+    // Handle contact type change
+    const handleContactTypeChange = (e) => {
+        const value = e.target.value;
+        setSample(prev => ({ ...prev, contactType: value }));
+        setShowContactTypeDropdown(false);
+    };
+
+    // Handle contact type input change
+    const handleContactTypeInputChange = (e) => {
+        const value = e.target.value;
+        setSample(prev => ({ ...prev, contactType: value }));
+        setShowContactTypeDropdown(true);
+    };
+
+    // Filter options based on input
+    const filteredContactTypeOptions = contactTypeOptions.filter(option =>
+        option.toLowerCase().includes((sample.contactType || '').toLowerCase())
+    );
+
     const handleSave = async () => {
         try {
+            // If contactType has a custom value not in options, add it to options
+            if (sample.contactType && !contactTypeOptions.includes(sample.contactType)) {
+                const updatedOptions = [...contactTypeOptions, sample.contactType];
+                setContactTypeOptions(updatedOptions);
+                // Store in localStorage for persistence
+                const customOptions = updatedOptions.filter(opt => 
+                    !['Tissue / Bone', 'Blood', 'Skin'].includes(opt)
+                );
+                localStorage.setItem('contactTypeOptions', JSON.stringify(customOptions));
+            }
+
             const payload = {
                 ...sample,
-                status: sample.formStatus || 'Draft',
+                company_id: sample.company_id || user?.companyId || '',
+                status: sample.status || 'Draft',
                 description: sample.sampleDescription,
-                formData: sample,
+                name: sample.name || sample.sampleDescription || '',
+                signatureImage: sample.signatureImage || signatureData.signature || '',
                 requestedTests: tests.filter(t => t.grkCode || t.description), // Only save tests with data
                 testMetadata: testMetadata
             };
             
-            const url = id === 'add' 
-                ? `${import.meta.env.VITE_BACKEND_URL}/api/samples`
-                : `${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}`;
-            const method = id === 'add' ? 'POST' : 'PUT';
-            
-            const res = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            
-            if (!res.ok) throw new Error('Failed to save');
-            
-            const saved = await res.json();
-            toast.success('Sample saved!');
-            
-            // If it was a new sample, navigate to the saved sample's ID
-            if (id === 'add' && saved._id) {
-                navigate(`/SampleSubmission/SSDetail/${saved._id}`, { replace: true });
+            if (isEdit) {
+                // Update existing sample (PUT)
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!res.ok) throw new Error('Failed to save');
+                toast.success('Sample saved!');
+            } else {
+                // Create new sample (POST)
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!res.ok) throw new Error('Failed to save');
+                
+                const saved = await res.json();
+                toast.success('Sample saved!');
+                
+                // Navigate to the saved sample's ID
+                if (saved._id) {
+                    navigate(`/SampleSubmission/SSDetail/${saved._id}`, { replace: true });
+                }
             }
         } catch (e) {
             console.error('Error saving sample:', e);
@@ -197,6 +385,60 @@ export default function SSDetail() {
         element.style.height = `${element.scrollHeight}px`;
     };
 
+    // Fetch partners for user's company
+    useEffect(() => {
+        const fetchPartners = async () => {
+            if (!user?.companyId) return;
+            try {
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners?companyId=${user.companyId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setPartners(data);
+                }
+            } catch (err) {
+                console.error('Failed to fetch partners:', err);
+            }
+        };
+        fetchPartners();
+    }, [user?.companyId]);
+
+    // Fetch projects for user's company
+    useEffect(() => {
+        const fetchProjects = async () => {
+            if (!user?.companyId) return;
+            try {
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects?companyId=${user.companyId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setProjects(data);
+                    setFilteredProjects(data); // Initially show all projects
+                }
+            } catch (err) {
+                console.error('Failed to fetch projects:', err);
+            }
+        };
+        fetchProjects();
+    }, [user?.companyId]);
+
+    // Filter projects based on selected partner
+    useEffect(() => {
+        if (sample.bPartnerCode) {
+            const selectedPartner = partners.find(p => p.partnerNumber === sample.bPartnerCode);
+            if (selectedPartner) {
+                const filtered = projects.filter(p => 
+                    p.bPartnerID === selectedPartner._id || 
+                    p.bPartnerCode === selectedPartner.partnerNumber
+                );
+                setFilteredProjects(filtered);
+            } else {
+                setFilteredProjects([]);
+            }
+        } else {
+            // Show all projects when partner is empty
+            setFilteredProjects(projects);
+        }
+    }, [sample.bPartnerCode, partners, projects]);
+
     // Load data and trigger textarea height adjustment
     useEffect(() => {
         const load = async () => {
@@ -213,38 +455,74 @@ export default function SSDetail() {
                             ...data,
                             ...formData,
                             // Override with formData values if they exist
-                            SAPid: formData.SAPid || data.SAPid || '',
+                            company_id: formData.company_id || data.company_id || data.companyId || user?.companyId || '',
                             bPartnerCode: formData.bPartnerCode || data.bPartnerCode || '',
-                            projectId: formData.projectId || data.projectID || formData.projectID || '',
-                            formStatus: data.status || formData.formStatus || 'Draft',
+                            bPartnerID: formData.bPartnerID || data.bPartnerID || '',
+                            projectID: formData.projectID || data.projectID || '',
+                            status: data.status || formData.status || 'Draft',
+                            bPartnerName: formData.bPartnerName || data.bPartnerName || '',
+                            sampleCode: formData.sampleCode || data.sampleCode || '',
+                            name: formData.name || data.name || '',
                             sampleDescription: data.description || formData.sampleDescription || '',
                             image: data.image || formData.image || null,
-                            sampleImages: formData.sampleImages || data.sampleImages || { general: null, labeling: null }
+                            sampleImages: formData.sampleImages || data.sampleImages || { general: null, labeling: null },
+                            SAPid: formData.SAPid || data.SAPid || '',
+                            poNumber: formData.poNumber || data.poNumber || '',
+                            poDate: formData.poDate || data.poDate || '',
+                            quoteNumber: formData.quoteNumber || data.quoteNumber || '',
+                            salesOrderNumber: formData.salesOrderNumber || data.salesOrderNumber || '',
+                            signatureImage: formData.signatureImage || data.signatureImage || '',
+                            startDate: formData.startDate || data.startDate || '',
+                            endDate: formData.endDate || data.endDate || '',
+                            actDate: formData.actDate || data.actDate || '',
+                            estDate: formData.estDate || data.estDate || '',
+                            commitDate: formData.commitDate || data.commitDate || ''
                         };
+                        
+                        // Load contact type options and add loaded contactType if it's custom
+                        const loadedContactType = mergedData.contactType || '';
+                        if (loadedContactType) {
+                            const currentOptions = getContactTypeOptions();
+                            if (!currentOptions.includes(loadedContactType)) {
+                                const updatedOptions = [...currentOptions, loadedContactType];
+                                setContactTypeOptions(updatedOptions);
+                                // Store in localStorage
+                                const customOptions = updatedOptions.filter(opt => 
+                                    !['Tissue / Bone', 'Blood', 'Skin'].includes(opt)
+                                );
+                                localStorage.setItem('contactTypeOptions', JSON.stringify(customOptions));
+                            } else {
+                                setContactTypeOptions(currentOptions);
+                            }
+                        } else {
+                            setContactTypeOptions(getContactTypeOptions());
+                        }
                         
                         // Set sample state with defaults for missing fields
                         setSample(prev => ({
-                            SAPid: '',
+                            company_id: user?.companyId || '',
                             bPartnerCode: '',
-                            projectId: '',
+                            bPartnerID: '',
+                            projectID: '',
                             projectName: '',
-                            formStatus: 'Draft',
-                            client: '',
+                            status: 'Draft',
+                            bPartnerName: '',
                             address: '',
-                            sponsor: '',
+                            contactName: '',
                             email: '',
                             phone: '',
                             image: null,
-                            sampleId: '',
+                            sampleCode: '',
+                            name: '',
                             sampleDescription: '',
                             intendedUse: '',
                             partNumber: '',
-                            lotNumber: '',
+                            lotNumber: '', 
                             devicesUsed: '1',
                             countryOrigin: '',
                             sampleMass: '',
                             surfaceArea: '',
-                            contactType: '',
+                            contactType: loadedContactType || '',
                             contactDuration: '',
                             manufacturer: '',
                             desiredMarkets: 'U',
@@ -265,6 +543,17 @@ export default function SSDetail() {
                                 general: null,
                                 labeling: null
                             },
+                            SAPid: '',
+                            poNumber: '',
+                            poDate: '',
+                            quoteNumber: '',
+                            salesOrderNumber: '',
+                            signatureImage: '',
+                            startDate: '',
+                            endDate: '',
+                            actDate: '',
+                            estDate: '',
+                            commitDate: '',
                             ...mergedData
                         }));
                         
@@ -298,18 +587,19 @@ export default function SSDetail() {
                 } else if (id === 'add') {
                     // Reset to empty state for new sample
                     setSample({
-                        SAPid: '',
+                        company_id: user?.companyId || '',
                         bPartnerCode: '',
-                        projectId: '',
+                        bPartnerID: '',
+                        projectID: '',
                         projectName: '',
-                        formStatus: 'Draft',
-                        client: '',
+                        status: 'Draft',
+                        bPartnerName: '',
                         address: '',
-                        sponsor: '',
+                        contactName: '',
                         email: '',
                         phone: '',
                         image: null,
-                        sampleId: '',
+                        sampleCode: '',
                         sampleDescription: '',
                         intendedUse: '',
                         partNumber: '',
@@ -407,6 +697,7 @@ export default function SSDetail() {
     const clearSignature = () => {
         sigCanvas.current.clear();
         setSignatureData({ signature: null });
+        setSample(prev => ({ ...prev, signatureImage: '' }));
     }
 
     //saving signature
@@ -417,6 +708,7 @@ export default function SSDetail() {
         }
         const dataURL = sigCanvas.current.toDataURL('image/png');
         setSignatureData({ signature: dataURL });
+        setSample(prev => ({ ...prev, signatureImage: dataURL }));
         toast.success("Signature saved!");
     }
     const handleSignatureInfoChange = (e) => {
@@ -447,21 +739,41 @@ export default function SSDetail() {
                         <div className={styles.detailContainer}>
                             {/* Details for Client Info  */}
                             <div className={styles.details}>
-                                <div className={styles.info} style={{ width: '25%' }}>
-                                    <div className={styles.infoDetail}>SAP Partner ID</div>
-                                    <input name="SAPid" value={sample.SAPid} onChange={handleChange} />
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Partner Code <span style={{ color: "red" }}>*</span></div>
+                                    <select 
+                                        className={styles.dropdown}
+                                        name="bPartnerCode" 
+                                        value={sample.bPartnerCode} 
+                                        onChange={handlePartnerChange}
+                                    >
+                                        <option value="">Select Partner</option>
+                                        {partners.map(partner => (
+                                            <option key={partner._id} value={partner.partnerNumber}>
+                                                {partner.partnerNumber} - {partner.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
-                                <div className={styles.info} style={{ width: '25%' }}>
-                                    <div className={styles.infoDetail}>Partner Code</div>
-                                    <input name="bPartnerCode" value={sample.bPartnerCode} onChange={handleChange} />
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Project <span style={{ color: "red" }}>*</span></div>
+                                    <select 
+                                        className={styles.dropdown}
+                                        name="projectID" 
+                                        value={sample.projectID} 
+                                        onChange={handleProjectChange}
+                                    >
+                                        <option value="">Select Project</option>
+                                        {filteredProjects.map(project => (
+                                            <option key={project._id} value={project._id || project.projectID || project.projectCode}>
+                                                {project.projectID || project.projectCode} - {project.description || project.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
-                                <div className={styles.info} style={{ width: '25%' }}>
-                                    <div className={styles.infoDetail}>Project</div>
-                                    <input name="projectId" value={sample.projectId} onChange={handleChange} />
-                                </div>
-                                <div className={styles.info} style={{ width: '25%' }}>
+                                <div className={styles.info} style={{ width: '33%' }}>
                                     <div className={styles.infoDetail}>Form Status</div>
-                                    <select className={styles.dropdown} name="formStatus" value={sample.formStatus} onChange={handleChange}>
+                                    <select className={styles.dropdown} name="status" value={sample.status} onChange={handleChange}>
                                         <option value="Draft">Draft</option>
                                         <option value="Submitted">Submitted</option>
                                         <option value="Accepted">Accepted</option>
@@ -522,7 +834,7 @@ export default function SSDetail() {
 
                 {/* WhiteIsland for sample information 2 */}
                 <WhiteIsland className={styles.bigIsland}>
-                    <h3>Sample Information for : {sample.sampleCode || sample.sampleId || '(unsaved)'}</h3>
+                    <h3>Sample Information for : {sample.sampleCode || '(unsaved)'}</h3>
                     <div className={styles.main}>
                         <div className={styles.detailContainer}>
                             {/* details for Sample Info  */}
@@ -573,11 +885,46 @@ export default function SSDetail() {
                             <div className={styles.details}>
                                 <div className={styles.info} style={{ width: '20%' }}>
                                     <div className={styles.infoDetail}>Type of Contact</div>
-                                    <select className={styles.dropdown} name="contactType" value={sample.contactType} onChange={handleChange}>
-                                        <option value="Tissue / Bone">Tissue / Bone</option>
-                                        <option value="Blood">Blood</option>
-                                        <option value="Skin">Skin</option>
-                                    </select>
+                                    <div className={styles.customDropdownContainer}>
+                                        <input
+                                            ref={contactTypeInputRef}
+                                            type="text"
+                                            className={styles.dropdown}
+                                            name="contactType"
+                                            value={sample.contactType}
+                                            onChange={handleContactTypeInputChange}
+                                            onFocus={() => setShowContactTypeDropdown(true)}
+                                            placeholder="Select or type custom value"
+                                            style={{
+                                                backgroundColor: '#ffffff',
+                                                background: '#ffffff',
+                                                color: '#000000',
+                                                WebkitAppearance: 'none',
+                                                MozAppearance: 'none',
+                                                appearance: 'none'
+                                            }}
+                                        />
+                                        {showContactTypeDropdown && filteredContactTypeOptions.length > 0 && (
+                                            <div 
+                                                ref={contactTypeDropdownRef}
+                                                className={styles.customDropdownList}
+                                            >
+                                                {filteredContactTypeOptions.map((option, index) => (
+                                                    <button
+                                                        key={index}
+                                                        type="button"
+                                                        className={styles.customDropdownOption}
+                                                        onClick={() => {
+                                                            setSample(prev => ({ ...prev, contactType: option }));
+                                                            setShowContactTypeDropdown(false);
+                                                        }}
+                                                    >
+                                                        {option}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className={styles.info} style={{ width: '20%' }}>
                                     <div className={styles.infoDetail}>Duration of Contact</div>
@@ -932,7 +1279,7 @@ export default function SSDetail() {
                                             <tr key={test.id}>
                                                 <td>{test.grkCode}</td>
                                                 <td>{test.description}</td>
-                                                <td className={styles.centerAlign}>
+                                                <td className={styles.centerAlign} style={{ textAlign: 'left' }}>
                                                     <input 
                                                         type="text" 
                                                         value={test.samplesSubmitted}
@@ -1066,7 +1413,7 @@ export default function SSDetail() {
                             <div className={styles.approvalRow}>
                                 <div className={styles.approvalLabel}>Groenakker Acceptance: </div>
                                 <div className={styles.approvalName}>
-                                    <input className={styles.mainText} defaultValue="Michael R Groendyk" />
+                                    <input className={styles.mainText} defaultValue='' />
                                     <div className={styles.subText}>Name</div>
                                 </div>
                                 <div className={styles.approvalSignature}>

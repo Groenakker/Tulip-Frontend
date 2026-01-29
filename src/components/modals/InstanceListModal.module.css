@@ -26,6 +26,45 @@
     margin-bottom: 20px;
 }
 
+.assignToAllContainer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.assignToAllLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2d3748;
+    white-space: nowrap;
+}
+
+.assignToAllSelect {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 13px;
+    background-color: white;
+    cursor: pointer;
+    min-width: 200px;
+    font-weight: 500;
+}
+
+.assignToAllSelect:hover {
+    border-color: #4570b6;
+}
+
+.assignToAllSelect:focus {
+    outline: none;
+    border-color: #4570b6;
+    box-shadow: 0 0 0 2px rgba(69, 112, 182, 0.2);
+}
+
 .tableContainer {
     margin-bottom: 20px;
 }
@@ -42,6 +81,41 @@
     text-align: left;
     padding: 10px 12px;
     font-weight: 600;
+}
+
+.warehouseHeader {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+.headerWarehouseSelect {
+    padding: 4px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    font-size: 11px;
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+    cursor: pointer;
+    min-width: 140px;
+    font-weight: 500;
+}
+
+.headerWarehouseSelect:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.headerWarehouseSelect:focus {
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.headerWarehouseSelect option {
+    background-color: #2d3748;
+    color: white;
 }
 
 .instanceTable td {
@@ -121,7 +195,8 @@
 
 .buttonGroup {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
+    gap: 10px;
     padding-top: 15px;
     border-top: 1px solid #e0e0e0;
 }
@@ -141,6 +216,48 @@
 
 .addButton:hover {
     background-color: #013179;
+}
+
+.saveBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #059669;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 16px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.saveBtn:hover:not(:disabled) {
+    background-color: #047857;
+}
+
+.saveBtn:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.warehouseSelect {
+    padding: 6px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 13px;
+    background-color: white;
+    cursor: pointer;
+    min-width: 150px;
+}
+
+.warehouseSelect:hover {
+    border-color: #9ca3af;
+}
+
+.warehouseSelect:focus {
+    outline: none;
+    border-color: #4570b6;
+    box-shadow: 0 0 0 2px rgba(69, 112, 182, 0.2);
 }
 
 .closeBtn {

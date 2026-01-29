@@ -3,13 +3,12 @@ import WhiteIsland from "../../../components/Whiteisland";
 import styles from "./ProjectDetails.module.css";
 import TabbedTable from "../../../components/TabbedTable";
 import { FaSave, FaTrash, FaImage } from "react-icons/fa";
-
-import { useLocation, useParams } from "react-router-dom";
-
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import toast from "../../../components/Toaster/toast";
 
 export default function ProjectDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const location = useLocation();
   const prefillProject = location?.state?.prefillProject;
   const [project, setProject] = useState({
@@ -19,16 +18,16 @@ export default function ProjectDetails() {
     name: "",
     contact: "",
     description: "",
-    startDate: "",
-    endDate: "",
-    status: "",
-    actDate: "",
-    estDate: "",
-    poNumber: "",
-    poDate: "",
-    commitDate: "",
-    quoteNumber: "",
-    salesOrderNumber: "",
+    startDate: null,
+    endDate: null,
+    status: null,
+    actDate: null,
+    estDate: null,
+    poNumber: null,
+    poDate: null,
+    commitDate: null,
+    quoteNumber: null,
+    salesOrderNumber: null,
     image: null,
   });
   const isEdit = Boolean(id);
@@ -151,15 +150,15 @@ export default function ProjectDetails() {
     "contact",
     "status",
     "description",
-    "poNumber",
-    "quoteNumber",
-    "salesOrderNumber",
-    "startDate",
-    "endDate",
-    "estDate",
-    "commitDate",
-    "poDate",
-    "actDate",
+    // "poNumber",
+    // "quoteNumber",
+    // "salesOrderNumber",
+    // "startDate",
+    // "endDate",
+    // "estDate",
+    // "commitDate",
+    // "poDate",
+    // "actDate",
   ];
 
   const isFormComplete = requiredFields.every((key) => {
@@ -195,15 +194,29 @@ export default function ProjectDetails() {
       }
     } else {
       // Create new project
-      await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(project),
-      });
-      console.log("New project created successfully");
-      toast.success("Project created successfully");
+      try {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(project),
+        });
+        
+        if (!response.ok) throw new Error("Failed to create project");
+        
+        const data = await response.json();
+        console.log("New project created successfully");
+        toast.success("Project created successfully");
+        
+        // Navigate to the new project's detail page
+        if (data._id) {
+          navigate(`/Projects/ProjectDetails/${data._id}`);
+        }
+      } catch (error) {
+        console.error("Error creating project:", error);
+        toast.error("Failed to create project");
+      }
     }
   };
   const handleDelete = () => {
@@ -236,10 +249,11 @@ export default function ProjectDetails() {
             <div className={styles.main}>
               <div className={styles.picture}>
                 <img
-                  src={project.image ? project.image : "/ProjectLogo.JPG"}
+                  src={project.image ? project.image : "https://www.svgrepo.com/show/508699/landscape-placeholder.svg"}
                   width={128}
                   height={128}
                   alt="Project"
+                  style={{ objectFit: "cover" }}
                 />
                 <label className={styles.uploadButton}>
                   <FaImage /> Upload
@@ -254,7 +268,7 @@ export default function ProjectDetails() {
               <div className={styles.detailContainer}>
                 <div className={styles.details}>
                   <div className={styles.info} style={{ width: "15%" }}>
-                    <div className={styles.infoDetail}>SAP Project ID</div>{" "}
+                    <div className={styles.infoDetail}>SAP Project ID <span style={{ color: "red" }}>*</span></div>{" "}
                     <input
                       name="projectID"
                       value={project.projectID}
@@ -262,7 +276,7 @@ export default function ProjectDetails() {
                     ></input>
                   </div>
                   <div className={styles.info} style={{ width: "15%" }}>
-                    <div className={styles.infoDetail}>SAP Partner Code</div>{" "}
+                    <div className={styles.infoDetail}>SAP Partner Code <span style={{ color: "red" }}>*</span></div>{" "}
                     <select
                       name="bPartnerCode"
                       value={project.bPartnerCode}
@@ -295,7 +309,7 @@ export default function ProjectDetails() {
                     </select>
                   </div>
                   <div className={styles.info} style={{ width: "55%" }}>
-                    <div className={styles.infoDetail}>Name</div>{" "}
+                    <div className={styles.infoDetail}>Name <span style={{ color: "red" }}>*</span></div>{" "}
                     <input
                       name="name"
                       value={project.name}
@@ -304,7 +318,7 @@ export default function ProjectDetails() {
                     ></input>
                   </div>
                   <div className={styles.info} style={{ width: "15%" }}>
-                    <div className={styles.infoDetail}>Sponsor</div>{" "}
+                    <div className={styles.infoDetail}>Sponsor <span style={{ color: "red" }}>*</span></div>{" "}
                     <select
                       name="contact"
                       value={project.contact}
@@ -339,7 +353,7 @@ export default function ProjectDetails() {
                     </select>
                   </div>
                   <div className={styles.info} style={{ width: "15%" }}>
-                    <div className={styles.infoDetail}>Status</div>{" "}
+                    <div className={styles.infoDetail}>Status <span style={{ color: "red" }}>*</span></div>{" "}
                     <select
                       name="status"
                       value={project.status}
@@ -355,7 +369,7 @@ export default function ProjectDetails() {
                 </div>
                 <div className={styles.details2}>
                   <div className={styles.info2} style={{ width: "100%" }}>
-                    <div className={styles.infoDetail}>Description</div>{" "}
+                    <div className={styles.infoDetail}>Description <span style={{ color: "red" }}>*</span></div>{" "}
                     <input
                       name="description"
                       value={project.description}
