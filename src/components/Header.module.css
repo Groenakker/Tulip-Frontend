@@ -24,7 +24,122 @@
     color: #374151;
 }
 
+.notificationWrapper {
+    position: relative;
+}
+
+.notificationButton {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border: none;
+    background: transparent;
+    color: #1f2937;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 1.5rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.notificationButton:hover {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+.badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #dc2626;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 600;
+    border-radius: 50%;
+    line-height: 1;
+}
+
+.notificationCard {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 320px;
+    max-height: 400px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    z-index: 100;
+}
+
+.notificationCardHeader {
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #1f2937;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.notificationList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 340px;
+    overflow-y: auto;
+}
+
+.notificationItem {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.15s ease;
+}
+
+.notificationItem:last-child {
+    border-bottom: none;
+}
+
+.notificationItem:hover {
+    background-color: #f9fafb;
+}
+
+.notificationItemUnseen {
+    background-color: #eff6ff;
+}
+
+.notificationItemUnseen:hover {
+    background-color: #dbeafe;
+}
+
+.notificationMessage {
+    margin: 0 0 4px 0;
+    font-size: 0.875rem;
+    color: #374151;
+    line-height: 1.4;
+}
+
+.notificationTime {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.notificationEmpty {
+    padding: 24px 16px;
+    text-align: center;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
 .title {
+    flex: 1;
     color: #1f2937;
     margin: 0;
 }
