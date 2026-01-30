@@ -37,6 +37,7 @@ import Settings from "./pages/SettingsPage/Settings";
 import Unauthorized from "./pages/Unauthorized";
 import DocumentList from "./pages/DocumentManagement/DocumentList";
 import DocumentDetails from "./pages/DocumentManagement/DocumentDetails";
+import DocumentCreate from "./pages/DocumentManagement/DocumentCreate";
 import StakeholderApproval from "./pages/StakeholderApproval/StakeholderApproval";
 // import Projects from './pages/Projects';
 // import ShippingLog from './pages/ShippingLog';
@@ -292,7 +293,7 @@ function AppContent() {
             path="/DocumentManagement/DocumentDetails/add" 
             element={
               <ProtectedRoute module="Document Management">
-                <DocumentDetails />
+                <DocumentCreate />
               </ProtectedRoute>
             } 
           />
