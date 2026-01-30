@@ -20,10 +20,12 @@ export default function DocumentDetails() {
     description: "",
     category: "",
     currentVersion: "v1.0",
-    file: null,
     fileName: "",
+    fileUrl: "",
   });
 
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
   const [selectedVersion, setSelectedVersion] = useState(null);
 
@@ -36,93 +38,67 @@ export default function DocumentDetails() {
     { step: 5, label: "Published", value: "Published", description: "Document is published" },
   ];
 
-  // Sample versions data with stakeholders and reviews
-  const [versions, setVersions] = useState([
-    {
-      id: 1,
-      version: "v2.0",
-      date: "2024-01-20",
-      author: "John Doe",
-      changes: "Updated procedures for warehouse management",
-      status: "Published",
-      file: null,
-      fileName: "SOP_Warehouse_v2.pdf",
-      stakeholders: [
-        {
-          id: 1,
-          name: "Sarah Chen",
-          email: "sarah.chen@example.com",
-          role: "REVIEWER",
-          status: "Approved",
-          avatar: "https://i.pravatar.cc/40?img=1",
-        },
-        {
-          id: 2,
-          name: "Marcus Miller",
-          email: "marcus.miller@example.com",
-          role: "APPROVER",
-          status: "Approved",
-          avatar: "https://i.pravatar.cc/40?img=2",
-        },
-      ],
-      reviews: [
-        {
-          id: 1,
-          reviewer: "Sarah Chen",
-          date: "2024-01-18",
-          comment: "Looks good, approved for publication",
-          status: "Approved",
-        },
-        {
-          id: 2,
-          reviewer: "Marcus Miller",
-          date: "2024-01-19",
-          comment: "Final approval granted",
-          status: "Approved",
-        },
-      ],
-    },
-    {
-      id: 2,
-      version: "v1.0",
-      date: "2023-12-15",
-      author: "Jane Smith",
-      changes: "Initial document creation",
-      status: "Creation",
-      file: null,
-      fileName: "SOP_Warehouse_v1.pdf",
-      stakeholders: [
-        {
-          id: 3,
-          name: "John Doe",
-          email: "john.doe@example.com",
-          role: "REVIEWER",
-          status: "Pending",
-          avatar: "https://i.pravatar.cc/40?img=3",
-        },
-      ],
-      reviews: [],
-    },
-  ]);
+  const [versions, setVersions] = useState([]);
 
   useEffect(() => {
-    // TODO: Fetch document data from API
-    // fetch(`${import.meta.env.VITE_BACKEND_URL}/api/documents/${id}`)
-    //   .then((res) => res.json())
-    //   .then((data) => setDocument(data))
-    //   .catch((error) => console.error("Error fetching document:", error));
-
-    // Sample data for now
-    setDocument({
-      documentID: "DOC-2024-001",
-      name: "Standard Operating Procedure - Warehouse",
-      status: "Published",
-      description: "Guidelines for handling constituent materials in the main warehouse area.",
-      category: "Logistics",
-      currentVersion: "v2.0",
-      file: null,
-      fileName: "SOP_Warehouse_v2.pdf",
-    });
+    if (!id || id === "add") return;
+    let cancelled = false;
+    setLoading(true);
+    setFetchError(null);
+    fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/documents/${id}?include=versions,reviews`,
+      { credentials: "include" }
+    )
+      .then((res) => {
+        if (!res.ok) {
+          if (res.status === 404) throw new Error("Document not found");
+          if (res.status === 403) throw new Error("Access denied");
+          throw new Error("Failed to load document");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setDocument({
+          documentID: data.documentID ?? "",
+          name: data.name ?? "",
+          status: data.status ?? "Creation",
+          description: data.description ?? "",
+          category: data.category ?? "",
+          currentVersion: data.currentVersion ?? "v1.0",
+          fileName: data.fileName ?? "",
+          fileUrl: data.fileUrl ?? "",
+        });
+        const versionList = Array.isArray(data.versions) ? data.versions : [];
+        setVersions(
+          versionList.map((v) => ({
+            id: v.id ?? v._id,
+            version: v.version,
+            date: v.date ? (typeof v.date === "string" ? v.date.split("T")[0] : v.date) : "",
+            author: v.author ?? "",
+            changes: v.changes ?? "",
+            status: v.status ?? "Creation",
+            fileName: v.fileName ?? "",
+            fileUrl: v.fileUrl,
+            stakeholders: (v.stakeholders || []).map((s, i) => ({
+              id: s._id ?? i,
+              name: s.name,
+              email: s.email,
+              role: s.role,
+              status: s.status ?? "Pending",
+              avatar: s.avatar || `https://i.pravatar.cc/40?img=${i + 1}`,
+            })),
+            reviews: [],
+          }))
+        );
+      })
+      .catch((err) => {
+        if (!cancelled) setFetchError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
   }, [id]);
 
   const getCurrentStageIndex = () => {
@@ -130,18 +106,22 @@ export default function DocumentDetails() {
   };
 
   const handleDelete = async () => {
-    if (window.confirm("Are you sure you want to delete this document?")) {
-      try {
-        // TODO: Delete document
-        // await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/documents/${id}`, {
-        //   method: "DELETE",
-        // });
-        toast.success("Document deleted successfully");
-        navigate("/DocumentManagement");
-      } catch (error) {
-        console.error("Error deleting document:", error);
-        toast.error("Failed to delete document");
+    if (!id || id === "add") return;
+    if (!window.confirm("Are you sure you want to delete this document?")) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/documents/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || "Failed to delete document");
       }
+      toast.success("Document deleted successfully");
+      navigate("/DocumentManagement");
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      toast.error(error.message || "Failed to delete document");
     }
   };
 
@@ -171,7 +151,7 @@ export default function DocumentDetails() {
   const handleVersionDelete = (versionId) => {
     const version = versions.find(v => v.id === versionId);
     const hasApprovedStakeholder = version?.stakeholders?.some(s => s.status === "Approved");
-    
+
     if (hasApprovedStakeholder) {
       toast.error("Cannot delete version with approved stakeholders");
       return;
@@ -188,6 +168,52 @@ export default function DocumentDetails() {
   };
 
   const currentStageIndex = getCurrentStageIndex();
+
+  if (loading) {
+    return (
+      <>
+        <Header title="Document Management" />
+        <div className={styles.detailPage}>
+          <div className={styles.mainContent}>
+            <WhiteIsland>
+              <p style={{ textAlign: "center", padding: "24px", color: "#6b7280" }}>Loading document…</p>
+            </WhiteIsland>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <>
+        <Header title="Document Management" />
+        <div className={styles.detailPage}>
+          <div className={styles.mainContent}>
+            <WhiteIsland>
+              <p style={{ textAlign: "center", padding: "24px", color: "#dc2626" }}>{fetchError}</p>
+              <div style={{ textAlign: "center", marginTop: "12px" }}>
+                <button
+                  type="button"
+                  onClick={() => navigate("/DocumentManagement")}
+                  style={{
+                    padding: "8px 16px",
+                    background: "rgb(69 112 182)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Back to list
+                </button>
+              </div>
+            </WhiteIsland>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -209,34 +235,29 @@ export default function DocumentDetails() {
                   >
                     <div className={styles.stageIndicator}>
                       <div
-                        className={`${styles.stageCircle} ${
-                          isCompleted ? styles.completedCircle : ""
-                        } ${isActive ? styles.activeCircle : ""} ${
-                          isFuture ? styles.futureCircle : ""
-                        }`}
+                        className={`${styles.stageCircle} ${isCompleted ? styles.completedCircle : ""
+                          } ${isActive ? styles.activeCircle : ""} ${isFuture ? styles.futureCircle : ""
+                          }`}
                       >
                         <div className={styles.innerDot}></div>
                       </div>
                       {index < lifecycleStages.length - 1 && (
                         <div
-                          className={`${styles.connector} ${
-                            isCompleted || isActive ? styles.activeConnector : ""
-                          }`}
+                          className={`${styles.connector} ${isCompleted || isActive ? styles.activeConnector : ""
+                            }`}
                         ></div>
                       )}
                     </div>
                     <div className={styles.stageContent}>
                       <div
-                        className={`${styles.stageLabel} ${
-                          isFuture ? styles.futureLabel : ""
-                        }`}
+                        className={`${styles.stageLabel} ${isFuture ? styles.futureLabel : ""
+                          }`}
                       >
                         {stage.label}
                       </div>
                       <div
-                        className={`${styles.stageDescription} ${
-                          isFuture ? styles.futureDescription : ""
-                        }`}
+                        className={`${styles.stageDescription} ${isFuture ? styles.futureDescription : ""
+                          }`}
                       >
                         {stage.description}
                       </div>
@@ -253,10 +274,22 @@ export default function DocumentDetails() {
           <WhiteIsland className={styles.documentIsland}>
             <h3>Document Info</h3>
             <div className={styles.main}>
-              {/* Left side - Document icon */}
+              {/* Left side - Document file */}
               <div className={styles.picture}>
                 {document.fileName && (
-                  <div className={styles.fileName}>{document.fileName}</div>
+                  <>
+                    <div className={styles.fileName}>{document.fileName}</div>
+                    {document.fileUrl && (
+                      <a
+                        href={document.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.fileLink}
+                      >
+                        Open file
+                      </a>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -344,8 +377,8 @@ export default function DocumentDetails() {
 
             {/* Action Buttons */}
             <div className={styles.actionButtons}>
-              <button 
-                className={styles.deleteButton} 
+              <button
+                className={styles.deleteButton}
                 onClick={handleDelete}
                 style={{
                   padding: "10px 20px",
@@ -371,47 +404,47 @@ export default function DocumentDetails() {
               <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#374151" }}>
                 Versions
               </h3>
-                <button
-                  className={styles.addTabButton}
-                  onClick={() => setActiveModal("versions")}
-                >
-                  <FaPlus /> Add Version
-                </button>
-              </div>
+              <button
+                className={styles.addTabButton}
+                onClick={() => setActiveModal("versions")}
+              >
+                <FaPlus /> Add Version
+              </button>
+            </div>
 
-              <div className={styles.tabContent}>
-                <div className={styles.versionsContent}>
-                  <table className={styles.versionsTable}>
-                    <thead>
-                      <tr>
-                        <th>Version</th>
-                        <th>Date</th>
-                        <th>Author</th>
-                        <th>Status</th>
-                        <th>Changes</th>
+            <div className={styles.tabContent}>
+              <div className={styles.versionsContent}>
+                <table className={styles.versionsTable}>
+                  <thead>
+                    <tr>
+                      <th>Version</th>
+                      <th>Date</th>
+                      <th>Author</th>
+                      <th>Status</th>
+                      <th>Changes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {versions.map((version) => (
+                      <tr
+                        key={version.id}
+                        onClick={() => handleVersionRowClick(version)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <td>{version.version}</td>
+                        <td>{version.date}</td>
+                        <td>{version.author}</td>
+                        <td>
+                          <span className={styles.statusBadge} data-status={version.status}>
+                            {version.status}
+                          </span>
+                        </td>
+                        <td>{version.changes}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {versions.map((version) => (
-                        <tr 
-                          key={version.id} 
-                          onClick={() => handleVersionRowClick(version)}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <td>{version.version}</td>
-                          <td>{version.date}</td>
-                          <td>{version.author}</td>
-                          <td>
-                            <span className={styles.statusBadge} data-status={version.status}>
-                              {version.status}
-                            </span>
-                          </td>
-                          <td>{version.changes}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </WhiteIsland>
         </div>

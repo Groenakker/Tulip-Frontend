@@ -100,6 +100,22 @@
     border-top: 1px solid #f1f5f9;
 }
 
+.loadingCell,
+.errorCell,
+.emptyCell {
+    text-align: center;
+    padding: 24px;
+    color: #6b7280;
+}
+
+.errorCell {
+    color: #dc2626;
+}
+
+.rowClickable {
+    cursor: pointer;
+}
+
 .documentTable tr {
     cursor: pointer;
 }

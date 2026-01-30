@@ -13,40 +13,35 @@ export default function DocumentList() {
   const navigate = useNavigate();
   const [documentData, setDocumentData] = useState([]);
   const [filteredDocuments, setFilteredDocuments] = useState([]);
-
-  // Sample data - replace with API call later
-  const sampleData = [
-    {
-      _id: "1",
-      documentID: "DOC-2024-001",
-      title: "Standard Operating Procedure - Warehouse",
-      category: "Logistics",
-      status: "PUBLISHED",
-      version: "v2.0",
-    },
-    {
-      _id: "2",
-      documentID: "DOC-2024-012",
-      title: "Quarterly Inventory Audit",
-      category: "Finance",
-      status: "REVIEW",
-      version: "v1.0",
-    },
-  ];
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // TODO: Replace with actual API call
-    // fetch(`${import.meta.env.VITE_BACKEND_URL}/api/documents`)
-    //   .then((response) => response.json())
-    //   .then((data) => {
-    //     setDocumentData(data);
-    //     setFilteredDocuments(data);
-    //   })
-    //   .catch((error) => console.error("Error fetching document data:", error));
-
-    // For now, use sample data
-    setDocumentData(sampleData);
-    setFilteredDocuments(sampleData);
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/documents`, { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error(res.status === 403 ? "Access denied" : "Failed to load documents");
+        return res.json();
+      })
+      .then((data) => {
+        if (!cancelled) {
+          setDocumentData(Array.isArray(data) ? data : []);
+          setFilteredDocuments(Array.isArray(data) ? data : []);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err.message);
+          setDocumentData([]);
+          setFilteredDocuments([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -102,13 +97,17 @@ export default function DocumentList() {
   };
 
   const getStatusClass = (status) => {
-    switch (status?.toUpperCase()) {
+    switch (String(status || "").toUpperCase()) {
       case "PUBLISHED":
         return styles.statusPublished;
       case "REVIEW":
         return styles.statusReview;
+      case "CREATION":
       case "DRAFT":
         return styles.statusDraft;
+      case "UPDATE":
+      case "REJECTED":
+        return styles.statusDefault;
       default:
         return styles.statusDefault;
     }
@@ -159,16 +158,38 @@ export default function DocumentList() {
               </tr>
             </thead>
             <tbody>
-              {pagedData.map((document) => (
+              {loading && (
+                <tr>
+                  <td colSpan={6} className={styles.loadingCell}>
+                    Loading documents…
+                  </td>
+                </tr>
+              )}
+              {!loading && error && (
+                <tr>
+                  <td colSpan={6} className={styles.errorCell}>
+                    {error}
+                  </td>
+                </tr>
+              )}
+              {!loading && !error && pagedData.length === 0 && (
+                <tr>
+                  <td colSpan={6} className={styles.emptyCell}>
+                    No documents found
+                  </td>
+                </tr>
+              )}
+              {!loading && !error && pagedData.map((document) => (
                 <tr
                   key={document._id}
                   onClick={() => navigate(`/DocumentManagement/DocumentDetails/${document._id}`)}
+                  className={styles.rowClickable}
                 >
                   <td>{document.documentID}</td>
                   <td>
                     <div className={styles.titleCell}>
                       <FaFile className={styles.documentIcon} />
-                      <span>{document.title}</span>
+                      <span>{document.title ?? document.name}</span>
                     </div>
                   </td>
                   <td>{document.category}</td>
@@ -177,7 +198,7 @@ export default function DocumentList() {
                       {document.status}
                     </span>
                   </td>
-                  <td>{document.version}</td>
+                  <td>{document.version ?? document.currentVersion}</td>
                   <td>
                     <button
                       className={styles.actionButton}

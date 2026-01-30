@@ -22,6 +22,7 @@ export default function DocumentCreate() {
 
   // Initial stakeholders for new document creation
   const [initialStakeholders, setInitialStakeholders] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAddStakeholder, setShowAddStakeholder] = useState(false);
   const [newStakeholder, setNewStakeholder] = useState({
     name: "",
@@ -48,39 +49,66 @@ export default function DocumentCreate() {
   };
 
   const handleSave = async () => {
-    if (!document.documentID || !document.name || !document.status) {
-      toast.warning("Please fill all required fields");
-      return;
-    }
-
+    // Mandatory: file, documentID, name, category
     if (!document.file) {
       toast.error("Please upload a document file");
       return;
     }
-
-    if (initialStakeholders.length === 0) {
-      toast.warning("Consider adding at least one stakeholder for the initial draft");
-      // Allow saving without stakeholders, just show warning
+    if (!document.documentID?.trim()) {
+      toast.warning("Document ID is required");
+      return;
+    }
+    if (!document.name?.trim()) {
+      toast.warning("Document name is required");
+      return;
+    }
+    if (!document.category?.trim()) {
+      toast.warning("Category is required");
+      return;
     }
 
+    // if (initialStakeholders.length === 0) {
+    //   toast.info("Consider adding at least one stakeholder for the initial draft");
+    // }
+
+    setIsSubmitting(true);
     try {
-      // TODO: Create new document with initial stakeholders
-      // const documentData = {
-      //   ...document,
-      //   stakeholders: initialStakeholders
-      // };
-      // await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/documents`, {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(documentData),
-      // });
-      
-      console.log("Creating document with stakeholders:", initialStakeholders);
+      const formData = new FormData();
+      formData.append("file", document.file);
+      formData.append("documentID", document.documentID.trim());
+      formData.append("name", document.name.trim());
+      formData.append("category", document.category.trim());
+      if (document.description?.trim()) {
+        formData.append("description", document.description.trim());
+      }
+      if (initialStakeholders.length > 0) {
+        const stakeholdersPayload = initialStakeholders.map(({ name, email, role, status }) => ({
+          name,
+          email,
+          role,
+          status: status || "Pending",
+        }));
+        formData.append("stakeholders", JSON.stringify(stakeholdersPayload));
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/documents`, {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        toast.error(data.message || "Failed to create document");
+        return;
+      }
       toast.success("Document created successfully");
       navigate("/DocumentManagement");
     } catch (error) {
       console.error("Error saving document:", error);
       toast.error("Failed to save document");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -225,8 +253,12 @@ export default function DocumentCreate() {
 
             {/* Action Buttons */}
             <div className={styles.actionButtons}>
-              <button className={styles.saveButton} onClick={handleSave}>
-                <FaSave /> Create Document
+              <button
+                className={styles.saveButton}
+                onClick={handleSave}
+                disabled={isSubmitting}
+              >
+                <FaSave /> {isSubmitting ? "Creating…" : "Create Document"}
               </button>
             </div>
           </WhiteIsland>
@@ -265,7 +297,7 @@ export default function DocumentCreate() {
                       value={newStakeholder.name}
                       onChange={handleStakeholderChange}
                       placeholder="Enter name"
-                      style={{ 
+                      style={{
                         width: '100%',
                         padding: '10px 14px',
                         borderRadius: '20px',
@@ -289,7 +321,7 @@ export default function DocumentCreate() {
                       value={newStakeholder.email}
                       onChange={handleStakeholderChange}
                       placeholder="Enter email"
-                      style={{ 
+                      style={{
                         width: '100%',
                         padding: '10px 14px',
                         borderRadius: '20px',
@@ -311,7 +343,7 @@ export default function DocumentCreate() {
                       name="role"
                       value={newStakeholder.role}
                       onChange={handleStakeholderChange}
-                      style={{ 
+                      style={{
                         width: '100%',
                         padding: '10px 14px',
                         borderRadius: '20px',
@@ -339,7 +371,7 @@ export default function DocumentCreate() {
                       name="status"
                       value={newStakeholder.status}
                       onChange={handleStakeholderChange}
-                      style={{ 
+                      style={{
                         width: '100%',
                         padding: '10px 14px',
                         borderRadius: '20px',
