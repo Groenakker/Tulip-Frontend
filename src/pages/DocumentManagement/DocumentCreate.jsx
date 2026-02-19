@@ -16,8 +16,7 @@ export default function DocumentCreate() {
     description: "",
     category: "",
     currentVersion: "v1.0",
-    file: null,
-    fileName: "",
+    files: [],
   });
 
   // Initial stakeholders for new document creation
@@ -37,21 +36,32 @@ export default function DocumentCreate() {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setDocument((prev) => ({
-        ...prev,
-        file: file,
-        fileName: file.name,
-      }));
-      toast.success(`File "${file.name}" uploaded successfully`);
-    }
+    const chosen = e.target.files;
+    if (!chosen?.length) return;
+    const fileList = Array.from(chosen);
+    setDocument((prev) => ({
+      ...prev,
+      files: [...(prev.files || []), ...fileList],
+    }));
+    const msg = fileList.length === 1
+      ? `File "${fileList[0].name}" added`
+      : `${fileList.length} files added`;
+    toast.success(msg);
+    e.target.value = "";
+  };
+
+  const removeFile = (index) => {
+    setDocument((prev) => ({
+      ...prev,
+      files: prev.files.filter((_, i) => i !== index),
+    }));
+    toast.success("File removed");
   };
 
   const handleSave = async () => {
-    // Mandatory: file, documentID, name, category
-    if (!document.file) {
-      toast.error("Please upload a document file");
+    const files = document.files || [];
+    if (files.length === 0) {
+      toast.error("Please upload at least one document file");
       return;
     }
     if (!document.documentID?.trim()) {
@@ -67,14 +77,10 @@ export default function DocumentCreate() {
       return;
     }
 
-    // if (initialStakeholders.length === 0) {
-    //   toast.info("Consider adding at least one stakeholder for the initial draft");
-    // }
-
     setIsSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append("file", document.file);
+      files.forEach((file) => formData.append("file", file));
       formData.append("documentID", document.documentID.trim());
       formData.append("name", document.name.trim());
       formData.append("category", document.category.trim());
@@ -106,7 +112,7 @@ export default function DocumentCreate() {
       navigate("/DocumentManagement");
     } catch (error) {
       console.error("Error saving document:", error);
-      toast.error("Failed to save document");
+      toast.error("Failed to save document(s)");
     } finally {
       setIsSubmitting(false);
     }
@@ -156,16 +162,52 @@ export default function DocumentCreate() {
                   <FaFile size={48} color="#9ca3af" />
                 </div>
                 <label className={styles.uploadButton}>
-                  <FaUpload /> Upload File
+                  <FaUpload /> Upload File(s)
                   <input
                     type="file"
+                    multiple
                     accept=".pdf,.doc,.docx"
                     style={{ display: "none" }}
                     onChange={handleFileChange}
                   />
                 </label>
-                {document.fileName && (
-                  <div className={styles.fileName}>{document.fileName}</div>
+                {(document.files?.length > 0) && (
+                  <div className={styles.fileName}>
+                    {document.files.length === 1 ? (
+                      <span style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                        {document.files[0].name}
+                        <button
+                          type="button"
+                          onClick={() => removeFile(0)}
+                          className={styles.removeStakeholderButton}
+                          title="Remove file"
+                          style={{ padding: "2px 6px" }}
+                        >
+                          <FaTimes />
+                        </button>
+                      </span>
+                    ) : (
+                      <>
+                        <span>{document.files.length} files selected</span>
+                        <ul style={{ margin: "8px 0 0 0", paddingLeft: "20px", textAlign: "left" }}>
+                          {document.files.map((f, i) => (
+                            <li key={`${f.name}-${i}`} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                              <span style={{ flex: 1 }}>{f.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeFile(i)}
+                                className={styles.removeStakeholderButton}
+                                title="Remove file"
+                                style={{ padding: "2px 6px" }}
+                              >
+                                <FaTimes />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
 

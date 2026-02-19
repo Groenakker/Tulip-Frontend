@@ -22,6 +22,7 @@ export default function DocumentDetails() {
     currentVersion: "v1.0",
     fileName: "",
     fileUrl: "",
+    files: [],
   });
 
   const [loading, setLoading] = useState(true);
@@ -68,6 +69,7 @@ export default function DocumentDetails() {
           currentVersion: data.currentVersion ?? "v1.0",
           fileName: data.fileName ?? "",
           fileUrl: data.fileUrl ?? "",
+          files: Array.isArray(data.files) ? data.files : [],
         });
         const versionList = Array.isArray(data.versions) ? data.versions : [];
         setVersions(
@@ -80,6 +82,7 @@ export default function DocumentDetails() {
             status: v.status ?? "Creation",
             fileName: v.fileName ?? "",
             fileUrl: v.fileUrl,
+            files: Array.isArray(v.files) ? v.files : [],
             stakeholders: (v.stakeholders || []).map((s, i) => ({
               id: s._id ?? i,
               name: s.name,
@@ -274,14 +277,14 @@ export default function DocumentDetails() {
           <WhiteIsland className={styles.documentIsland}>
             <h3>Document Info</h3>
             <div className={styles.main}>
-              {/* Left side - Document file */}
+              {/* Left side - Document file(s) */}
               <div className={styles.picture}>
-                {document.fileName && (
-                  <>
-                    <div className={styles.fileName}>{document.fileName}</div>
-                    {document.fileUrl && (
+                {(document.files?.length > 0 ? document.files : (document.fileName ? [{ fileName: document.fileName, fileUrl: document.fileUrl }] : [])).map((f, i) => (
+                  <div key={i} style={{ marginBottom: i > 0 ? "12px" : 0 }}>
+                    <div className={styles.fileName}>{f.fileName}</div>
+                    {f.fileUrl && (
                       <a
-                        href={document.fileUrl}
+                        href={f.fileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={styles.fileLink}
@@ -289,8 +292,8 @@ export default function DocumentDetails() {
                         Open file
                       </a>
                     )}
-                  </>
-                )}
+                  </div>
+                ))}
               </div>
 
               {/* Right side - Form fields */}
