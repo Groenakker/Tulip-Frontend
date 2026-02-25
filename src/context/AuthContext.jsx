@@ -124,9 +124,11 @@ export const AuthProvider = ({ children }) => {
       clearInterval(refreshIntervalRef.current);
       refreshIntervalRef.current = null;
     }
-    // Navigate to login if not already there
+    // Navigate to login if not already on a public or token-only page
+    const pathname = window.location.pathname;
     const publicPaths = ['/login', '/signup', '/invite-signup'];
-    if (!publicPaths.includes(window.location.pathname)) {
+    const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/approval/');
+    if (!isPublicPath) {
       window.location.href = '/login';
     }
   }, []);

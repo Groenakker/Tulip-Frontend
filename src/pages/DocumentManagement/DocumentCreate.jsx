@@ -1,13 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import WhiteIsland from "../../components/Whiteisland";
 import styles from "./DocumentDetails.module.css";
-import { FaSave, FaUpload, FaFile, FaPlus, FaTimes } from "react-icons/fa";
+import { FaSave, FaUpload, FaFile, FaPlus, FaTimes, FaUserFriends, FaUserPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import toast from "../../components/Toaster/toast";
 import Header from '../../components/Header';
+import { useAuth } from "../../context/AuthContext";
+
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
 export default function DocumentCreate() {
   const navigate = useNavigate();
+  const { user: authUser } = useAuth();
 
   const [document, setDocument] = useState({
     documentID: "",
@@ -23,12 +27,50 @@ export default function DocumentCreate() {
   const [initialStakeholders, setInitialStakeholders] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAddStakeholder, setShowAddStakeholder] = useState(false);
+  // 'team' | 'manual' | null (null = show choice)
+  const [stakeholderSource, setStakeholderSource] = useState(null);
   const [newStakeholder, setNewStakeholder] = useState({
     name: "",
     email: "",
     role: "",
     status: "Pending",
   });
+  // From team: list of company users, search, selection
+  const [teamUsers, setTeamUsers] = useState([]);
+  const [teamUsersLoading, setTeamUsersLoading] = useState(false);
+  const [teamSearchQuery, setTeamSearchQuery] = useState("");
+  const [selectedTeamUser, setSelectedTeamUser] = useState(null);
+  const [selectedTeamUserRole, setSelectedTeamUserRole] = useState("");
+  const [selectedTeamUserStatus, setSelectedTeamUserStatus] = useState("Pending");
+
+  // Fetch team users when "From team" is selected
+  useEffect(() => {
+    if (stakeholderSource !== "team" || !authUser?.companyId) {
+      setTeamUsers([]);
+      return;
+    }
+    let cancelled = false;
+    setTeamUsersLoading(true);
+    fetch(`${API_BASE_URL}/companies/${authUser.companyId}/users`, { credentials: "include" })
+      .then((res) => res.json().catch(() => []))
+      .then((data) => {
+        if (cancelled) return;
+        const list = Array.isArray(data) ? data : [];
+        setTeamUsers(list.map((item) => ({
+          id: item._id || item.id,
+          name: item.name || "",
+          email: item.email || "",
+          profilePicture: item.profilePicture,
+        })));
+      })
+      .catch(() => {
+        if (!cancelled) setTeamUsers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setTeamUsersLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [stakeholderSource, authUser?.companyId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -124,6 +166,42 @@ export default function DocumentCreate() {
     setNewStakeholder((prev) => ({ ...prev, [name]: value }));
   };
 
+  const addedEmails = new Set(initialStakeholders.map((s) => (s.email || "").toLowerCase()));
+  const filteredTeamUsers = teamUsers.filter((u) => {
+    const emailMatch = !addedEmails.has((u.email || "").toLowerCase());
+    const searchLower = (teamSearchQuery || "").toLowerCase();
+    const nameMatch = !searchLower || (u.name || "").toLowerCase().includes(searchLower) || (u.email || "").toLowerCase().includes(searchLower);
+    return emailMatch && nameMatch;
+  });
+
+  const closeAddStakeholder = () => {
+    setShowAddStakeholder(false);
+    setStakeholderSource(null);
+    setNewStakeholder({ name: "", email: "", role: "", status: "Pending" });
+    setSelectedTeamUser(null);
+    setSelectedTeamUserRole("");
+    setSelectedTeamUserStatus("Pending");
+    setTeamSearchQuery("");
+  };
+
+  const handleAddStakeholderFromTeam = () => {
+    if (!selectedTeamUser || !selectedTeamUserRole) {
+      toast.warning("Select a team member and choose a role");
+      return;
+    }
+    const stakeholder = {
+      id: selectedTeamUser.id || initialStakeholders.length + 1,
+      name: selectedTeamUser.name,
+      email: selectedTeamUser.email,
+      role: selectedTeamUserRole,
+      status: selectedTeamUserStatus || "Pending",
+      avatar: selectedTeamUser.profilePicture || `https://i.pravatar.cc/40?img=${initialStakeholders.length + 10}`,
+    };
+    setInitialStakeholders([...initialStakeholders, stakeholder]);
+    toast.success("Stakeholder added");
+    closeAddStakeholder();
+  };
+
   const handleAddStakeholder = () => {
     if (!newStakeholder.name || !newStakeholder.email || !newStakeholder.role) {
       toast.warning("Please fill all stakeholder fields");
@@ -139,6 +217,7 @@ export default function DocumentCreate() {
     setInitialStakeholders([...initialStakeholders, stakeholder]);
     setNewStakeholder({ name: "", email: "", role: "", status: "Pending" });
     setShowAddStakeholder(false);
+    setStakeholderSource(null);
     toast.success("Stakeholder added");
   };
 
@@ -325,129 +404,262 @@ export default function DocumentCreate() {
               Add stakeholders who will review and approve this initial document draft.
             </p>
 
-            {/* Add Stakeholder Form */}
+            {/* Add Stakeholder: choice or form */}
             {showAddStakeholder && (
               <div className={styles.stakeholderFormContainer}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '40px', rowGap: '20px', marginBottom: '20px' }}>
-                  {/* Column 1 - Name */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label className={styles.stakeholderFormLabel}>
-                      Name <span className={styles.required}>*</span>
-                    </label>
-                    <input
-                      name="name"
-                      value={newStakeholder.name}
-                      onChange={handleStakeholderChange}
-                      placeholder="Enter name"
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '20px',
-                        border: '1px solid #D0D5DD',
-                        fontSize: '0.95rem',
-                        outline: 'none',
-                        background: 'white',
-                        fontFamily: 'inherit',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-                  {/* Column 2 - Email */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label className={styles.stakeholderFormLabel}>
-                      Email <span className={styles.required}>*</span>
-                    </label>
-                    <input
-                      name="email"
-                      type="email"
-                      value={newStakeholder.email}
-                      onChange={handleStakeholderChange}
-                      placeholder="Enter email"
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '20px',
-                        border: '1px solid #D0D5DD',
-                        fontSize: '0.95rem',
-                        outline: 'none',
-                        background: 'white',
-                        fontFamily: 'inherit',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-                  {/* Column 1 - Role */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label className={styles.stakeholderFormLabel}>
-                      Role <span className={styles.required}>*</span>
-                    </label>
-                    <select
-                      name="role"
-                      value={newStakeholder.role}
-                      onChange={handleStakeholderChange}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '20px',
-                        border: '1px solid #D0D5DD',
-                        fontSize: '0.95rem',
-                        outline: 'none',
-                        background: 'white',
-                        fontFamily: 'inherit',
-                        boxSizing: 'border-box'
-                      }}
+                {stakeholderSource === null && (
+                  <>
+                    <p className={styles.stakeholdersSectionDescription} style={{ marginBottom: "16px" }}>
+                      Choose how to add a stakeholder:
+                    </p>
+                    <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", marginBottom: "20px" }}>
+                      <button
+                        type="button"
+                        onClick={() => setStakeholderSource("team")}
+                        className={styles.addTabButton}
+                        style={{ flex: "1", minWidth: "180px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+                      >
+                        <FaUserFriends /> Search from team
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setStakeholderSource("manual")}
+                        className={styles.addTabButton}
+                        style={{ flex: "1", minWidth: "180px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+                      >
+                        <FaUserPlus /> Not in team (add by name & email)
+                      </button>
+                    </div>
+                    <div className={styles.stakeholderFormActions}>
+                      <button onClick={closeAddStakeholder} className={styles.rejectButton}>
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {stakeholderSource === "team" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => { setStakeholderSource(null); setSelectedTeamUser(null); setTeamSearchQuery(""); }}
+                      className={styles.rejectButton}
+                      style={{ marginBottom: "16px" }}
                     >
-                      <option value="">Select Role</option>
-                      <option value="REVIEWER">Reviewer</option>
-                      <option value="APPROVER">Approver</option>
-                      <option value="OBSERVER">Observer</option>
-                      <option value="EDITOR">Editor</option>
-                    </select>
-                  </div>
-                  {/* Column 2 - Status */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label className={styles.stakeholderFormLabel}>
-                      Status
-                    </label>
-                    <select
-                      name="status"
-                      value={newStakeholder.status}
-                      onChange={handleStakeholderChange}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '20px',
-                        border: '1px solid #D0D5DD',
-                        fontSize: '0.95rem',
-                        outline: 'none',
-                        background: 'white',
-                        fontFamily: 'inherit',
-                        boxSizing: 'border-box'
-                      }}
+                      ← Back
+                    </button>
+                    <div style={{ marginBottom: "16px" }}>
+                      <input
+                        type="text"
+                        placeholder="Search by name or email..."
+                        value={teamSearchQuery}
+                        onChange={(e) => setTeamSearchQuery(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: "10px 14px",
+                          borderRadius: "20px",
+                          border: "1px solid #D0D5DD",
+                          fontSize: "0.95rem",
+                          outline: "none",
+                          background: "white",
+                          boxSizing: "border-box",
+                        }}
+                      />
+                    </div>
+                    {teamUsersLoading ? (
+                      <p style={{ color: "#6b7280", marginBottom: "16px" }}>Loading team...</p>
+                    ) : filteredTeamUsers.length === 0 ? (
+                      <p style={{ color: "#6b7280", marginBottom: "16px" }}>No team members found or all are already added.</p>
+                    ) : (
+                      <ul style={{ listStyle: "none", padding: 0, margin: "0 0 16px 0", maxHeight: "200px", overflowY: "auto" }}>
+                        {filteredTeamUsers.map((u) => (
+                          <li
+                            key={u.id}
+                            onClick={() => setSelectedTeamUser(selectedTeamUser?.id === u.id ? null : u)}
+                            style={{
+                              padding: "10px 14px",
+                              borderRadius: "12px",
+                              marginBottom: "6px",
+                              cursor: "pointer",
+                              background: selectedTeamUser?.id === u.id ? "#e0f2fe" : "#f9fafb",
+                              border: selectedTeamUser?.id === u.id ? "1px solid #0ea5e9" : "1px solid #e5e7eb",
+                            }}
+                          >
+                            <strong>{u.name || "—"}</strong> {u.email && <span style={{ color: "#6b7280" }}>({u.email})</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {selectedTeamUser && (
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                        <div>
+                          <label className={styles.stakeholderFormLabel}>Role <span className={styles.required}>*</span></label>
+                          <select
+                            value={selectedTeamUserRole}
+                            onChange={(e) => setSelectedTeamUserRole(e.target.value)}
+                            style={{
+                              width: "100%",
+                              padding: "10px 14px",
+                              borderRadius: "20px",
+                              border: "1px solid #D0D5DD",
+                              fontSize: "0.95rem",
+                              outline: "none",
+                              background: "white",
+                              boxSizing: "border-box",
+                            }}
+                          >
+                            <option value="">Select Role</option>
+                            <option value="REVIEWER">Reviewer</option>
+                            <option value="APPROVER">Approver</option>
+                            <option value="OBSERVER">Observer</option>
+                            <option value="EDITOR">Editor</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className={styles.stakeholderFormLabel}>Status</label>
+                          <select
+                            value={selectedTeamUserStatus}
+                            onChange={(e) => setSelectedTeamUserStatus(e.target.value)}
+                            style={{
+                              width: "100%",
+                              padding: "10px 14px",
+                              borderRadius: "20px",
+                              border: "1px solid #D0D5DD",
+                              fontSize: "0.95rem",
+                              outline: "none",
+                              background: "white",
+                              boxSizing: "border-box",
+                            }}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                    <div className={styles.stakeholderFormActions}>
+                      <button onClick={handleAddStakeholderFromTeam} className={styles.saveButton} disabled={!selectedTeamUser || !selectedTeamUserRole}>
+                        <FaSave /> Add
+                      </button>
+                      <button onClick={closeAddStakeholder} className={styles.rejectButton}>
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {stakeholderSource === "manual" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setStakeholderSource(null)}
+                      className={styles.rejectButton}
+                      style={{ marginBottom: "16px" }}
                     >
-                      <option value="Pending">Pending</option>
-                      <option value="Approved">Approved</option>
-                      <option value="Rejected">Rejected</option>
-                    </select>
-                  </div>
-                </div>
-                <div className={styles.stakeholderFormActions}>
-                  <button
-                    onClick={handleAddStakeholder}
-                    className={styles.saveButton}
-                  >
-                    <FaSave /> Add
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowAddStakeholder(false);
-                      setNewStakeholder({ name: "", email: "", role: "", status: "Pending" });
-                    }}
-                    className={styles.rejectButton}
-                  >
-                    Cancel
-                  </button>
-                </div>
+                      ← Back
+                    </button>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '40px', rowGap: '20px', marginBottom: '20px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label className={styles.stakeholderFormLabel}>Name <span className={styles.required}>*</span></label>
+                        <input
+                          name="name"
+                          value={newStakeholder.name}
+                          onChange={handleStakeholderChange}
+                          placeholder="Enter name"
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '20px',
+                            border: '1px solid #D0D5DD',
+                            fontSize: '0.95rem',
+                            outline: 'none',
+                            background: 'white',
+                            fontFamily: 'inherit',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label className={styles.stakeholderFormLabel}>Email <span className={styles.required}>*</span></label>
+                        <input
+                          name="email"
+                          type="email"
+                          value={newStakeholder.email}
+                          onChange={handleStakeholderChange}
+                          placeholder="Enter email"
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '20px',
+                            border: '1px solid #D0D5DD',
+                            fontSize: '0.95rem',
+                            outline: 'none',
+                            background: 'white',
+                            fontFamily: 'inherit',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label className={styles.stakeholderFormLabel}>Role <span className={styles.required}>*</span></label>
+                        <select
+                          name="role"
+                          value={newStakeholder.role}
+                          onChange={handleStakeholderChange}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '20px',
+                            border: '1px solid #D0D5DD',
+                            fontSize: '0.95rem',
+                            outline: 'none',
+                            background: 'white',
+                            fontFamily: 'inherit',
+                            boxSizing: 'border-box'
+                          }}
+                        >
+                          <option value="">Select Role</option>
+                          <option value="REVIEWER">Reviewer</option>
+                          <option value="APPROVER">Approver</option>
+                          <option value="OBSERVER">Observer</option>
+                          <option value="EDITOR">Editor</option>
+                        </select>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label className={styles.stakeholderFormLabel}>Status</label>
+                        <select
+                          name="status"
+                          value={newStakeholder.status}
+                          onChange={handleStakeholderChange}
+                          style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            borderRadius: '20px',
+                            border: '1px solid #D0D5DD',
+                            fontSize: '0.95rem',
+                            outline: 'none',
+                            background: 'white',
+                            fontFamily: 'inherit',
+                            boxSizing: 'border-box'
+                          }}
+                        >
+                          <option value="Pending">Pending</option>
+                          <option value="Approved">Approved</option>
+                          <option value="Rejected">Rejected</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className={styles.stakeholderFormActions}>
+                      <button onClick={handleAddStakeholder} className={styles.saveButton}>
+                        <FaSave /> Add
+                      </button>
+                      <button onClick={closeAddStakeholder} className={styles.rejectButton}>
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

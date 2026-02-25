@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import styles from "./StakeholderApproval.module.css";
 import { FaCheckCircle, FaTimesCircle, FaFileAlt, FaUser } from "react-icons/fa";
 import SignatureCanvas from "react-signature-canvas";
 
 export default function StakeholderApproval() {
   const { token } = useParams();
-  const [searchParams] = useSearchParams();
   const [stakeholderData, setStakeholderData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
@@ -15,50 +14,37 @@ export default function StakeholderApproval() {
   const [submitting, setSubmitting] = useState(false);
   const signatureRef = useRef(null);
 
-  useEffect(() => {
-    fetchStakeholderData();
-  }, [token]);
+  const API_BASE = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
   const fetchStakeholderData = async () => {
+    if (!token) {
+      setStakeholderData(null);
+      setLoading(false);
+      return;
+    }
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/stakeholder-approval/${token}`);
-      // const data = await response.json();
-      
-      // Mock data for now
-      setTimeout(() => {
-        setStakeholderData({
-          stakeholder: {
-            id: 1,
-            name: "Sarah Chen",
-            email: "sarah.chen@example.com",
-            role: "REVIEWER",
-            status: "Pending",
-            avatar: "https://i.pravatar.cc/100?img=1",
-          },
-          version: {
-            version: "v2.0",
-            date: "2024-01-20",
-            author: "John Doe",
-            changes: "Updated procedures for warehouse management",
-            status: "Review",
-          },
-          document: {
-            documentID: "DOC-2024-001",
-            name: "Standard Operating Procedure - Warehouse",
-            description: "Guidelines for handling constituent materials in the main warehouse area.",
-            category: "Logistics",
-            fileName: "SOP_Warehouse_v2.pdf",
-            fileUrl: "/sample.pdf", // URL to view the document from public folder
-          },
-        });
+      setLoading(true);
+      const response = await fetch(`${API_BASE}/stakeholder-approval/${token}`, {
+        credentials: "omit",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setStakeholderData(null);
         setLoading(false);
-      }, 1000);
+        return;
+      }
+      setStakeholderData(data);
     } catch (error) {
       console.error("Error fetching stakeholder data:", error);
+      setStakeholderData(null);
+    } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchStakeholderData();
+  }, [token]);
 
   const handleApprove = () => {
     if (stakeholderData.stakeholder.status !== "Pending") {
@@ -81,32 +67,34 @@ export default function StakeholderApproval() {
     }
 
     setSubmitting(true);
-    
     try {
       const signatureData = signatureRef.current.toDataURL();
-      
-      // TODO: Replace with actual API call
-      // const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/stakeholder-approval/${token}/approve`, {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ signature: signatureData }),
-      // });
-
-      setTimeout(() => {
-        setStakeholderData((prev) => ({
-          ...prev,
-          stakeholder: {
-            ...prev.stakeholder,
-            status: "Approved",
-            approvedAt: new Date().toISOString(),
-            signature: signatureData,
-          },
-        }));
-        setShowSignatureModal(false);
+      const response = await fetch(`${API_BASE}/stakeholder-approval/${token}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "omit",
+        body: JSON.stringify({ signature: signatureData }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        alert(data.message || "Failed to submit approval");
         setSubmitting(false);
-      }, 1000);
+        return;
+      }
+      setStakeholderData((prev) => ({
+        ...prev,
+        stakeholder: {
+          ...prev.stakeholder,
+          status: "Approved",
+          approvedAt: new Date().toISOString(),
+          signature: signatureData,
+        },
+      }));
+      setShowSignatureModal(false);
     } catch (error) {
       console.error("Error submitting approval:", error);
+      alert("Failed to submit approval");
+    } finally {
       setSubmitting(false);
     }
   };
@@ -118,30 +106,33 @@ export default function StakeholderApproval() {
     }
 
     setSubmitting(true);
-    
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/stakeholder-approval/${token}/reject`, {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ reason: rejectionReason }),
-      // });
-
-      setTimeout(() => {
-        setStakeholderData((prev) => ({
-          ...prev,
-          stakeholder: {
-            ...prev.stakeholder,
-            status: "Rejected",
-            rejectedAt: new Date().toISOString(),
-            rejectionReason: rejectionReason,
-          },
-        }));
-        setShowRejectModal(false);
+      const response = await fetch(`${API_BASE}/stakeholder-approval/${token}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "omit",
+        body: JSON.stringify({ reason: rejectionReason.trim() }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        alert(data.message || "Failed to submit rejection");
         setSubmitting(false);
-      }, 1000);
+        return;
+      }
+      setStakeholderData((prev) => ({
+        ...prev,
+        stakeholder: {
+          ...prev.stakeholder,
+          status: "Rejected",
+          rejectedAt: new Date().toISOString(),
+          rejectionReason: rejectionReason.trim(),
+        },
+      }));
+      setShowRejectModal(false);
     } catch (error) {
       console.error("Error submitting rejection:", error);
+      alert("Failed to submit rejection");
+    } finally {
       setSubmitting(false);
     }
   };
