@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import WhiteIsland from "../../components/Whiteisland";
 import styles from "./DocumentDetails.module.css";
-import { FaPlus, FaTrash } from "react-icons/fa";
+import { FaPlus, FaTrash, FaDownload } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "../../components/Toaster/toast";
 import Modal from "../../components/Modal";
@@ -23,6 +23,7 @@ export default function DocumentDetails() {
     fileName: "",
     fileUrl: "",
     files: [],
+    owner: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -47,7 +48,7 @@ export default function DocumentDetails() {
     setLoading(true);
     setFetchError(null);
     fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/api/documents/${id}?include=versions,reviews`,
+      `${import.meta.env.VITE_BACKEND_URL}/api/documents/${id}?include=versions,reviews,owner`,
       { credentials: "include" }
     )
       .then((res) => {
@@ -60,6 +61,24 @@ export default function DocumentDetails() {
       })
       .then((data) => {
         if (cancelled) return;
+        
+        // Extract owner name from various possible formats
+        let ownerName = "";
+        if (data.owner) {
+          if (typeof data.owner === 'object' && data.owner !== null) {
+            ownerName = data.owner.name || data.owner.username || "";
+          } else if (typeof data.owner === 'string') {
+            ownerName = data.owner;
+          }
+        }
+        if (!ownerName && data.createdBy) {
+          if (typeof data.createdBy === 'object' && data.createdBy !== null) {
+            ownerName = data.createdBy.name || data.createdBy.username || "";
+          } else if (typeof data.createdBy === 'string') {
+            ownerName = data.createdBy;
+          }
+        }
+        
         setDocument({
           documentID: data.documentID ?? "",
           name: data.name ?? "",
@@ -70,6 +89,7 @@ export default function DocumentDetails() {
           fileName: data.fileName ?? "",
           fileUrl: data.fileUrl ?? "",
           files: Array.isArray(data.files) ? data.files : [],
+          owner: ownerName,
         });
         const versionList = Array.isArray(data.versions) ? data.versions : [];
         setVersions(
@@ -109,6 +129,12 @@ export default function DocumentDetails() {
   };
 
   const handleDelete = async () => {
+    // Prevent deletion if document is in Review status (sent for approval)
+    if (document.status === "Review") {
+      toast.error("Cannot delete document while it's under review. Wait for approval or rejection.");
+      return;
+    }
+
     if (!id || id === "add") return;
     if (!window.confirm("Are you sure you want to delete this document?")) return;
     try {
@@ -147,6 +173,11 @@ export default function DocumentDetails() {
   };
 
   const handleVersionUpdate = (versionId, updatedData) => {
+    // Prevent updates if document is in Review status
+    if (document.status === "Review") {
+      toast.error("Cannot update version while document is under review");
+      return;
+    }
     setVersions(versions.map(v => v.id === versionId ? { ...v, ...updatedData } : v));
     toast.success("Version updated successfully");
   };
@@ -154,9 +185,15 @@ export default function DocumentDetails() {
   const handleVersionDelete = (versionId) => {
     const version = versions.find(v => v.id === versionId);
     const hasApprovedStakeholder = version?.stakeholders?.some(s => s.status === "Approved");
-
+    
     if (hasApprovedStakeholder) {
       toast.error("Cannot delete version with approved stakeholders");
+      return;
+    }
+
+    // Prevent deletion if document is in Review status
+    if (document.status === "Review") {
+      toast.error("Cannot delete version while document is under review");
       return;
     }
 
@@ -170,7 +207,61 @@ export default function DocumentDetails() {
     setSelectedVersion(version);
   };
 
+  const handleAddVersionClick = () => {
+    if (!isDocumentEditable) {
+      toast.error("Cannot add version while document is under review");
+      return;
+    }
+    setActiveModal("versions");
+  };
+
+  const handleDownloadVersion = async (e, version) => {
+    e.stopPropagation(); // Prevent row click event
+    
+    if (!version.files?.length && !version.fileName) {
+      toast.error("No file available for download");
+      return;
+    }
+
+    try {
+      // If there are files from the upload
+      if (version.files?.length > 0) {
+        // Download the first file (or modify to download all)
+        const file = version.files[0];
+        if (file instanceof File) {
+          // Newly uploaded file object
+          const url = URL.createObjectURL(file);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = file.name || `${version.version}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          toast.success("File downloaded successfully");
+        } else if (file.fileUrl) {
+          // File from server with URL
+          window.open(file.fileUrl, '_blank');
+          toast.success("Opening file");
+        }
+      } else if (version.fileUrl) {
+        // Single file URL from server
+        window.open(version.fileUrl, '_blank');
+        toast.success("Opening file");
+      } else {
+        // TODO: Fetch from backend by version ID
+        toast.info(`Download functionality for ${version.fileName} (from server) - to be implemented`);
+      }
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      toast.error("Failed to download file");
+    }
+  };
+
   const currentStageIndex = getCurrentStageIndex();
+  
+  // Check if document is editable (not in Review status)
+  const isDocumentEditable = document.status !== "Review";
 
   if (loading) {
     return (
@@ -277,25 +368,6 @@ export default function DocumentDetails() {
           <WhiteIsland className={styles.documentIsland}>
             <h3>Document Info</h3>
             <div className={styles.main}>
-              {/* Left side - Document file(s) */}
-              <div className={styles.picture}>
-                {(document.files?.length > 0 ? document.files : (document.fileName ? [{ fileName: document.fileName, fileUrl: document.fileUrl }] : [])).map((f, i) => (
-                  <div key={i} style={{ marginBottom: i > 0 ? "12px" : 0 }}>
-                    <div className={styles.fileName}>{f.fileName}</div>
-                    {f.fileUrl && (
-                      <a
-                        href={f.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.fileLink}
-                      >
-                        Open file
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-
               {/* Right side - Form fields */}
               <div className={styles.detailContainer}>
                 <div className={styles.details}>
@@ -322,6 +394,19 @@ export default function DocumentDetails() {
                   </div>
 
                   <div className={styles.info}>
+                    <div className={styles.infoDetail}>Owner <span className={styles.required}>*</span></div>
+                    <input
+                      type="text"
+                      name="owner"
+                      value={document.owner}
+                      placeholder="Document owner"
+                      readOnly
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.details}>
+                  <div className={styles.info}>
                     <div className={styles.infoDetail}>Category <span className={styles.required}>*</span></div>
                     <select
                       name="category"
@@ -336,9 +421,7 @@ export default function DocumentDetails() {
                       <option value="Quality">Quality</option>
                     </select>
                   </div>
-                </div>
 
-                <div className={styles.details}>
                   <div className={styles.info}>
                     <div className={styles.infoDetail}>Status <span className={styles.required}>*</span></div>
                     <select
@@ -354,17 +437,6 @@ export default function DocumentDetails() {
                     </select>
                   </div>
 
-                  <div className={styles.info} style={{ flex: 2 }}>
-                    <div className={styles.infoDetail}>Description</div>
-                    <input
-                      type="text"
-                      name="description"
-                      value={document.description}
-                      placeholder="Document description"
-                      readOnly
-                    />
-                  </div>
-
                   <div className={styles.info}>
                     <div className={styles.infoDetail}>Current Version</div>
                     <input
@@ -375,25 +447,57 @@ export default function DocumentDetails() {
                     />
                   </div>
                 </div>
+
+                <div className={styles.details}>
+                  <div className={styles.info} style={{ flex: 1 }}>
+                    <div className={styles.infoDetail}>Description</div>
+                    <input
+                      type="text"
+                      name="description"
+                      value={document.description}
+                      placeholder="Document description"
+                      readOnly
+                    />
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Warning message when document is in Review status */}
+            {!isDocumentEditable && (
+              <div style={{
+                padding: "12px 16px",
+                background: "#fef3c7",
+                border: "1px solid #fbbf24",
+                borderRadius: "8px",
+                color: "#92400e",
+                fontSize: "14px",
+                fontWeight: "500",
+                marginTop: "16px",
+              }}>
+                <strong>⚠️ Document Under Review:</strong> This document is currently sent for approval. 
+                Editing, deleting, and version management are disabled until the document is approved or rejected.
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className={styles.actionButtons}>
               <button
                 className={styles.deleteButton}
                 onClick={handleDelete}
+                disabled={!isDocumentEditable}
                 style={{
                   padding: "10px 20px",
-                  background: "#ef4444",
+                  background: isDocumentEditable ? "#ef4444" : "#d1d5db",
                   color: "white",
                   border: "none",
                   borderRadius: "6px",
-                  cursor: "pointer",
+                  cursor: isDocumentEditable ? "pointer" : "not-allowed",
                   display: "flex",
                   alignItems: "center",
                   gap: "8px",
                   fontWeight: "500",
+                  opacity: isDocumentEditable ? 1 : 0.6,
                 }}
               >
                 <FaTrash /> Delete
@@ -409,7 +513,13 @@ export default function DocumentDetails() {
               </h3>
               <button
                 className={styles.addTabButton}
-                onClick={() => setActiveModal("versions")}
+                onClick={handleAddVersionClick}
+                disabled={!isDocumentEditable}
+                style={{
+                  cursor: isDocumentEditable ? "pointer" : "not-allowed",
+                  opacity: isDocumentEditable ? 1 : 0.6,
+                  background: isDocumentEditable ? undefined : "#d1d5db",
+                }}
               >
                 <FaPlus /> Add Version
               </button>
@@ -425,6 +535,7 @@ export default function DocumentDetails() {
                       <th>Author</th>
                       <th>Status</th>
                       <th>Changes</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -443,6 +554,27 @@ export default function DocumentDetails() {
                           </span>
                         </td>
                         <td>{version.changes}</td>
+                        <td>
+                          <button
+                            onClick={(e) => handleDownloadVersion(e, version)}
+                            style={{
+                              padding: "6px 12px",
+                              background: "#3b82f6",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              fontSize: "13px",
+                              fontWeight: "500",
+                            }}
+                            title={`Download ${version.fileName || version.version}`}
+                          >
+                            <FaDownload /> Download
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -473,6 +605,7 @@ export default function DocumentDetails() {
             onClose={() => setSelectedVersion(null)}
             onUpdate={handleVersionUpdate}
             onDelete={handleVersionDelete}
+            isDocumentEditable={isDocumentEditable}
           />
         </Modal>
       )}
