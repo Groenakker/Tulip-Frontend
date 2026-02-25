@@ -26,10 +26,10 @@ export default function DocumentCreate() {
 
   // Set the owner to the current user when component mounts
   useEffect(() => {
-    if (user?.name) {
-      setDocument((prev) => ({ ...prev, owner: user.name }));
+    if (authUser?.name) {
+      setDocument((prev) => ({ ...prev, owner: authUser.name }));
     }
-  }, [user]);
+  }, [authUser]);
 
   // Initial stakeholders for new document creation
   const [initialStakeholders, setInitialStakeholders] = useState([]);
