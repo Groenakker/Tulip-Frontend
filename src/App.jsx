@@ -39,6 +39,7 @@ import DocumentList from "./pages/DocumentManagement/DocumentList";
 import DocumentDetails from "./pages/DocumentManagement/DocumentDetails";
 import DocumentCreate from "./pages/DocumentManagement/DocumentCreate";
 import StakeholderApproval from "./pages/StakeholderApproval/StakeholderApproval";
+import OTPVerification from "./pages/StakeholderApproval/OTPVerification";
 // import Projects from './pages/Projects';
 // import ShippingLog from './pages/ShippingLog';
 // import RecieveLog from './pages/RecieveLog';
@@ -61,13 +62,19 @@ function App() {
 function AppContent() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
-  const isApprovalPage = location.pathname.startsWith('/approval/');
+  const isApprovalPage = location.pathname.startsWith('/approval/') || location.pathname.startsWith('/verify-otp/');
 
   return (
     <>
       {!isApprovalPage && isAuthenticated && <Sidebar />}
       <main className={!isApprovalPage && isAuthenticated ? "mainContentArea" : ""}>
         <Routes>
+          {/* OTP Verification - Public route (no authentication required) */}
+          <Route
+            path="/verify-otp/:token"
+            element={<OTPVerification />}
+          />
+
           {/* Stakeholder Approval - Public route (no authentication required, no layout) */}
           <Route
             path="/approval/:token"

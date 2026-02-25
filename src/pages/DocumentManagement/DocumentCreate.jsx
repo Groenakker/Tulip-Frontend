@@ -1,13 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import WhiteIsland from "../../components/Whiteisland";
 import styles from "./DocumentDetails.module.css";
 import { FaSave, FaUpload, FaFile, FaPlus, FaTimes } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import toast from "../../components/Toaster/toast";
 import Header from '../../components/Header';
+import { useAuth } from "../../context/AuthContext";
 
 export default function DocumentCreate() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [document, setDocument] = useState({
     documentID: "",
@@ -17,7 +19,15 @@ export default function DocumentCreate() {
     category: "",
     currentVersion: "v1.0",
     files: [],
+    owner: "",
   });
+
+  // Set the owner to the current user when component mounts
+  useEffect(() => {
+    if (user?.name) {
+      setDocument((prev) => ({ ...prev, owner: user.name }));
+    }
+  }, [user]);
 
   // Initial stakeholders for new document creation
   const [initialStakeholders, setInitialStakeholders] = useState([]);
@@ -109,7 +119,15 @@ export default function DocumentCreate() {
         return;
       }
       toast.success("Document created successfully");
-      navigate("/DocumentManagement");
+      
+      // Navigate to the newly created document's detail page
+      const newDocumentId = data._id || data.id;
+      if (newDocumentId) {
+        navigate(`/DocumentManagement/DocumentDetails/${newDocumentId}`);
+      } else {
+        // Fallback to list if no ID returned
+        navigate("/DocumentManagement");
+      }
     } catch (error) {
       console.error("Error saving document:", error);
       toast.error("Failed to save document(s)");
@@ -237,6 +255,19 @@ export default function DocumentCreate() {
                   </div>
 
                   <div className={styles.info}>
+                    <div className={styles.infoDetail}>Owner <span className={styles.required}>*</span></div>
+                    <input
+                      type="text"
+                      name="owner"
+                      value={document.owner}
+                      placeholder="Document owner"
+                      readOnly
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.details}>
+                  <div className={styles.info}>
                     <div className={styles.infoDetail}>Category <span className={styles.required}>*</span></div>
                     <select
                       name="category"
@@ -251,9 +282,7 @@ export default function DocumentCreate() {
                       <option value="Quality">Quality</option>
                     </select>
                   </div>
-                </div>
 
-                <div className={styles.details}>
                   <div className={styles.info}>
                     <div className={styles.infoDetail}>Status <span className={styles.required}>*</span></div>
                     <select
@@ -269,17 +298,6 @@ export default function DocumentCreate() {
                     </select>
                   </div>
 
-                  <div className={styles.info} style={{ flex: 2 }}>
-                    <div className={styles.infoDetail}>Description</div>
-                    <input
-                      type="text"
-                      name="description"
-                      value={document.description}
-                      onChange={handleChange}
-                      placeholder="Document description"
-                    />
-                  </div>
-
                   <div className={styles.info}>
                     <div className={styles.infoDetail}>Current Version</div>
                     <input
@@ -287,6 +305,19 @@ export default function DocumentCreate() {
                       name="currentVersion"
                       value={document.currentVersion}
                       readOnly
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.details}>
+                  <div className={styles.info} style={{ flex: 1 }}>
+                    <div className={styles.infoDetail}>Description</div>
+                    <input
+                      type="text"
+                      name="description"
+                      value={document.description}
+                      onChange={handleChange}
+                      placeholder="Document description"
                     />
                   </div>
                 </div>
