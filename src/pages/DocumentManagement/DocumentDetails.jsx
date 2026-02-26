@@ -157,20 +157,31 @@ export default function DocumentDetails() {
 
   // Handle saved data from modals
   const handleVersionSaved = (versionData) => {
-    const version = {
-      id: versions.length + 1,
-      version: `v${versions.length + 1}.0`,
-      date: new Date().toISOString().split("T")[0],
-      author: "Current User",
-      changes: versionData.changes,
-      status: "Creation",
-      file: versionData.file,
-      fileName: versionData.file?.name || "",
-      stakeholders: versionData.stakeholders || [],
-      reviews: [],
-    };
-    setVersions([version, ...versions]);
-    toast.success("Version created successfully");
+    if (versionData && versionData.id) {
+      setVersions((prev) => [
+        {
+          id: versionData.id,
+          version: versionData.version,
+          date: versionData.date ? (typeof versionData.date === "string" ? versionData.date.split("T")[0] : versionData.date) : "",
+          author: versionData.author ?? "",
+          changes: versionData.changes ?? "",
+          status: versionData.status ?? "Creation",
+          fileName: versionData.fileName ?? "",
+          fileUrl: versionData.fileUrl,
+          files: versionData.files || [],
+          stakeholders: (versionData.stakeholders || []).map((s, i) => ({
+            id: s._id ?? i,
+            name: s.name,
+            email: s.email,
+            role: s.role,
+            status: s.status ?? "Pending",
+            avatar: s.avatar || `https://i.pravatar.cc/40?img=${i + 1}`,
+          })),
+          reviews: [],
+        },
+        ...prev,
+      ]);
+    }
   };
 
   const handleVersionUpdate = (versionId, updatedData) => {
@@ -592,6 +603,7 @@ export default function DocumentDetails() {
         <Modal onClose={() => setActiveModal(null)}>
           <VersionsForm
             onClose={() => setActiveModal(null)}
+            documentId={id}
             documentID={id}
             currentVersionNumber={versions.length}
             onSaved={handleVersionSaved}
