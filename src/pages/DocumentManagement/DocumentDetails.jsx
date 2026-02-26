@@ -31,13 +31,14 @@ export default function DocumentDetails() {
   const [activeModal, setActiveModal] = useState(null);
   const [selectedVersion, setSelectedVersion] = useState(null);
 
-  // Lifecycle stages
+  // Lifecycle stages - Updated with Archived
   const lifecycleStages = [
     { step: 1, label: "Creation", value: "Creation", description: "Document is being created" },
     { step: 2, label: "Review", value: "Review", description: "Document is under review" },
     { step: 3, label: "Update", value: "Update", description: "Document needs updates" },
     { step: 4, label: "Rejected", value: "Rejected", description: "Document was rejected" },
     { step: 5, label: "Published", value: "Published", description: "Document is published" },
+    { step: 6, label: "Archived", value: "Archived", description: "Document is archived" },
   ];
 
   const [versions, setVersions] = useState([]);
@@ -434,6 +435,7 @@ export default function DocumentDetails() {
                       <option value="Update">Update</option>
                       <option value="Rejected">Rejected</option>
                       <option value="Published">Published</option>
+                      <option value="Archived">Archived</option>
                     </select>
                   </div>
 

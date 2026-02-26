@@ -16,7 +16,7 @@ export default function DocumentCreate() {
   const [document, setDocument] = useState({
     documentID: "",
     name: "",
-    status: "Creation",
+    status: "Creation", // Always starts with Creation status
     description: "",
     category: "",
     currentVersion: "v1.0",
@@ -26,10 +26,10 @@ export default function DocumentCreate() {
 
   // Set the owner to the current user when component mounts
   useEffect(() => {
-    if (user?.name) {
-      setDocument((prev) => ({ ...prev, owner: user.name }));
+    if (authUser?.name) {
+      setDocument((prev) => ({ ...prev, owner: authUser.name }));
     }
-  }, [user]);
+  }, [authUser]);
 
   // Initial stakeholders for new document creation
   const [initialStakeholders, setInitialStakeholders] = useState([]);
@@ -214,6 +214,13 @@ export default function DocumentCreate() {
       avatar: selectedTeamUser.profilePicture || `https://i.pravatar.cc/40?img=${initialStakeholders.length + 10}`,
     };
     setInitialStakeholders([...initialStakeholders, stakeholder]);
+    
+    // Auto-change status to "Review" when first stakeholder is added
+    if (initialStakeholders.length === 0 && document.status === "Creation") {
+      setDocument((prev) => ({ ...prev, status: "Review" }));
+      toast.info("Document status changed to Review");
+    }
+    
     toast.success("Stakeholder added");
     closeAddStakeholder();
   };
@@ -231,6 +238,13 @@ export default function DocumentCreate() {
     };
 
     setInitialStakeholders([...initialStakeholders, stakeholder]);
+    
+    // Auto-change status to "Review" when first stakeholder is added
+    if (initialStakeholders.length === 0 && document.status === "Creation") {
+      setDocument((prev) => ({ ...prev, status: "Review" }));
+      toast.info("Document status changed to Review");
+    }
+    
     setNewStakeholder({ name: "", email: "", role: "", status: "Pending" });
     setShowAddStakeholder(false);
     setStakeholderSource(null);

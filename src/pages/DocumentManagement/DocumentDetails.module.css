@@ -360,16 +360,37 @@
 
 /* Tabs Section */
 .tabsSection {
-    padding: 0;
+    padding: 24px;
     overflow: hidden;
 }
 
 .tabHeader {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #e5e7eb;
-    padding-right: 24px;
+    align-items: flex-end;
+    border-bottom: none;
+    padding: 0 0 10px 0;
+    background: none;
+    margin-bottom: 10px;
+}
+
+.tabHeader h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    border-bottom: 1px solid black;
+    padding-bottom: 5px;
+    margin-bottom: 0;
+    flex: 1;
+    margin-right: 16px;
+    max-width: calc(100% - 150px);
+}
+
+.tabContent {
+    padding: 0;
+    background: white;
+    min-height: 300px;
 }
 
 .tabs {
@@ -380,16 +401,27 @@
 .addTabButton {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     background: rgb(69 112 182);
     color: white;
     border: none;
-    padding: 8px 14px;
-    border-radius: 6px;
+    padding: 10px 18px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
-    transition: background 0.2s ease;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.addTabButton:hover {
+    background: rgb(59 100 162);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(69, 112, 182, 0.3);
+}
+
+.addTabButton:active {
+    transform: translateY(0);
 }
 
 .addTabButton:hover {
@@ -498,69 +530,115 @@
 /* Versions Content */
 .versionsContent {
     overflow-x: auto;
+    width: 100%;
 }
 
 .versionsTable {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .versionsTable thead {
-    background: #f9fafb;
+    background: white;
 }
 
 .versionsTable th {
     text-align: left;
-    padding: 12px;
+    padding: 16px 20px;
     font-size: 13px;
-    font-weight: 600;
-    color: #6b7280;
-    border-bottom: 1px solid #e5e7eb;
+    font-weight: 700;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e5e7eb;
+    white-space: nowrap;
 }
 
-.versionsTable td {
-    padding: 12px;
-    font-size: 14px;
-    color: #1f2937;
+.versionsTable tbody tr {
+    transition: all 0.2s ease;
     border-bottom: 1px solid #f3f4f6;
+    background: white;
+}
+
+.versionsTable tbody tr:last-child {
+    border-bottom: none;
 }
 
 .versionsTable tbody tr:hover {
-    background: #f9fafb;
-    transition: background 0.2s ease;
+    background: linear-gradient(to right, #f9fafb 0%, #ffffff 100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transform: translateX(2px);
+}
+
+.versionsTable td {
+    padding: 18px 20px;
+    font-size: 14px;
+    color: #4b5563;
+    vertical-align: middle;
+}
+
+.versionsTable td:first-child {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 15px;
+}
+
+.versionsTable td:last-child {
+    text-align: right;
+    padding-right: 24px;
 }
 
 .statusBadge {
-    padding: 4px 10px;
-    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
-    display: inline-block;
+    text-transform: capitalize;
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .statusBadge[data-status="Creation"] {
-    background: #dbeafe;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
     color: #1e40af;
+    border: 1px solid #93c5fd;
 }
 
 .statusBadge[data-status="Review"] {
-    background: #fef3c7;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
     color: #92400e;
+    border: 1px solid #fcd34d;
 }
 
 .statusBadge[data-status="Update"] {
-    background: #e0e7ff;
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
     color: #3730a3;
+    border: 1px solid #a5b4fc;
 }
 
 .statusBadge[data-status="Rejected"] {
-    background: #fee2e2;
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
     color: #991b1b;
+    border: 1px solid #fca5a5;
 }
 
 .statusBadge[data-status="Published"] {
-    background: #d1fae5;
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
     color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.statusBadge[data-status="Archived"] {
+    background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+    color: #374151;
+    border: 1px solid #9ca3af;
 }
 
 /* Reviews Content */
