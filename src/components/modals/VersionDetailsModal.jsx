@@ -6,7 +6,7 @@ import toast from "../Toaster/toast";
 const VersionDetailsModal = ({ version, onClose, onUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    status: version.status,
+    status: version.status || "Creation",
     changes: version.changes,
   });
   const [stakeholders, setStakeholders] = useState(version.stakeholders || []);

@@ -93,14 +93,19 @@ export default function DocumentDetails() {
           owner: ownerName,
         });
         const versionList = Array.isArray(data.versions) ? data.versions : [];
+        // Ensure version status shown in UI always matches the document lifecycle status
         setVersions(
           versionList.map((v) => ({
             id: v.id ?? v._id,
             version: v.version,
-            date: v.date ? (typeof v.date === "string" ? v.date.split("T")[0] : v.date) : "",
+            date: v.date
+              ? typeof v.date === "string"
+                ? v.date.split("T")[0]
+                : v.date
+              : "",
             author: v.author ?? "",
             changes: v.changes ?? "",
-            status: v.status ?? "Creation",
+            status: data.status ?? "Creation",
             fileName: v.fileName ?? "",
             fileUrl: v.fileUrl,
             files: Array.isArray(v.files) ? v.files : [],
@@ -165,10 +170,15 @@ export default function DocumentDetails() {
         {
           id: versionData.id,
           version: versionData.version,
-          date: versionData.date ? (typeof versionData.date === "string" ? versionData.date.split("T")[0] : versionData.date) : "",
+          date: versionData.date
+            ? typeof versionData.date === "string"
+              ? versionData.date.split("T")[0]
+              : versionData.date
+            : "",
           author: versionData.author ?? "",
           changes: versionData.changes ?? "",
-          status: versionData.status ?? "Creation",
+          // New versions also reflect the current document status
+          status: document.status ?? "Creation",
           fileName: versionData.fileName ?? "",
           fileUrl: versionData.fileUrl,
           files: versionData.files || [],
