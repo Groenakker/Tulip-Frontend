@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import WhiteIsland from "../../components/Whiteisland";
 import styles from "./DocumentDetails.module.css";
-import { FaPlus, FaTrash, FaDownload } from "react-icons/fa";
+import { FaPlus, FaTrash, FaDownload, FaCheckCircle } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "../../components/Toaster/toast";
 import Modal from "../../components/Modal";
@@ -31,13 +31,13 @@ export default function DocumentDetails() {
   const [activeModal, setActiveModal] = useState(null);
   const [selectedVersion, setSelectedVersion] = useState(null);
 
-  // Lifecycle stages - Updated with Archived
+  // Lifecycle stages: Creation → Review (add stakeholder) → Update | Rejected → Publish → Archived
   const lifecycleStages = [
-    { step: 1, label: "Creation", value: "Creation", description: "Document is being created" },
-    { step: 2, label: "Review", value: "Review", description: "Document is under review" },
+    { step: 1, label: "Creation", value: "Creation", description: "Document is being created; add stakeholders to send for approval" },
+    { step: 2, label: "Review", value: "Review", description: "Document is under review; stakeholders are approving" },
     { step: 3, label: "Update", value: "Update", description: "Document needs updates" },
     { step: 4, label: "Rejected", value: "Rejected", description: "Document was rejected" },
-    { step: 5, label: "Published", value: "Published", description: "Document is published" },
+    { step: 5, label: "Published", value: "Published", description: "Document is published (final draft); no further edits" },
     { step: 6, label: "Archived", value: "Archived", description: "Document is archived" },
   ];
 
@@ -49,7 +49,7 @@ export default function DocumentDetails() {
     setLoading(true);
     setFetchError(null);
     fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/api/documents/${id}?include=versions,reviews,owner`,
+      `${import.meta.env.VITE_BACKEND_URL}/api/documents/${id}?include=versions,reviews`,
       { credentials: "include" }
     )
       .then((res) => {
@@ -62,7 +62,7 @@ export default function DocumentDetails() {
       })
       .then((data) => {
         if (cancelled) return;
-        
+
         // Extract owner name from various possible formats
         let ownerName = "";
         if (data.owner) {
@@ -79,7 +79,7 @@ export default function DocumentDetails() {
             ownerName = data.createdBy;
           }
         }
-        
+
         setDocument({
           documentID: data.documentID ?? "",
           name: data.name ?? "",
@@ -130,9 +130,12 @@ export default function DocumentDetails() {
   };
 
   const handleDelete = async () => {
-    // Prevent deletion if document is in Review status (sent for approval)
     if (document.status === "Review") {
       toast.error("Cannot delete document while it's under review. Wait for approval or rejection.");
+      return;
+    }
+    if (document.status === "Published" || document.status === "Archived") {
+      toast.error("Cannot delete a published or archived document.");
       return;
     }
 
@@ -185,9 +188,8 @@ export default function DocumentDetails() {
   };
 
   const handleVersionUpdate = (versionId, updatedData) => {
-    // Prevent updates if document is in Review status
-    if (document.status === "Review") {
-      toast.error("Cannot update version while document is under review");
+    if (!isDocumentEditable) {
+      toast.error("Cannot update version while document is under review or published.");
       return;
     }
     setVersions(versions.map(v => v.id === versionId ? { ...v, ...updatedData } : v));
@@ -197,15 +199,19 @@ export default function DocumentDetails() {
   const handleVersionDelete = (versionId) => {
     const version = versions.find(v => v.id === versionId);
     const hasApprovedStakeholder = version?.stakeholders?.some(s => s.status === "Approved");
-    
+
     if (hasApprovedStakeholder) {
       toast.error("Cannot delete version with approved stakeholders");
       return;
     }
 
-    // Prevent deletion if document is in Review status
+    // Prevent deletion if document is in Review or Published/Archived
     if (document.status === "Review") {
       toast.error("Cannot delete version while document is under review");
+      return;
+    }
+    if (document.status === "Published" || document.status === "Archived") {
+      toast.error("Cannot delete version of a published or archived document");
       return;
     }
 
@@ -221,7 +227,11 @@ export default function DocumentDetails() {
 
   const handleAddVersionClick = () => {
     if (!isDocumentEditable) {
-      toast.error("Cannot add version while document is under review");
+      toast.error(
+        document.status === "Published" || document.status === "Archived"
+          ? "Cannot add versions to a published or archived document."
+          : "Cannot add version while document is under review."
+      );
       return;
     }
     setActiveModal("versions");
@@ -229,7 +239,7 @@ export default function DocumentDetails() {
 
   const handleDownloadVersion = async (e, version) => {
     e.stopPropagation(); // Prevent row click event
-    
+
     if (!version.files?.length && !version.fileName) {
       toast.error("No file available for download");
       return;
@@ -271,9 +281,38 @@ export default function DocumentDetails() {
   };
 
   const currentStageIndex = getCurrentStageIndex();
-  
-  // Check if document is editable (not in Review status)
-  const isDocumentEditable = document.status !== "Review";
+
+  // Editable only in Creation, Update, or Rejected. Not editable in Review, Published, or Archived.
+  const isDocumentEditable = ["Creation", "Update", "Rejected"].includes(document.status);
+
+  // Publish: only when in Review and all stakeholders (latest version) have approved
+  const latestVersion = versions[0];
+  const allStakeholdersApproved =
+    latestVersion?.stakeholders?.length > 0 &&
+    latestVersion.stakeholders.every((s) => (s.status || "").toLowerCase() === "approved");
+  const canPublish = document.status === "Review" && allStakeholdersApproved;
+
+  const handlePublish = async () => {
+    if (!canPublish || !id) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/documents/${id}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Published" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.message || "Failed to publish document");
+        return;
+      }
+      toast.success("Document published. It is now final and no longer editable.");
+      setDocument((prev) => ({ ...prev, status: "Published" }));
+    } catch (error) {
+      console.error("Error publishing document:", error);
+      toast.error("Failed to publish document");
+    }
+  };
 
   if (loading) {
     return (
@@ -333,7 +372,7 @@ export default function DocumentDetails() {
                 const isCompleted = stage.step < currentStageIndex + 1;
                 const isActive = stage.value === document.status;
                 const isFuture = stage.step > currentStageIndex + 1;
-
+                console.log("Document status:", document.status);
                 return (
                   <div
                     key={stage.step}
@@ -476,8 +515,8 @@ export default function DocumentDetails() {
               </div>
             </div>
 
-            {/* Warning message when document is in Review status */}
-            {!isDocumentEditable && (
+            {/* Warning when in Review; info when Published/Archived */}
+            {document.status === "Review" && (
               <div style={{
                 padding: "12px 16px",
                 background: "#fef3c7",
@@ -488,13 +527,48 @@ export default function DocumentDetails() {
                 fontWeight: "500",
                 marginTop: "16px",
               }}>
-                <strong>⚠️ Document Under Review:</strong> This document is currently sent for approval. 
-                Editing, deleting, and version management are disabled until the document is approved or rejected.
+                <strong>⚠️ Document Under Review:</strong> This document is sent for approval.
+                Editing, deleting, and version management are disabled until stakeholders approve or reject.
+              </div>
+            )}
+            {(document.status === "Published" || document.status === "Archived") && (
+              <div style={{
+                padding: "12px 16px",
+                background: "#d1fae5",
+                border: "1px solid #10b981",
+                borderRadius: "8px",
+                color: "#065f46",
+                fontSize: "14px",
+                fontWeight: "500",
+                marginTop: "16px",
+              }}>
+                <strong>✓ Final draft.</strong> This document is {document.status === "Published" ? "published" : "archived"} and cannot be edited. No further versions can be added.
               </div>
             )}
 
             {/* Action Buttons */}
             <div className={styles.actionButtons}>
+              {canPublish && (
+                <button
+                  type="button"
+                  className={styles.saveButton}
+                  onClick={handlePublish}
+                  style={{
+                    padding: "10px 20px",
+                    background: "#10b981",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontWeight: "500",
+                  }}
+                >
+                  <FaCheckCircle /> Publish
+                </button>
+              )}
               <button
                 className={styles.deleteButton}
                 onClick={handleDelete}

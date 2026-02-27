@@ -14,7 +14,6 @@ export default function DocumentCreate() {
   const { user: authUser } = useAuth();
 
   const [document, setDocument] = useState({
-    documentID: "",
     name: "",
     status: "Creation", // Always starts with Creation status
     description: "",
@@ -114,10 +113,6 @@ export default function DocumentCreate() {
       toast.error("Please upload at least one document file");
       return;
     }
-    if (!document.documentID?.trim()) {
-      toast.warning("Document ID is required");
-      return;
-    }
     if (!document.name?.trim()) {
       toast.warning("Document name is required");
       return;
@@ -131,7 +126,6 @@ export default function DocumentCreate() {
     try {
       const formData = new FormData();
       files.forEach((file) => formData.append("file", file));
-      formData.append("documentID", document.documentID.trim());
       formData.append("name", document.name.trim());
       formData.append("category", document.category.trim());
       if (document.description?.trim()) {
@@ -323,17 +317,6 @@ export default function DocumentCreate() {
               {/* Right side - Form fields */}
               <div className={styles.detailContainer}>
                 <div className={styles.details}>
-                  <div className={styles.info}>
-                    <div className={styles.infoDetail}>Document ID <span className={styles.required}>*</span></div>
-                    <input
-                      type="text"
-                      name="documentID"
-                      value={document.documentID}
-                      onChange={handleChange}
-                      placeholder="DOC-2024-001"
-                    />
-                  </div>
-
                   <div className={styles.info} style={{ flex: 2 }}>
                     <div className={styles.infoDetail}>Name <span className={styles.required}>*</span></div>
                     <input
