@@ -4,7 +4,7 @@ import { FaSave, FaTrash, FaImage } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "../../../components/Toaster/toast";
-
+import Header from '../../../components/Header';
 export default function TestCodesDetails() {
   const { id } = useParams();
   //DUMMY DATA FOR TEST DETAILS
@@ -123,7 +123,8 @@ export default function TestCodesDetails() {
 
   return (
     <>
-      <h2 className={styles.bHeading}>Test Detail</h2>
+      {/* <h2 className={styles.bHeading}>Test Detail</h2> */}
+      <Header title="Test Detail" />
       <div className={styles.detailPage}>
         <div className={styles.leftGrid}>
           <WhiteIsland className={styles.bigIsland}>

@@ -4,7 +4,7 @@ import Sidebar from './components/Sidebar';
 import './App.css';
 import WhiteIsland from './components/Whiteisland.jsx';
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -35,6 +35,11 @@ import ShippingDetails from "./pages/ContractManagement/ShippingLog/ShippingDeta
 import Warehouse from "./pages/Warehouse/Warehouse";
 import Settings from "./pages/SettingsPage/Settings";
 import Unauthorized from "./pages/Unauthorized";
+import DocumentList from "./pages/DocumentManagement/DocumentList";
+import DocumentDetails from "./pages/DocumentManagement/DocumentDetails";
+import DocumentCreate from "./pages/DocumentManagement/DocumentCreate";
+import StakeholderApproval from "./pages/StakeholderApproval/StakeholderApproval";
+import OTPVerification from "./pages/StakeholderApproval/OTPVerification";
 // import Projects from './pages/Projects';
 // import ShippingLog from './pages/ShippingLog';
 // import RecieveLog from './pages/RecieveLog';
@@ -56,12 +61,26 @@ function App() {
 
 function AppContent() {
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  const isApprovalPage = location.pathname.startsWith('/approval/') || location.pathname.startsWith('/verify-otp/');
 
   return (
     <>
-      {isAuthenticated && <Sidebar />}
-      <main className={isAuthenticated ? "mainContentArea" : ""}>
+      {!isApprovalPage && isAuthenticated && <Sidebar />}
+      <main className={!isApprovalPage && isAuthenticated ? "mainContentArea" : ""}>
         <Routes>
+          {/* OTP Verification - Public route (no authentication required) */}
+          <Route
+            path="/verify-otp/:token"
+            element={<OTPVerification />}
+          />
+
+          {/* Stakeholder Approval - Public route (no authentication required, no layout) */}
+          <Route
+            path="/approval/:token"
+            element={<StakeholderApproval />}
+          />
+
           {/* Public Routes - Only accessible when not authenticated */}
           <Route 
             path="/login" 
@@ -258,6 +277,30 @@ function AppContent() {
             element={
               <ProtectedRoute module="Warehouse">
                 <Warehouse />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/DocumentManagement" 
+            element={
+              <ProtectedRoute module="Document Management">
+                <DocumentList />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/DocumentManagement/DocumentDetails/:id" 
+            element={
+              <ProtectedRoute module="Document Management">
+                <DocumentDetails />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/DocumentManagement/DocumentDetails/add" 
+            element={
+              <ProtectedRoute module="Document Management">
+                <DocumentCreate />
               </ProtectedRoute>
             } 
           />

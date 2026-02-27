@@ -4,7 +4,7 @@ import styles from './RecieveLog.module.css';
 import { useState, useEffect } from 'react';
 import { FaSearch, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-
+import Header from '../../../components/Header';
 
 
 
@@ -77,7 +77,8 @@ export default function RecieveLog() {
 
   return (
     <>
-      <h2 className={styles.title}>Recieve Log</h2>
+      {/* <h2 className={styles.title}>Recieve Log</h2> */}
+      <Header title="Recieve Log" />
       <WhiteIsland className='WhiteIsland'>
         <div className={styles.recievesPage}>
 

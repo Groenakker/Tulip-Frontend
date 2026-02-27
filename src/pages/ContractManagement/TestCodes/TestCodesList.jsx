@@ -4,7 +4,7 @@ import styles from "./TestCodesList.module.css";
 import { useState, useEffect } from "react";
 import { FaSearch, FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-
+import Header from '../../../components/Header';
 // const testData = [
 //   {
 //     "GRK  test code": "BC-GP-VOCP",
@@ -100,7 +100,8 @@ export default function TestCodesList() {
 
   return (
     <>
-      <h2 className={styles.title}>Test Codes</h2>
+      {/* <h2 className={styles.title}>Test Codes</h2> */}
+      <Header title="Test Codes" />
       <WhiteIsland className="WhiteIsland">
         <div className={styles.testsPage}>
           <header className={styles.addbtn}>

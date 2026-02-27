@@ -5,6 +5,7 @@ import TabbedTable from "../../../components/TabbedTable";
 import { FaSave, FaTrash, FaImage } from "react-icons/fa";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import toast from "../../../components/Toaster/toast";
+import Header from "../../../components/Header";
 
 export default function ProjectDetails() {
   const { id } = useParams();
@@ -241,7 +242,8 @@ export default function ProjectDetails() {
 
   return (
     <>
-      <h2 className={styles.bHeading}>Business Project Detail</h2>
+      {/* <h2 className={styles.bHeading}>Business Project Detail</h2> */}
+      <Header title="Business Project Detail" />
       <div className={styles.detailPage}>
         <div className={styles.leftGrid}>
           <WhiteIsland className={styles.bigIsland}>

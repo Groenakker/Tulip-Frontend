@@ -4,7 +4,7 @@ import styles from "./ProjectList.module.css";
 import { useState, useEffect } from "react";
 import { FaSearch, FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-
+import Header from "../../../components/Header";
 // const projectData = [
 //   {
 //     id: "GRK-25035-01",
@@ -102,7 +102,8 @@ export default function ProjectList() {
 
   return (
     <>
-      <h2 className={styles.title}>Projects</h2>
+      {/* <h2 className={styles.title}>Projects</h2> */}
+      <Header title="Project List" />
       <WhiteIsland className="WhiteIsland">
         <div className={styles.projectsPage}>
           <header className={styles.addbtn}>
@@ -145,8 +146,8 @@ export default function ProjectList() {
                 >
                   <td>{project.projectID}</td>
                   <td>{project.description}</td>
-                  <td>{project.startDate ? project.startDate.split("T")[0] : "" }</td>
-                  <td>{project.endDate ? project.endDate.split("T")[0] : "" }</td>
+                  <td>{project.startDate ? project.startDate.split("T")[0] : ""}</td>
+                  <td>{project.endDate ? project.endDate.split("T")[0] : ""}</td>
                 </tr>
               ))}
             </tbody>

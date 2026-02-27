@@ -4,6 +4,7 @@ import styles from './InstanceList.module.css';
 import { useState, useEffect } from 'react';
 import { FaSearch, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import Header from "../../../components/Header";
 
 
 
@@ -88,7 +89,8 @@ export default function InstanceList() {
 
     return (
         <>
-            <h2 className={styles.title}>Instances</h2>
+            {/* <h2 className={styles.title}>Instances</h2> */}
+            <Header title="Instance List" />
             <WhiteIsland className='WhiteIsland'>
                 <div className={styles.instancesPage}>
 

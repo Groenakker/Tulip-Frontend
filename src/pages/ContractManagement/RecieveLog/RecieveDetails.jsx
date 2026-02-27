@@ -10,7 +10,7 @@ import SampleSelect from '../../../components/modals/SampleSelect'
 import InstanceList from '../../../components/modals/InstanceListModal';
 import toast from '../../../components/Toaster/toast';
 import SignatureCanvas from 'react-signature-canvas';
-
+import Header from '../../../components/Header';
 export default function RecieveDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -428,7 +428,8 @@ export default function RecieveDetails() {
 
     return (
         <div className={styles.pageContainer}>
-            <h2 className={styles.bHeading}>Recieving Details</h2>
+            {/* <h2 className={styles.bHeading}>Recieving Details</h2> */}
+            <Header title="Recieving Details" />
             <WhiteIsland className={styles.bigIsland}>
                     <h3>Receiving : {log.receivingCode || '(unsaved)'}</h3>
                 <div className={styles.main}>
