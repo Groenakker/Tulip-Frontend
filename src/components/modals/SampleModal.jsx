@@ -20,25 +20,26 @@ const SampleForm = ({ onClose, projectId, project }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Button Clicked");
-    
+
     // Validate required fields
     if (!sampleData.id || !sampleData.description) {
       toast.error("Please fill in Sample ID and Description");
-      //return;
+      return;
     }
 
     // Check if project is selected
     if (!projectId) {
       toast.error("Please select a project in the receiving page first");
-     // return;
+      return;
     }
 
     setIsSubmitting(true);
 
     try {
       // Step 1: Fetch project details to get business partner ID
-      const projectRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects/${projectId}`);
+      const projectRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects/${projectId}`, {
+        credentials: "include",
+      });
       if (!projectRes.ok) {
         throw new Error('Failed to fetch project details');
       }
@@ -47,7 +48,9 @@ const SampleForm = ({ onClose, projectId, project }) => {
       // Step 2: Fetch business partner details from the project
       let businessPartnerData = null;
       if (projectData.bPartnerID) {
-        const bpRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${projectData.bPartnerID}`);
+        const bpRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${projectData.bPartnerID}`, {
+          credentials: "include",
+        });
         if (bpRes.ok) {
           businessPartnerData = await bpRes.json();
           console.log("BPartner Data:", businessPartnerData);
@@ -58,6 +61,18 @@ const SampleForm = ({ onClose, projectId, project }) => {
       }
 
       // Step 3: Create sample with form data and business partner details
+      const address = businessPartnerData
+        ? [
+            businessPartnerData.address1,
+            businessPartnerData.city,
+            businessPartnerData.state,
+            businessPartnerData.zip,
+            businessPartnerData.country,
+          ]
+            .filter(Boolean)
+            .join(", ")
+        : "";
+
       const samplePayload = {
         sampleCode: sampleData.id,
         description: sampleData.description,
@@ -66,41 +81,48 @@ const SampleForm = ({ onClose, projectId, project }) => {
         notes: sampleData.notes || '',
         manufacturer: sampleData.manufacturer || '',
         status: 'Draft',
+        company_id: projectData.company_id || "",
         // Include business partner details if available
         ...(businessPartnerData && {
           bPartnerID: businessPartnerData._id || projectData.bPartnerID,
           client: businessPartnerData.name || '',
           bPartnerCode: businessPartnerData.partnerNumber || '',
           SAPid: businessPartnerData.SAPid || '',
-          address: businessPartnerData.address1 & businessPartnerData.city & businessPartnerData.state & businessPartnerData.zip & businessPartnerData.country || '',
-          
+          address,
           phone: businessPartnerData.phone || '',
           email: businessPartnerData.email || '',
         }),
         // Include project reference
-        projectID: projectData.projectID,
+        projectID: projectData._id || projectId,
         projectName: projectData.name || projectData.projectID || '',
         // Store form data
         formData: {
           ...sampleData,
-          projectId: projectData.projectId,
+          projectId: projectData._id || projectId,
+          projectCode: projectData.projectID || '',
           projectName: projectData.name || projectData.projectID || '',
         }
       };
-      console.log("Sample Payload:", samplePayload);
+
       // Step 4: Create the sample via API
       const createRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(samplePayload)
+        body: JSON.stringify(samplePayload),
+        credentials: "include",
       });
 
       if (!createRes.ok) {
-        const errorData = await createRes.json().catch(() => ({ message: 'Failed to create sample' }));
-        throw new Error(errorData.message || 'Failed to create sample');
+        const errorData = await createRes.json().catch(() => null);
+        const fallbackText = await createRes.text().catch(() => "");
+        throw new Error(
+          errorData?.message ||
+          fallbackText ||
+          `Failed to create sample (${createRes.status})`
+        );
       }
 
-      const createdSample = await createRes.json();
+      await createRes.json();
       toast.success('Sample created successfully!');
       onClose();
       

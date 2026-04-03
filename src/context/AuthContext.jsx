@@ -367,11 +367,12 @@ export const AuthProvider = ({ children }) => {
       return true;
     }
 
-    // If permissions are still loading OR haven't been loaded yet, don't deny access yet
-    // This prevents false negatives for admin users during reload
-    if (permissionsLoading || !permissionsLoadedRef.current) {
-      return true; // Optimistically allow access while loading
-    }
+    // While permissions are loading, keep routes accessible to avoid flicker.
+    if (permissionsLoading) return true;
+
+    // If permissions haven't been loaded successfully yet, deny to prevent
+    // calling protected endpoints that may return 403.
+    if (!permissionsLoadedRef.current) return false;
 
     if (hasSystemRole) {
       return true;

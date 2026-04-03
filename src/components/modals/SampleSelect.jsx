@@ -11,7 +11,9 @@ const SampleSelect = ({ onClose, onOpenSampleForm, items, onSelectSample }) => {
         const load = async () => {
             setLoading(true);
             try {
-                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`);
+                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`, {
+                    credentials: "include",
+                });
                 let normalized = [];
                 if (res.ok) {
                     const data = await res.json();
@@ -19,8 +21,8 @@ const SampleSelect = ({ onClose, onOpenSampleForm, items, onSelectSample }) => {
                         _id: s._id,
                         id: s._id,
                         sampleCode: s.sampleCode,
-                        description: s.description || s.name || '-',
-                        lot: s.poNumber || s.bPartnerCode || '-',
+                        description: s.description || s.sampleDescription || s.name || '-',
+                        lot: s.lotNumber || s.formData?.lot || s.formData?.lotNumber || '-',
                         quantity: 1
                     }));
                 }

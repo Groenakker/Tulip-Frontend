@@ -63,8 +63,16 @@ export default function Bpartner() {
   const [filteredPartners, setFilteredPartners] = useState([]);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners`)
-      .then((res) => res.json()).then((data) => {
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners`, {
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch partners (${res.status})`);
+        }
+        return res.json();
+      })
+      .then((data) => {
         setPartners(data);
         setFilteredPartners(data);
       })

@@ -60,9 +60,31 @@ function App() {
 }
 
 function AppContent() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, hasPermission, permissionsLoading } = useAuth();
   const location = useLocation();
   const isApprovalPage = location.pathname.startsWith('/approval/') || location.pathname.startsWith('/verify-otp/');
+  const defaultAuthedPath = React.useMemo(() => {
+    if (permissionsLoading) {
+      return "/BuisnessPartner";
+    }
+
+    const preferredRoutes = [
+      { path: "/BuisnessPartner", module: "Business Partners" },
+      { path: "/Projects", module: "Projects" },
+      { path: "/TestCodes", module: "Test Codes" },
+      { path: "/RecieveLog", module: "Receiving" },
+      { path: "/ShippingLog", module: "Shipping" },
+      { path: "/Warehouse", module: "Warehouse" },
+      { path: "/DocumentManagement", module: "Document Management" },
+      { path: "/Settings", module: "Settings" },
+    ];
+
+    const accessibleRoute = preferredRoutes.find((route) =>
+      hasPermission(route.module, "read")
+    );
+
+    return accessibleRoute?.path || "/not-authorized";
+  }, [permissionsLoading, hasPermission]);
 
   return (
     <>
@@ -326,14 +348,14 @@ function AppContent() {
             path="/" 
             element={
               <ProtectedRoute>
-                <Navigate to="/" replace />
+                <Navigate to={defaultAuthedPath} replace />
               </ProtectedRoute>
             } 
           />
           {/* Catch all - redirect to login if not authenticated, or home if authenticated */}
           <Route 
             path="*" 
-            element={<Navigate to={isAuthenticated ? "/BuisnessPartner" : "/login"} replace />} 
+            element={<Navigate to={isAuthenticated ? defaultAuthedPath : "/login"} replace />} 
           />
         </Routes>
       </main>
