@@ -40,6 +40,7 @@ import DocumentDetails from "./pages/DocumentManagement/DocumentDetails";
 import DocumentCreate from "./pages/DocumentManagement/DocumentCreate";
 import StakeholderApproval from "./pages/StakeholderApproval/StakeholderApproval";
 import OTPVerification from "./pages/StakeholderApproval/OTPVerification";
+import ComingSoon from "./pages/ComingSoon/ComingSoon";
 // import Projects from './pages/Projects';
 // import ShippingLog from './pages/ShippingLog';
 // import RecieveLog from './pages/RecieveLog';
@@ -326,6 +327,15 @@ function AppContent() {
               </ProtectedRoute>
             } 
           />
+          {/* Coming Soon pages */}
+          <Route path="/Dashboard" element={<ProtectedRoute module="Dashboard"><ComingSoon /></ProtectedRoute>} />
+          <Route path="/MaterialResearch" element={<ProtectedRoute module="Material Research"><ComingSoon /></ProtectedRoute>} />
+          <Route path="/ConstituentResearch" element={<ProtectedRoute module="Constituent Research"><ComingSoon /></ProtectedRoute>} />
+          <Route path="/Library" element={<ProtectedRoute module="Library"><ComingSoon /></ProtectedRoute>} />
+          <Route path="/CreateSample" element={<ProtectedRoute module="Create Sample"><ComingSoon /></ProtectedRoute>} />
+          <Route path="/LabStudies" element={<ProtectedRoute module="Lab Studies"><ComingSoon /></ProtectedRoute>} />
+          <Route path="/Reports" element={<ProtectedRoute module="Reports"><ComingSoon /></ProtectedRoute>} />
+
           <Route 
             path="/Settings" 
             element={
