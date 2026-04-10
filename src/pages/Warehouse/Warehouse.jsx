@@ -2,17 +2,28 @@ import React from 'react';
 import WhiteIsland from '../../components/Whiteisland';
 import styles from './Warehouse.module.css';
 import { useState, useEffect } from 'react';
-import { FaSearch, FaPlus, FaEdit, FaSave, FaTimes, FaTrash } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { FaSearch, FaPlus, FaEdit, FaTrash, FaEllipsisV } from 'react-icons/fa';
 import toast from '../../components/Toaster/toast';
+import Modal from '../../components/Modal';
 
 export default function Warehouse() {
+    const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [inputValue, setInputValue] = useState('');
     const [pageSize, setPageSize] = useState(9);
-    const [editingRows, setEditingRows] = useState({}); // Track which rows are being edited
     const [warehouseData, setWarehouseData] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [openActionMenuId, setOpenActionMenuId] = useState(null);
+    const [activeModal, setActiveModal] = useState(null);
+    const [formData, setFormData] = useState({
+        _id: null,
+        warehouseID: '',
+        address: '',
+        storage: '',
+        space: 'Empty'
+    });
 
     // Fetch warehouses from backend
     useEffect(() => {
@@ -46,64 +57,26 @@ export default function Warehouse() {
         setPage(1); // Reset to first page when filtering
     }, [inputValue, warehouseData]);
 
-    // Handle field changes
-    const handleFieldChange = (warehouseId, field, value) => {
-        setWarehouseData(prevData =>
-            prevData.map(warehouse =>
-                warehouse._id === warehouseId
-                    ? { ...warehouse, [field]: value }
-                    : warehouse
-            )
-        );
+    const openAddModal = () => {
+        setFormData({
+            _id: null,
+            warehouseID: `WH-${Date.now()}`,
+            address: '',
+            storage: '',
+            space: 'Empty'
+        });
+        setActiveModal('warehouse');
     };
 
-    // Toggle edit mode and save changes
-    const toggleEditMode = async (warehouse) => {
-        const warehouseId = warehouse._id;
-        const isEditing = editingRows[warehouseId];
-
-        if (isEditing) {
-            // Save changes
-            try {
-                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/warehouses/${warehouseId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        warehouseID: warehouse.warehouseID,
-                        address: warehouse.address,
-                        storage: warehouse.storage,
-                        space: warehouse.space
-                    })
-                });
-
-                if (!res.ok) {
-                    const errorData = await res.json();
-                    throw new Error(errorData.message || 'Failed to update warehouse');
-                }
-
-                const updated = await res.json();
-                setWarehouseData(prevData =>
-                    prevData.map(w => w._id === warehouseId ? updated : w)
-                );
-                setEditingRows(prev => ({ ...prev, [warehouseId]: false }));
-                toast.success('Warehouse updated successfully!');
-            } catch (error) {
-                console.error('Error updating warehouse:', error);
-                toast.error(error.message || 'Failed to update warehouse');
-                // Reload data to revert changes
-                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/warehouses`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setWarehouseData(data);
-                }
-            }
-        } else {
-            // Enter edit mode
-            setEditingRows(prev => ({
-                ...prev,
-                [warehouseId]: true
-            }));
-        }
+    const openEditModal = (warehouse) => {
+        setFormData({
+            _id: warehouse._id,
+            warehouseID: warehouse.warehouseID || '',
+            address: warehouse.address || '',
+            storage: warehouse.storage || '',
+            space: warehouse.space || 'Empty'
+        });
+        setActiveModal('warehouse');
     };
 
     useEffect(() => {
@@ -131,38 +104,48 @@ export default function Warehouse() {
         // Search is handled by useEffect
     };
 
-    const HandleAddWarehouse = async () => {
-        try {
-            const newWarehouse = {
-                warehouseID: `WH-${Date.now()}`,
-                address: 'New Warehouse Address',
-                storage: '0',
-                space: 'Empty'
-            };
+    const handleSaveWarehouse = async () => {
+        const payload = {
+            warehouseID: formData.warehouseID?.trim(),
+            address: formData.address?.trim(),
+            storage: formData.storage?.trim(),
+            space: formData.space
+        };
 
-            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/warehouses`, {
-                method: 'POST',
+        if (!payload.warehouseID || !payload.address || !payload.storage || !payload.space) {
+            toast.error('Please fill all required fields');
+            return;
+        }
+
+        const isEdit = Boolean(formData._id);
+
+        try {
+            const endpoint = isEdit
+                ? `${import.meta.env.VITE_BACKEND_URL}/api/warehouses/${formData._id}`
+                : `${import.meta.env.VITE_BACKEND_URL}/api/warehouses`;
+            const res = await fetch(endpoint, {
+                method: isEdit ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newWarehouse)
+                body: JSON.stringify(payload)
             });
 
             if (!res.ok) {
                 const errorData = await res.json();
-                throw new Error(errorData.message || 'Failed to create warehouse');
+                throw new Error(errorData.message || `Failed to ${isEdit ? 'update' : 'create'} warehouse`);
             }
 
-            const created = await res.json();
-            setWarehouseData(prev => [created, ...prev]);
-            toast.success('Warehouse added successfully!');
-            
-            // Enter edit mode for the new warehouse
-            setEditingRows(prev => ({
-                ...prev,
-                [created._id]: true
-            }));
+            const savedWarehouse = await res.json();
+            if (isEdit) {
+                setWarehouseData(prev => prev.map(w => (w._id === savedWarehouse._id ? savedWarehouse : w)));
+                toast.success('Warehouse updated successfully!');
+            } else {
+                setWarehouseData(prev => [savedWarehouse, ...prev]);
+                toast.success('Warehouse added successfully!');
+            }
+            setActiveModal(null);
         } catch (error) {
-            console.error('Error adding warehouse:', error);
-            toast.error(error.message || 'Failed to add warehouse');
+            console.error(`Error ${isEdit ? 'updating' : 'adding'} warehouse:`, error);
+            toast.error(error.message || `Failed to ${isEdit ? 'update' : 'add'} warehouse`);
         }
     };
 
@@ -189,11 +172,22 @@ export default function Warehouse() {
         }
     };
 
+    useEffect(() => {
+        const handleOutsideClick = () => {
+            setOpenActionMenuId(null);
+        };
+        document.addEventListener('click', handleOutsideClick);
+        return () => document.removeEventListener('click', handleOutsideClick);
+    }, []);
+
     return (
         <>
             <h2 className={styles.title}>Warehouses</h2>
             <WhiteIsland className='WhiteIsland'>
                 <div className={styles.warehousesPage}>
+                    <div className={styles.sectionHeader}>
+                        <h3 className={styles.sectionTitle}>All Warehouses</h3>
+                    </div>
 
                     <header className={styles.addbtn}>
                         <div className={styles.searchBar}>
@@ -207,7 +201,7 @@ export default function Warehouse() {
                             <button className={styles.searchButton} onClick={handleSubmit}><FaSearch /></button>
                         </div>
 
-                        <button className={styles.addButton} onClick={() => HandleAddWarehouse()}>
+                        <button className={styles.addButton} onClick={openAddModal}>
                             <FaPlus />
                             <span>Add Warehouse</span>
                         </button>
@@ -238,73 +232,64 @@ export default function Warehouse() {
                                 </tr>
                             ) : (
                                 pagedData.map((warehouse) => {
-                                    const isEditing = editingRows[warehouse._id];
                                     return (
-                                        <tr key={warehouse._id}>
+                                        <tr
+                                            key={warehouse._id}
+                                            onClick={() => navigate(`/Warehouse/${encodeURIComponent(warehouse.warehouseID || warehouse._id)}`)}
+                                            style={{ cursor: 'pointer' }}
+                                        >
                                             <td>
-                                                {isEditing ? (
-                                                    <input
-                                                        type="text"
-                                                        value={warehouse.warehouseID || ''}
-                                                        onChange={(e) => handleFieldChange(warehouse._id, 'warehouseID', e.target.value)}
-                                                        className={styles.tableInput}
-                                                    />
-                                                ) : (
-                                                    <span className={styles.tableText}>{warehouse.warehouseID}</span>
-                                                )}
+                                                <span className={styles.tableText}>{warehouse.warehouseID}</span>
                                             </td>
                                             <td>
-                                                {isEditing ? (
-                                                    <input
-                                                        type="text"
-                                                        value={warehouse.address || ''}
-                                                        onChange={(e) => handleFieldChange(warehouse._id, 'address', e.target.value)}
-                                                        className={styles.tableInput}
-                                                    />
-                                                ) : (
-                                                    <span className={styles.tableText}>{warehouse.address}</span>
-                                                )}
+                                                <span className={styles.tableText}>{warehouse.address}</span>
                                             </td>
                                             <td>
-                                                {isEditing ? (
-                                                    <input
-                                                        type="text"
-                                                        value={warehouse.storage || ''}
-                                                        onChange={(e) => handleFieldChange(warehouse._id, 'storage', e.target.value)}
-                                                        className={styles.tableInput}
-                                                    />
-                                                ) : (
-                                                    <span className={styles.tableText}>{warehouse.storage}</span>
-                                                )}
+                                                <span className={styles.tableText}>{warehouse.storage}</span>
                                             </td>
                                             <td>
-                                                {isEditing ? (
-                                                    <select
-                                                        value={warehouse.space || 'Empty'}
-                                                        onChange={(e) => handleFieldChange(warehouse._id, 'space', e.target.value)}
-                                                        className={styles.tableSelect}
+                                                <span className={styles.tableText}>{warehouse.space}</span>
+                                            </td>
+                                            <td>
+                                                <div className={styles.actionMenuWrapper}>
+                                                    <button
+                                                        className={styles.actionButton}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setOpenActionMenuId(openActionMenuId === warehouse._id ? null : warehouse._id);
+                                                        }}
+                                                        aria-label="Open warehouse actions"
                                                     >
-                                                        <option value="Full">Full</option>
-                                                        <option value="Space Available">Space Available</option>
-                                                        <option value="Empty">Empty</option>
-                                                    </select>
-                                                ) : (
-                                                    <span className={styles.tableText}>{warehouse.space}</span>
-                                                )}
-                                            </td>
-                                            <td>
-                                                <button 
-                                                    className={styles.editButton}
-                                                    onClick={() => toggleEditMode(warehouse)}
-                                                >
-                                                    {isEditing ? <FaSave /> : <FaEdit />}
-                                                </button>
-                                                <button 
-                                                    className={styles.deleteButton} 
-                                                    onClick={() => handleDeleteWarehouse(warehouse)}
-                                                >
-                                                    <FaTrash />
-                                                </button>
+                                                        <FaEllipsisV />
+                                                    </button>
+                                                    {openActionMenuId === warehouse._id && (
+                                                        <div
+                                                            className={styles.actionMenu}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <button
+                                                                className={styles.actionMenuItem}
+                                                                onClick={() => {
+                                                                    openEditModal(warehouse);
+                                                                    setOpenActionMenuId(null);
+                                                                }}
+                                                            >
+                                                                <FaEdit />
+                                                                <span>Edit</span>
+                                                            </button>
+                                                            <button
+                                                                className={`${styles.actionMenuItem} ${styles.actionMenuItemDelete}`}
+                                                                onClick={() => {
+                                                                    handleDeleteWarehouse(warehouse);
+                                                                    setOpenActionMenuId(null);
+                                                                }}
+                                                            >
+                                                                <FaTrash />
+                                                                <span>Delete</span>
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -331,6 +316,72 @@ export default function Warehouse() {
                         Next →
                     </button>
                 </div>
+                {activeModal === 'warehouse' && (
+                    <Modal onClose={() => setActiveModal(null)}>
+                        <div className={styles.modalContent}>
+                            <h3 className={styles.modalTitle}>
+                                {formData._id ? 'Edit Warehouse' : 'Add Warehouse'}
+                            </h3>
+                            <div className={styles.modalForm}>
+                                <label className={styles.modalField}>
+                                    <span>Warehouse ID</span>
+                                    <input
+                                        type="text"
+                                        value={formData.warehouseID}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, warehouseID: e.target.value }))}
+                                        className={styles.modalInput}
+                                    />
+                                </label>
+                                <label className={styles.modalField}>
+                                    <span>Address</span>
+                                    <input
+                                        type="text"
+                                        value={formData.address}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                                        className={styles.modalInput}
+                                    />
+                                </label>
+                                <label className={styles.modalField}>
+                                    <span>Storage</span>
+                                    <input
+                                        type="text"
+                                        value={formData.storage}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, storage: e.target.value }))}
+                                        className={styles.modalInput}
+                                    />
+                                </label>
+                                <label className={styles.modalField}>
+                                    <span>Space</span>
+                                    <select
+                                        value={formData.space}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, space: e.target.value }))}
+                                        className={styles.modalSelect}
+                                    >
+                                        <option value="Full">Full</option>
+                                        <option value="Space Available">Space Available</option>
+                                        <option value="Empty">Empty</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div className={styles.modalActions}>
+                                <button
+                                    type="button"
+                                    className={styles.cancelButton}
+                                    onClick={() => setActiveModal(null)}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles.saveButton}
+                                    onClick={handleSaveWarehouse}
+                                >
+                                    {formData._id ? 'Save Changes' : 'Add Warehouse'}
+                                </button>
+                            </div>
+                        </div>
+                    </Modal>
+                )}
             </WhiteIsland>
         </>
     );

@@ -1,0 +1,36 @@
+.wrapper {
+    margin-top: 20px;
+}
+
+.title {
+    margin: 0 0 12px;
+    font-size: 20px;
+    color: #1f2937;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table th,
+.table td {
+    text-align: left;
+    padding: 12px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+}
+
+.table th {
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 600;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}

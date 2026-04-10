@@ -10,6 +10,17 @@
     margin-bottom: 16px;
 }
 
+.sectionHeader {
+    margin-bottom: 16px;
+}
+
+.sectionTitle {
+    color: #1f2937;
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0;
+}
+
 .addbtn {
     display: flex;
     justify-content: space-between;
@@ -66,30 +77,6 @@
     background: rgb(1, 49, 126);
 }
 
-.editButton {
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 5px 7px;
-}
-
-.editButton:hover {
-    background-color: #218838;
-}
-
-.deleteButton {
-    padding: 5px 7px;
-    background-color: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 4px;
-}
-
-.deleteButton:hover {
-    background-color: #c82333;
-}
-
 .warehouseTable {
     width: 100%;
     border-collapse: collapse;
@@ -105,6 +92,8 @@
     background: #f9fafb;
     padding: 10px;
     white-space: nowrap;
+    color: #6b7280;
+    font-size: 13px;
 }
 
 .warehouseTable td {
@@ -115,8 +104,7 @@
 
 .warehouseTable tr {
     cursor: pointer;
-    max-height: 42px;
-
+    height: 56px;
 }
 
 .warehouseTable tr:hover {
@@ -146,17 +134,13 @@
     width: 14%;
 }
 
-.warehouseTable th:nth-child(5){
+.warehouseTable th:nth-child(5) {
     width: 14%;
 }
 
 .warehouseTable td:nth-child(5) {
     width: 14%;
-    display: flex;
-    padding: 0px 5px;
-    gap: 2px;
-    align-items: center;
-    margin-top: 4px;
+    position: relative;
 }
 
 .tableInput {
@@ -186,6 +170,145 @@
     background-color: #ffffff;
     width: 100%;
     padding: 0px 5px;
+}
+
+.actionButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 4px 8px;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+.actionButton:hover {
+    color: rgb(69 112 182);
+}
+
+.actionMenuWrapper {
+    display: inline-flex;
+    justify-content: center;
+    width: 100%;
+    position: relative;
+}
+
+.actionMenu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 8px;
+    z-index: 20;
+    min-width: 120px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    padding: 6px;
+}
+
+.actionMenuItem {
+    width: 100%;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #374151;
+    font-size: 13px;
+}
+
+.actionMenuItem:hover {
+    background: #f3f4f6;
+}
+
+.actionMenuItemDelete {
+    color: #dc2626;
+}
+
+.actionMenuItemDelete:hover {
+    background: #fee2e2;
+}
+
+.modalContent {
+    min-width: 460px;
+}
+
+.modalTitle {
+    margin: 0 0 16px 0;
+    color: #1f2937;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.modalForm {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.modalField {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.modalInput,
+.modalSelect {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.modalInput:focus,
+.modalSelect:focus {
+    border-color: rgb(69 112 182);
+    box-shadow: 0 0 0 2px rgba(69, 112, 182, 0.1);
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.cancelButton {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+    padding: 9px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.cancelButton:hover {
+    background: #f9fafb;
+}
+
+.saveButton {
+    border: none;
+    background: rgb(69 112 182);
+    color: #fff;
+    padding: 9px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.saveButton:hover {
+    background: rgb(1, 49, 126);
 }
 
 .pagination {

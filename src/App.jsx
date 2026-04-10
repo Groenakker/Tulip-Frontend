@@ -33,6 +33,7 @@ import InstanceDetail from "./pages/ContractManagement/Instance/InstanceDetail";
 import ShippingLog from "./pages/ContractManagement/ShippingLog/ShippingLog";
 import ShippingDetails from "./pages/ContractManagement/ShippingLog/ShippingDetails";
 import Warehouse from "./pages/Warehouse/Warehouse";
+import WarehouseDetails from "./pages/Warehouse/WarehouseDetails";
 import Settings from "./pages/SettingsPage/Settings";
 import Unauthorized from "./pages/Unauthorized";
 import DocumentList from "./pages/DocumentManagement/DocumentList";
@@ -302,6 +303,14 @@ function AppContent() {
                 <Warehouse />
               </ProtectedRoute>
             } 
+          />
+          <Route
+            path="/Warehouse/:warehouseId"
+            element={
+              <ProtectedRoute module="Warehouse">
+                <WarehouseDetails />
+              </ProtectedRoute>
+            }
           />
           <Route 
             path="/DocumentManagement" 
