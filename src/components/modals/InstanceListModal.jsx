@@ -445,16 +445,22 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
 
                 const updatedInstance = await res.json();
                 
-                // Create movement record for warehouse allocation
+                // Create movement record for warehouse assignment
                 if (newWarehouseId) {
                     try {
+                        const receivingId = receivingLine?.receivingId || receivingLine?._id || receivingLine?.id || null;
+                        const receivingCode = receivingLine?.receivingCode || null;
+
                         const movementData = {
                             instanceId: instance._id,
-                            movementType: 'Allocated',
+                            movementType: 'In Warehouse',
                             movementDate: new Date(),
                             warehouseId: newWarehouseId,
+                            receivingId: receivingId,
                             location: newWarehouseName,
-                            notes: `Instance allocated to warehouse ${newWarehouseName}`
+                            notes: receivingCode
+                                ? `Instance assigned to warehouse ${newWarehouseName} via receiving log ${receivingCode}`
+                                : `Instance assigned to warehouse ${newWarehouseName}`
                         };
                         
                         const movementRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instance-movements`, {
@@ -466,7 +472,7 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
                         if (!movementRes.ok) {
                             console.warn(`Failed to create movement record for instance ${instance.instanceCode}`);
                         } else {
-                            console.log(`Created allocation movement for instance ${instance.instanceCode}`);
+                            console.log(`Created warehouse movement for instance ${instance.instanceCode}`);
                         }
                     } catch (movementError) {
                         console.error(`Error creating movement for instance ${instance.instanceCode}:`, movementError);

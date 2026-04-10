@@ -228,17 +228,6 @@ const VersionsForm = ({ onClose, documentId, documentID, currentVersionNumber, o
           </label>
 
           <label className={styles.field}>
-            <span className={styles.labelText}>Status *</span>
-            <select className={styles.input} name="status" value={formData.status} onChange={handleChange} required>
-              <option value="Creation">Creation</option>
-              <option value="Review">Review</option>
-              <option value="Update">Update</option>
-              <option value="Rejected">Rejected</option>
-              <option value="Published">Published</option>
-            </select>
-          </label>
-
-          <label className={styles.field}>
             <span className={styles.labelText}>Changes *</span>
             <textarea
               className={styles.input}
@@ -375,7 +364,7 @@ const VersionsForm = ({ onClose, documentId, documentID, currentVersionNumber, o
                       </ul>
                     )}
                     {selectedTeamUser && (
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                      <div style={{ marginBottom: "16px" }}>
                         <div>
                           <label style={{ display: "block", marginBottom: "4px", fontSize: "13px", fontWeight: "500" }}>Role *</label>
                           <select
@@ -388,18 +377,6 @@ const VersionsForm = ({ onClose, documentId, documentID, currentVersionNumber, o
                             <option value="APPROVER">Approver</option>
                             <option value="OBSERVER">Observer</option>
                             <option value="EDITOR">Editor</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label style={{ display: "block", marginBottom: "4px", fontSize: "13px", fontWeight: "500" }}>Status</label>
-                          <select
-                            value={selectedTeamUserStatus}
-                            onChange={(e) => setSelectedTeamUserStatus(e.target.value)}
-                            style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D0D5DD", fontSize: "14px" }}
-                          >
-                            <option value="Pending">Pending</option>
-                            <option value="Approved">Approved</option>
-                            <option value="Rejected">Rejected</option>
                           </select>
                         </div>
                       </div>
@@ -429,7 +406,7 @@ const VersionsForm = ({ onClose, documentId, documentID, currentVersionNumber, o
                         <label style={{ display: "block", marginBottom: "4px", fontSize: "13px", fontWeight: "500" }}>Email *</label>
                         <input className={styles.input} name="email" type="email" value={newStakeholder.email} onChange={handleStakeholderChange} placeholder="Enter email" />
                       </div>
-                      <div>
+                      <div style={{ gridColumn: "1 / -1" }}>
                         <label style={{ display: "block", marginBottom: "4px", fontSize: "13px", fontWeight: "500" }}>Role *</label>
                         <select className={styles.input} name="role" value={newStakeholder.role} onChange={handleStakeholderChange}>
                           <option value="">Select Role</option>
@@ -437,14 +414,6 @@ const VersionsForm = ({ onClose, documentId, documentID, currentVersionNumber, o
                           <option value="APPROVER">Approver</option>
                           <option value="OBSERVER">Observer</option>
                           <option value="EDITOR">Editor</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label style={{ display: "block", marginBottom: "4px", fontSize: "13px", fontWeight: "500" }}>Status</label>
-                        <select className={styles.input} name="status" value={newStakeholder.status} onChange={handleStakeholderChange}>
-                          <option value="Pending">Pending</option>
-                          <option value="Approved">Approved</option>
-                          <option value="Rejected">Rejected</option>
                         </select>
                       </div>
                     </div>

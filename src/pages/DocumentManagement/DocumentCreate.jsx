@@ -358,21 +358,6 @@ export default function DocumentCreate() {
                   </div>
 
                   <div className={styles.info}>
-                    <div className={styles.infoDetail}>Status <span className={styles.required}>*</span></div>
-                    <select
-                      name="status"
-                      value={document.status}
-                      onChange={handleChange}
-                    >
-                      <option value="Creation">Creation</option>
-                      <option value="Review">Review</option>
-                      <option value="Update">Update</option>
-                      <option value="Rejected">Rejected</option>
-                      <option value="Published">Published</option>
-                    </select>
-                  </div>
-
-                  <div className={styles.info}>
                     <div className={styles.infoDetail}>Current Version</div>
                     <input
                       type="text"
@@ -517,7 +502,7 @@ export default function DocumentCreate() {
                       </ul>
                     )}
                     {selectedTeamUser && (
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                      <div style={{ marginBottom: "16px" }}>
                         <div>
                           <label className={styles.stakeholderFormLabel}>Role <span className={styles.required}>*</span></label>
                           <select
@@ -539,27 +524,6 @@ export default function DocumentCreate() {
                             <option value="APPROVER">Approver</option>
                             <option value="OBSERVER">Observer</option>
                             <option value="EDITOR">Editor</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className={styles.stakeholderFormLabel}>Status</label>
-                          <select
-                            value={selectedTeamUserStatus}
-                            onChange={(e) => setSelectedTeamUserStatus(e.target.value)}
-                            style={{
-                              width: "100%",
-                              padding: "10px 14px",
-                              borderRadius: "20px",
-                              border: "1px solid #D0D5DD",
-                              fontSize: "0.95rem",
-                              outline: "none",
-                              background: "white",
-                              boxSizing: "border-box",
-                            }}
-                          >
-                            <option value="Pending">Pending</option>
-                            <option value="Approved">Approved</option>
-                            <option value="Rejected">Rejected</option>
                           </select>
                         </div>
                       </div>
@@ -650,29 +614,6 @@ export default function DocumentCreate() {
                           <option value="APPROVER">Approver</option>
                           <option value="OBSERVER">Observer</option>
                           <option value="EDITOR">Editor</option>
-                        </select>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label className={styles.stakeholderFormLabel}>Status</label>
-                        <select
-                          name="status"
-                          value={newStakeholder.status}
-                          onChange={handleStakeholderChange}
-                          style={{
-                            width: '100%',
-                            padding: '10px 14px',
-                            borderRadius: '20px',
-                            border: '1px solid #D0D5DD',
-                            fontSize: '0.95rem',
-                            outline: 'none',
-                            background: 'white',
-                            fontFamily: 'inherit',
-                            boxSizing: 'border-box'
-                          }}
-                        >
-                          <option value="Pending">Pending</option>
-                          <option value="Approved">Approved</option>
-                          <option value="Rejected">Rejected</option>
                         </select>
                       </div>
                     </div>

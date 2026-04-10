@@ -130,6 +130,11 @@ export default function DocumentDetails() {
     return () => { cancelled = true; };
   }, [id]);
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setDocument((prev) => ({ ...prev, [name]: value }));
+  };
+
   const getCurrentStageIndex = () => {
     return lifecycleStages.findIndex((stage) => stage.value === document.status);
   };
@@ -228,6 +233,31 @@ export default function DocumentDetails() {
     if (window.confirm("Are you sure you want to delete this version?")) {
       setVersions(versions.filter(v => v.id !== versionId));
       toast.success("Version deleted successfully");
+    }
+  };
+
+  const handleStakeholderAdded = (versionId, newStakeholder, newDocumentStatus, newVersionStatus) => {
+    setVersions((prev) =>
+      prev.map((v) =>
+        v.id === versionId
+          ? {
+              ...v,
+              stakeholders: [...(v.stakeholders || []), newStakeholder],
+              ...(newVersionStatus ? { status: newVersionStatus } : {}),
+            }
+          : v
+      )
+    );
+    setSelectedVersion((prev) => {
+      if (!prev || prev.id !== versionId) return prev;
+      return {
+        ...prev,
+        stakeholders: [...(prev.stakeholders || []), newStakeholder],
+        ...(newVersionStatus ? { status: newVersionStatus } : {}),
+      };
+    });
+    if (newDocumentStatus && newDocumentStatus !== document.status) {
+      setDocument((prev) => ({ ...prev, status: newDocumentStatus }));
     }
   };
 
@@ -449,8 +479,9 @@ export default function DocumentDetails() {
                       type="text"
                       name="name"
                       value={document.name}
+                      onChange={handleChange}
                       placeholder="Document name"
-                      readOnly
+                      readOnly={!isDocumentEditable}
                     />
                   </div>
 
@@ -472,7 +503,8 @@ export default function DocumentDetails() {
                     <select
                       name="category"
                       value={document.category}
-                      disabled
+                      onChange={handleChange}
+                      disabled={!isDocumentEditable}
                     >
                       <option value="">Select Category</option>
                       <option value="Logistics">Logistics</option>
@@ -484,19 +516,13 @@ export default function DocumentDetails() {
                   </div>
 
                   <div className={styles.info}>
-                    <div className={styles.infoDetail}>Status <span className={styles.required}>*</span></div>
-                    <select
+                    <div className={styles.infoDetail}>Status</div>
+                    <input
+                      type="text"
                       name="status"
                       value={document.status}
-                      disabled
-                    >
-                      <option value="Creation">Creation</option>
-                      <option value="Review">Review</option>
-                      <option value="Update">Update</option>
-                      <option value="Rejected">Rejected</option>
-                      <option value="Published">Published</option>
-                      <option value="Archived">Archived</option>
-                    </select>
+                      readOnly
+                    />
                   </div>
 
                   <div className={styles.info}>
@@ -517,8 +543,9 @@ export default function DocumentDetails() {
                       type="text"
                       name="description"
                       value={document.description}
+                      onChange={handleChange}
                       placeholder="Document description"
-                      readOnly
+                      readOnly={!isDocumentEditable}
                     />
                   </div>
                 </div>
@@ -700,9 +727,11 @@ export default function DocumentDetails() {
         <Modal onClose={() => setSelectedVersion(null)}>
           <VersionDetailsModal
             version={selectedVersion}
+            documentId={id}
             onClose={() => setSelectedVersion(null)}
             onUpdate={handleVersionUpdate}
             onDelete={handleVersionDelete}
+            onStakeholderAdded={handleStakeholderAdded}
             isDocumentEditable={isDocumentEditable}
           />
         </Modal>
