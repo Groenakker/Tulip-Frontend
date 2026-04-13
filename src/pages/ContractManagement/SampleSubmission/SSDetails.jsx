@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import WhiteIsland from '../../../components/Whiteisland';
 import styles from './SSDetails.module.css';
-import { FaSave, FaTrash, FaImage, FaEdit, } from "react-icons/fa";
+import { FaSave, FaTrash, FaImage, FaEdit, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import Modal from '../../../components/Modal';
 import SignatureCanvas from 'react-signature-canvas';
 import toast from '../../../components/Toaster/toast';
@@ -171,6 +171,12 @@ export default function SSDetail() {
         serviceLevel: 'Standard',
         notes: ''
     });
+
+    // Instance inventory tracking state
+    const [instances, setInstances] = useState([]);
+    const [movements, setMovements] = useState([]);
+    const [loadingInventory, setLoadingInventory] = useState(false);
+    const [expandedInstance, setExpandedInstance] = useState(null);
 
 
     // Handle image change for sample images
@@ -659,6 +665,76 @@ export default function SSDetail() {
         };
     }, [sample.materialsOfConstruction, sample.safetyPrecautions, testMetadata.notes]);
 
+
+    // Fetch instances and movements for this sample
+    useEffect(() => {
+        if (!isEdit || !id || id === 'add') return;
+        
+        const fetchInventory = async () => {
+            setLoadingInventory(true);
+            try {
+                const [instancesRes, movementsRes] = await Promise.all([
+                    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances/sample/${id}`),
+                    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instance-movements/sample/${id}`)
+                ]);
+
+                if (instancesRes.ok) {
+                    const data = await instancesRes.json();
+                    setInstances(Array.isArray(data) ? data : []);
+                }
+                if (movementsRes.ok) {
+                    const data = await movementsRes.json();
+                    setMovements(Array.isArray(data) ? data : []);
+                }
+            } catch (err) {
+                console.error('Error fetching inventory data:', err);
+            } finally {
+                setLoadingInventory(false);
+            }
+        };
+        fetchInventory();
+    }, [id, isEdit]);
+
+    const getLatestMovementForInstance = (instanceId) => {
+        const instanceMovements = movements.filter(m => 
+            (m.instanceId?._id || m.instanceId) === instanceId
+        );
+        return instanceMovements.length > 0 ? instanceMovements[0] : null;
+    };
+
+    const getMovementsForInstance = (instanceId) => {
+        return movements.filter(m => 
+            (m.instanceId?._id || m.instanceId) === instanceId
+        );
+    };
+
+    const getInventorySummary = () => {
+        const total = instances.length;
+        let received = 0, inWarehouse = 0, shipped = 0;
+        const warehouseMap = {};
+
+        instances.forEach(inst => {
+            const latest = getLatestMovementForInstance(inst._id);
+            const type = latest?.movementType;
+            if (type === 'Shipped') shipped++;
+            else if (type === 'In Warehouse') inWarehouse++;
+            else received++;
+
+            if (type === 'In Warehouse' && latest?.warehouseId) {
+                const whName = latest.warehouseId?.warehouseID || latest.location || 'Unknown';
+                warehouseMap[whName] = (warehouseMap[whName] || 0) + 1;
+            }
+        });
+
+        return { total, received, inWarehouse, shipped, warehouseMap };
+    };
+
+    const formatMovementDate = (value) => {
+        if (!value) return '';
+        const d = new Date(value);
+        if (isNaN(d.getTime())) return '';
+        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
 
     //Image click handler
     const handleImageClick = (type) => () => {
@@ -1403,6 +1479,161 @@ export default function SSDetail() {
                 </div>
             </WhiteIsland>
 
+
+            {/* Instance Inventory & Movement Tracking */}
+            {isEdit && (
+                <WhiteIsland className={styles.bigIsland}>
+                    <h3>Instance Inventory & Movement</h3>
+                    <div className={styles.main}>
+                        <div className={styles.detailContainer}>
+                            {loadingInventory ? (
+                                <div style={{ padding: '20px', textAlign: 'center' }}>Loading inventory data...</div>
+                            ) : instances.length === 0 ? (
+                                <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                                    No instances created yet. Instances are generated when samples are received via a Receiving Log.
+                                </div>
+                            ) : (() => {
+                                const summary = getInventorySummary();
+                                return (
+                                    <>
+                                        {/* Summary Cards */}
+                                        <div className={styles.inventorySummary}>
+                                            <div className={`${styles.summaryCard} ${styles.summaryTotal}`}>
+                                                <div className={styles.summaryNumber}>{summary.total}</div>
+                                                <div className={styles.summaryLabel}>Total Instances</div>
+                                            </div>
+                                            <div className={`${styles.summaryCard} ${styles.summaryReceived}`}>
+                                                <div className={styles.summaryNumber}>{summary.received}</div>
+                                                <div className={styles.summaryLabel}>Received</div>
+                                            </div>
+                                            <div className={`${styles.summaryCard} ${styles.summaryWarehouse}`}>
+                                                <div className={styles.summaryNumber}>{summary.inWarehouse}</div>
+                                                <div className={styles.summaryLabel}>In Warehouse</div>
+                                            </div>
+                                            <div className={`${styles.summaryCard} ${styles.summaryShipped}`}>
+                                                <div className={styles.summaryNumber}>{summary.shipped}</div>
+                                                <div className={styles.summaryLabel}>Shipped</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Warehouse Breakdown */}
+                                        {Object.keys(summary.warehouseMap).length > 0 && (
+                                            <div className={styles.warehouseBreakdown}>
+                                                <div className={styles.breakdownTitle}>Warehouse Distribution</div>
+                                                <div className={styles.breakdownChips}>
+                                                    {Object.entries(summary.warehouseMap).map(([name, count]) => (
+                                                        <div key={name} className={styles.warehouseChip}>
+                                                            <span className={styles.chipName}>{name}</span>
+                                                            <span className={styles.chipCount}>{count}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Instance Detail Table */}
+                                        <div className={styles.inventoryTableWrap}>
+                                            <table className={styles.inventoryTable}>
+                                                <thead>
+                                                    <tr>
+                                                        <th></th>
+                                                        <th>Instance Code</th>
+                                                        <th>Lot #</th>
+                                                        <th>Test Status</th>
+                                                        <th>Location</th>
+                                                        <th>Warehouse</th>
+                                                        <th>Last Updated</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {instances.map((inst) => {
+                                                        const latest = getLatestMovementForInstance(inst._id);
+                                                        const locationType = latest?.movementType || 'Received';
+                                                        const warehouseName = latest?.warehouseId?.warehouseID || inst.warehouseID?.warehouseID || '-';
+                                                        const isExpanded = expandedInstance === inst._id;
+                                                        const instMovements = isExpanded ? getMovementsForInstance(inst._id) : [];
+
+                                                        return (
+                                                            <React.Fragment key={inst._id}>
+                                                                <tr
+                                                                    className={styles.inventoryRow}
+                                                                    onClick={() => setExpandedInstance(isExpanded ? null : inst._id)}
+                                                                >
+                                                                    <td className={styles.expandCell}>
+                                                                        {isExpanded ? <FaChevronUp size={10} /> : <FaChevronDown size={10} />}
+                                                                    </td>
+                                                                    <td className={styles.codeCell}>{inst.instanceCode}</td>
+                                                                    <td>{inst.lotNo || '-'}</td>
+                                                                    <td>
+                                                                        <span className={`${styles.statusPill} ${styles['status_' + (inst.status || 'Pending').toLowerCase().replace(/\s/g, '')]}`}>
+                                                                            {inst.status || 'Pending'}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td>
+                                                                        <span className={`${styles.locationPill} ${styles['loc_' + locationType.toLowerCase().replace(/\s/g, '')]}`}>
+                                                                            {locationType}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td>{warehouseName}</td>
+                                                                    <td className={styles.dateCell}>{formatMovementDate(latest?.movementDate)}</td>
+                                                                </tr>
+                                                                {isExpanded && (
+                                                                    <tr className={styles.expandedRow}>
+                                                                        <td colSpan="7">
+                                                                            <div className={styles.movementTimeline}>
+                                                                                <div className={styles.timelineTitle}>Movement History</div>
+                                                                                {instMovements.length === 0 ? (
+                                                                                    <div className={styles.noMovements}>No movements recorded</div>
+                                                                                ) : (
+                                                                                    <div className={styles.timelineList}>
+                                                                                        {instMovements.map((mv, idx) => (
+                                                                                            <div key={mv._id} className={styles.timelineItem}>
+                                                                                                <div className={`${styles.timelineDot} ${styles['dot_' + mv.movementType.toLowerCase().replace(/\s/g, '')]}`} />
+                                                                                                <div className={styles.timelineContent}>
+                                                                                                    <div className={styles.timelineHeader}>
+                                                                                                        <span className={`${styles.locationPill} ${styles['loc_' + mv.movementType.toLowerCase().replace(/\s/g, '')]}`}>
+                                                                                                            {mv.movementType}
+                                                                                                        </span>
+                                                                                                        <span className={styles.timelineDate}>
+                                                                                                            {formatMovementDate(mv.movementDate)}
+                                                                                                        </span>
+                                                                                                    </div>
+                                                                                                    <div className={styles.timelineDetails}>
+                                                                                                        {mv.warehouseId?.warehouseID && (
+                                                                                                            <span>Warehouse: {mv.warehouseId.warehouseID}</span>
+                                                                                                        )}
+                                                                                                        {mv.receivingId?.receivingCode && (
+                                                                                                            <span>Receiving: {mv.receivingId.receivingCode}</span>
+                                                                                                        )}
+                                                                                                        {mv.shippingId?.shippingCode && (
+                                                                                                            <span>Shipping: {mv.shippingId.shippingCode}</span>
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                    {mv.notes && (
+                                                                                                        <div className={styles.timelineNotes}>{mv.notes}</div>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                )}
+                                                            </React.Fragment>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    </div>
+                </WhiteIsland>
+            )}
 
             {/* Submission Approval WhiteIsland */}
             {/* NOTE : data for this section is not being saved in the object-sample. The input fields just have a default value  */}

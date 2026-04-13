@@ -698,10 +698,10 @@ export default function ShipmentDetails() {
                                 try {
                                     const movementData = {
                                         instanceId: instance._id,
+                                        sampleId: instance.idSample || null,
                                         movementType: 'Shipped',
                                         movementDate: new Date(),
                                         shippingId: id,
-                                        shippingCode: log.shippingCode || null,
                                         warehouseId: instance.warehouseID || null,
                                         location: null,
                                         notes: `Instance shipped via shipping log ${log.shippingCode || id}`
@@ -718,9 +718,20 @@ export default function ShipmentDetails() {
                                     } else {
                                         console.log(`Created shipping movement for instance ${instance.instanceCode}`);
                                     }
+                                    // Clear warehouseID from instance since it's been shipped
+                                    if (instance.warehouseID) {
+                                        try {
+                                            await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances/${instance._id}`, {
+                                                method: 'PUT',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ warehouseID: null })
+                                            });
+                                        } catch (clearErr) {
+                                            console.warn(`Failed to clear warehouse from instance ${instance.instanceCode}:`, clearErr);
+                                        }
+                                    }
                                 } catch (movementError) {
                                     console.error(`Error creating movement for instance ${instance.instanceCode}:`, movementError);
-                                    // Don't fail the whole operation if movement creation fails
                                 }
                             } else {
                                 console.log(`Instance ${instance.instanceCode} already exists in shipping line, skipping`);

@@ -1,42 +1,532 @@
-.title {
-    font-size: 28px;
-    margin: 0 0 18px;
+.pageWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 20px;
 }
 
-.page {
-    padding: 8px 0;
+.island {
+    flex: 1;
+    min-width: 0;
 }
 
-.backButton {
+.loadingState {
+    padding: 40px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.emptyState {
+    padding: 30px;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+/* Top row: info + capacity side by side */
+.topRow {
+    display: flex;
+    gap: 10px;
+}
+
+.topRow .island:first-child {
+    flex: 2;
+}
+
+.capacityIsland {
+    flex: 1 !important;
+}
+
+/* Info header */
+.infoHeader {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 10px;
+}
+
+.backBtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     border: none;
     background: #f1f5f9;
-    color: #0f172a;
+    color: #374151;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s;
+}
+
+.backBtn:hover {
+    background: #e2e8f0;
+}
+
+.whCode {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e3a5f;
+    margin: 0;
+    flex: 1;
+}
+
+.editBtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.editBtn:hover {
+    background: #f0f4ff;
+    border-color: #4570b6;
+    color: #4570b6;
+}
+
+.infoGrid {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.infoItem {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 140px;
+}
+
+.infoLabel {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #9ca3af;
+}
+
+.infoValue {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.spaceBadge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.space_full {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.space_spaceavailable {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.space_empty {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+/* Capacity section */
+.sectionTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 12px;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 8px;
+}
+
+.capacityBody {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.capacityCards {
+    display: flex;
+    gap: 10px;
+}
+
+.capCard {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 8px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+.capIcon {
+    font-size: 18px;
+    margin-bottom: 2px;
+}
+
+.capNumber {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1f2937;
+    line-height: 1;
+}
+
+.capLabel {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #6b7280;
+}
+
+.progressWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.progressBar {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progressText {
+    font-size: 12px;
+    color: #6b7280;
+    text-align: right;
+}
+
+.capacityNote {
+    font-size: 12px;
+    color: #9ca3af;
+    text-align: center;
+    font-style: italic;
+}
+
+/* Tab Bar */
+.tabBar {
+    display: flex;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 0;
+}
+
+.tab {
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.tab:hover {
+    color: #374151;
+}
+
+.tabActive {
+    color: #4570b6;
+    border-bottom-color: #4570b6;
+    font-weight: 600;
+}
+
+.tabContent {
+    padding-top: 12px;
+}
+
+/* Sample groups (current inventory) */
+.sampleGroups {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sampleGroup {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.sampleGroupHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 10px 14px;
+    background: #f9fafb;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.sampleGroupHeader:hover {
+    background: #f0f4ff;
+}
+
+.sampleGroupLeft {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6b7280;
+}
+
+.sampleGroupCode {
+    font-weight: 600;
+    color: #1e3a5f;
+    font-size: 14px;
+}
+
+.sampleGroupCount {
+    font-size: 13px;
+    color: #6b7280;
+    background: #e5e7eb;
+    padding: 2px 10px;
+    border-radius: 10px;
+}
+
+/* Instance table inside sample group */
+.instanceTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.instanceTable thead th {
+    background: #2d3748;
+    color: #fff;
+    padding: 7px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.instanceTable tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.clickRow {
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.clickRow:hover {
+    background: #f5f7ff;
+}
+
+.codeTd {
+    font-weight: 600;
+    color: #1e3a5f;
+}
+
+.dateCol {
+    font-size: 12px;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.notesCol {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Status pills */
+.statusPill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.st_pending { background: #f3f4f6; color: #6b7280; }
+.st_intesting { background: #dbeafe; color: #1d4ed8; }
+.st_completed { background: #d1fae5; color: #065f46; }
+.st_failed { background: #fee2e2; color: #991b1b; }
+.st_cancelled { background: #f3f4f6; color: #9ca3af; }
+
+/* History table */
+.historyTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.historyTable thead th {
+    background: #2d3748;
+    color: #fff;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.historyTable tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.historyTable tbody tr:hover {
+    background: #fafbfc;
+}
+
+/* Direction badge */
+.dirBadge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.arrival {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.departure {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Edit Modal */
+.modalContent {
+    min-width: 460px;
+}
+
+.modalTitle {
+    margin: 0 0 16px 0;
+    color: #1f2937;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.modalForm {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.modalField {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.modalInput,
+.modalSelect {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
     border-radius: 8px;
     font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.modalInput:focus,
+.modalSelect:focus {
+    border-color: rgb(69 112 182);
+    box-shadow: 0 0 0 2px rgba(69, 112, 182, 0.1);
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.cancelButton {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+    padding: 9px 14px;
+    border-radius: 8px;
     cursor: pointer;
-    margin-bottom: 18px;
+    font-size: 13px;
+    font-weight: 500;
 }
 
-.detailsCard {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 14px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 16px;
+.cancelButton:hover {
+    background: #f9fafb;
 }
 
-.label {
-    font-size: 12px;
-    color: #64748b;
-    text-transform: uppercase;
+.saveButton {
+    border: none;
+    background: rgb(69 112 182);
+    color: #fff;
+    padding: 9px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
 }
 
-.value {
-    margin: 6px 0 0;
-    font-size: 16px;
-    color: #0f172a;
-    font-weight: 600;
+.saveButton:hover {
+    background: rgb(1, 49, 126);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .topRow {
+        flex-direction: column;
+    }
+
+    .capacityCards {
+        flex-direction: row;
+    }
+
+    .infoGrid {
+        gap: 12px;
+    }
+
+    .modalContent {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .modalForm {
+        grid-template-columns: 1fr;
+    }
 }

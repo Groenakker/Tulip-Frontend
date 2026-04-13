@@ -24,7 +24,7 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
                 
                 const filtered = data.filter(i => 
                     i.sampleCode === (sample?.sampleCode || sample?.id) ||
-                    i.idSample === (sample?._id || sample?.id)
+                    i.idSample === (sample?.id)
                 );
                 console.log('Filtered instances:', filtered);
                 setInstances(filtered);
@@ -146,7 +146,7 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
                 
                 const instanceData = {
                     instanceCode,
-                    idSample: sample?._id || sample?.id || null,
+                    idSample: sample?.id || null,
                     sampleCode: sample?.sampleCode || sample?.id || 'UNKNOWN-SAMPLE',
                     lotNo: receivingLine?.lot || 'DEFAULT-LOT',
                     status: 'Pending',
@@ -185,11 +185,11 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
                     
                     const movementData = {
                         instanceId: instance._id,
+                        sampleId: sample?.id || null,
                         movementType: 'Received',
                         movementDate: new Date(),
                         receivingId: receivingId,
-                        receivingCode: receivingCode,
-                        warehouseId: null, // Will be set when allocated
+                        warehouseId: null,
                         location: null,
                         notes: receivingCode 
                             ? `Instance received via receiving log ${receivingCode}`
@@ -453,6 +453,7 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
 
                         const movementData = {
                             instanceId: instance._id,
+                            sampleId: instance.idSample || sample?.id || null,
                             movementType: 'In Warehouse',
                             movementDate: new Date(),
                             warehouseId: newWarehouseId,

@@ -662,3 +662,287 @@
 .smallBtn:hover {
     background-color: #013179;
 }
+
+/* Instance Inventory & Movement Section */
+.inventorySummary {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.summaryCard {
+    flex: 1;
+    min-width: 120px;
+    padding: 16px;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid #e0e0e0;
+}
+
+.summaryNumber {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.summaryLabel {
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.summaryTotal {
+    background: #f0f4ff;
+    border-color: #c7d7fe;
+}
+.summaryTotal .summaryNumber { color: #3b5998; }
+.summaryTotal .summaryLabel { color: #5a7cbf; }
+
+.summaryReceived {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+.summaryReceived .summaryNumber { color: #166534; }
+.summaryReceived .summaryLabel { color: #16a34a; }
+
+.summaryWarehouse {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+.summaryWarehouse .summaryNumber { color: #1e40af; }
+.summaryWarehouse .summaryLabel { color: #3b82f6; }
+
+.summaryShipped {
+    background: #fffbeb;
+    border-color: #fde68a;
+}
+.summaryShipped .summaryNumber { color: #92400e; }
+.summaryShipped .summaryLabel { color: #d97706; }
+
+.warehouseBreakdown {
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: #fafafa;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.breakdownTitle {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #374151;
+}
+
+.breakdownChips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.warehouseChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 20px;
+    font-size: 13px;
+}
+
+.chipName {
+    font-weight: 500;
+    color: #374151;
+}
+
+.chipCount {
+    background: #4570b6;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.inventoryTableWrap {
+    overflow-x: auto;
+}
+
+.inventoryTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.inventoryTable thead th {
+    background: #2d3748;
+    color: #fff;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.inventoryTable thead th:first-child {
+    width: 30px;
+    text-align: center;
+}
+
+.inventoryRow {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.inventoryRow:hover {
+    background: #f5f7ff;
+}
+
+.inventoryRow td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+}
+
+.expandCell {
+    text-align: center;
+    color: #9ca3af;
+    width: 30px;
+}
+
+.codeCell {
+    font-weight: 600;
+    color: #1e3a5f;
+}
+
+.dateCell {
+    font-size: 12px;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.statusPill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status_pending { background: #f3f4f6; color: #6b7280; }
+.status_intesting { background: #dbeafe; color: #1d4ed8; }
+.status_completed { background: #d1fae5; color: #065f46; }
+.status_failed { background: #fee2e2; color: #991b1b; }
+.status_cancelled { background: #f3f4f6; color: #9ca3af; }
+
+.locationPill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.loc_received { background: #d1fae5; color: #065f46; }
+.loc_inwarehouse { background: #dbeafe; color: #1e40af; }
+.loc_shipped { background: #fef3c7; color: #92400e; }
+
+/* Expanded movement timeline */
+.expandedRow td {
+    padding: 0 !important;
+    border-bottom: 2px solid #4570b6;
+}
+
+.movementTimeline {
+    padding: 12px 16px 12px 40px;
+    background: #f9fafb;
+}
+
+.timelineTitle {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+    margin-bottom: 10px;
+}
+
+.noMovements {
+    font-size: 13px;
+    color: #9ca3af;
+    padding: 8px 0;
+}
+
+.timelineList {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.timelineItem {
+    display: flex;
+    gap: 12px;
+    padding: 8px 0;
+    position: relative;
+}
+
+.timelineItem:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 22px;
+    bottom: -8px;
+    width: 2px;
+    background: #e5e7eb;
+}
+
+.timelineDot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 2px;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #d1d5db;
+}
+
+.dot_received { background: #22c55e; box-shadow: 0 0 0 1px #22c55e; }
+.dot_inwarehouse { background: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
+.dot_shipped { background: #f59e0b; box-shadow: 0 0 0 1px #f59e0b; }
+
+.timelineContent {
+    flex: 1;
+    min-width: 0;
+}
+
+.timelineHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.timelineDate {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.timelineDetails {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: #6b7280;
+    flex-wrap: wrap;
+}
+
+.timelineNotes {
+    font-size: 12px;
+    color: #6b7280;
+    font-style: italic;
+    margin-top: 2px;
+}

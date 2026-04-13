@@ -22,7 +22,7 @@ export default function Warehouse() {
         warehouseID: '',
         address: '',
         storage: '',
-        space: 'Empty'
+        capacity: 0
     });
 
     // Fetch warehouses from backend
@@ -63,7 +63,7 @@ export default function Warehouse() {
             warehouseID: `WH-${Date.now()}`,
             address: '',
             storage: '',
-            space: 'Empty'
+            capacity: 0
         });
         setActiveModal('warehouse');
     };
@@ -74,7 +74,7 @@ export default function Warehouse() {
             warehouseID: warehouse.warehouseID || '',
             address: warehouse.address || '',
             storage: warehouse.storage || '',
-            space: warehouse.space || 'Empty'
+            capacity: warehouse.capacity || 0
         });
         setActiveModal('warehouse');
     };
@@ -109,10 +109,10 @@ export default function Warehouse() {
             warehouseID: formData.warehouseID?.trim(),
             address: formData.address?.trim(),
             storage: formData.storage?.trim(),
-            space: formData.space
+            capacity: parseInt(formData.capacity) || 0
         };
 
-        if (!payload.warehouseID || !payload.address || !payload.storage || !payload.space) {
+        if (!payload.warehouseID || !payload.address || !payload.storage) {
             toast.error('Please fill all required fields');
             return;
         }
@@ -235,7 +235,7 @@ export default function Warehouse() {
                                     return (
                                         <tr
                                             key={warehouse._id}
-                                            onClick={() => navigate(`/Warehouse/${encodeURIComponent(warehouse.warehouseID || warehouse._id)}`)}
+                                            onClick={() => navigate(`/Warehouse/${warehouse._id}`)}
                                             style={{ cursor: 'pointer' }}
                                         >
                                             <td>
@@ -351,16 +351,14 @@ export default function Warehouse() {
                                     />
                                 </label>
                                 <label className={styles.modalField}>
-                                    <span>Space</span>
-                                    <select
-                                        value={formData.space}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, space: e.target.value }))}
-                                        className={styles.modalSelect}
-                                    >
-                                        <option value="Full">Full</option>
-                                        <option value="Space Available">Space Available</option>
-                                        <option value="Empty">Empty</option>
-                                    </select>
+                                    <span>Capacity (max instances, 0 = unlimited)</span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={formData.capacity}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, capacity: e.target.value }))}
+                                        className={styles.modalInput}
+                                    />
                                 </label>
                             </div>
                             <div className={styles.modalActions}>
