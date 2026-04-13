@@ -97,16 +97,18 @@
 }
 
 .infoGrid {
-    display: flex;
-    gap: 24px;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, auto);
+    gap: 20px 32px;
+    align-items: start;
 }
 
 .infoItem {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    min-width: 140px;
+    min-width: 0;
 }
 
 .infoLabel {
@@ -518,7 +520,8 @@
     }
 
     .infoGrid {
-        gap: 12px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px 20px;
     }
 
     .modalContent {

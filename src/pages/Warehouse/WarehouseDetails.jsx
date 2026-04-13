@@ -218,9 +218,6 @@ export default function WarehouseDetails() {
             <div className={styles.topRow}>
                 <WhiteIsland className={styles.island}>
                     <div className={styles.infoHeader}>
-                        <button className={styles.backBtn} onClick={() => navigate('/Warehouse')}>
-                            <FaArrowLeft /> Back
-                        </button>
                         <h3 className={styles.whCode}>{warehouse.warehouseID}</h3>
                         <button className={styles.editBtn} onClick={openEditModal}>
                             <FaEdit /> Edit

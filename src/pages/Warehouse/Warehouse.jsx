@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaSearch, FaPlus, FaEdit, FaTrash, FaEllipsisV } from 'react-icons/fa';
 import toast from '../../components/Toaster/toast';
 import Modal from '../../components/Modal';
+import Header from '../../components/Header';
 
 export default function Warehouse() {
     const navigate = useNavigate();
@@ -182,7 +183,7 @@ export default function Warehouse() {
 
     return (
         <>
-            <h2 className={styles.title}>Warehouses</h2>
+            <Header title="Warehouses" />
             <WhiteIsland className='WhiteIsland'>
                 <div className={styles.warehousesPage}>
                     <div className={styles.sectionHeader}>
