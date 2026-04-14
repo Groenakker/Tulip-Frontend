@@ -340,7 +340,7 @@ export default function WarehouseDetails() {
                                                     </thead>
                                                     <tbody>
                                                         {group.instances.map(inst => (
-                                                            <tr key={inst._id} onClick={() => navigate(`/Instance/InstanceDetail/${inst._id}`)} className={styles.clickRow}>
+                                                            <tr key={inst._id} onClick={() => navigate(`/Instance/${inst._id}`)} className={styles.clickRow}>
                                                                 <td className={styles.codeTd}>{inst.instanceCode}</td>
                                                                 <td>{inst.lotNo || '-'}</td>
                                                                 <td>
