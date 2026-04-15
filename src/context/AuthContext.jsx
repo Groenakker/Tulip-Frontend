@@ -186,16 +186,20 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      // Ensure permissionsLoading is set to true synchronously before async fetch
       setPermissionsLoading(true);
       fetchPermissions();
-    } else {
+    } else if (!isLoading) {
+      // Only clear permissions after auth check is complete.
+      // Without this guard, on mount isAuthenticated is false (auth check
+      // hasn't finished yet) and we'd prematurely set permissionsLoading=false,
+      // causing ProtectedRoute to see "permissions done but empty" and redirect
+      // to /not-authorized before the real permissions fetch even starts.
       setPermissions([]);
       setHasSystemRole(false);
       setPermissionsLoading(false);
       permissionsLoadedRef.current = false;
     }
-  }, [isAuthenticated, fetchPermissions]);
+  }, [isAuthenticated, isLoading, fetchPermissions]);
 
   const login = async (email, password) => {
     try {

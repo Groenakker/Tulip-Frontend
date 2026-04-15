@@ -629,6 +629,12 @@
     border: 1px solid #fca5a5;
 }
 
+.statusBadge[data-status="Approved"] {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+}
+
 .statusBadge[data-status="Published"] {
     background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
     color: #065f46;

@@ -29,13 +29,13 @@ const VersionDetailsModal = ({ version, documentId, onClose, onUpdate, onDelete,
     status: "Pending",
   });
 
-  // Lifecycle stages
   const lifecycleStages = [
     { step: 1, label: "Creation", value: "Creation" },
     { step: 2, label: "Review", value: "Review" },
-    { step: 3, label: "Update", value: "Update" },
-    { step: 4, label: "Rejected", value: "Rejected" },
-    { step: 5, label: "Published", value: "Published" },
+    { step: 3, label: "Approved", value: "Approved" },
+    { step: 4, label: "Update", value: "Update" },
+    { step: 5, label: "Rejected", value: "Rejected" },
+    { step: 6, label: "Published", value: "Published" },
   ];
 
   const hasApprovedStakeholder = stakeholders.some(s => s.status === "Approved");
@@ -511,7 +511,7 @@ const VersionDetailsModal = ({ version, documentId, onClose, onUpdate, onDelete,
                     marginLeft: "8px",
                     padding: "4px 12px",
                     borderRadius: "12px",
-                    background: formData.status === "Published" ? "#10b981" : "#3b82f6",
+                    background: formData.status === "Published" ? "#10b981" : formData.status === "Approved" ? "#2563eb" : formData.status === "Rejected" ? "#ef4444" : "#3b82f6",
                     color: "white",
                     fontSize: "13px",
                   }}

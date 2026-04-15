@@ -145,11 +145,16 @@
 }
 
 .statusPublished {
-    background: #dbeafe;
-    color: #1e40af;
+    background: #d1fae5;
+    color: #065f46;
 }
 
 .statusReview {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.statusApproved {
     background: #dbeafe;
     color: #1e40af;
 }
@@ -157,6 +162,16 @@
 .statusDraft {
     background: #f3f4f6;
     color: #6b7280;
+}
+
+.statusRejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.statusArchived {
+    background: #e5e7eb;
+    color: #374151;
 }
 
 .statusDefault {
@@ -203,4 +218,50 @@
 .pagination button:disabled {
     opacity: 0.4;
     cursor: default;
+}
+
+.tabBar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s ease;
+}
+
+.tab:hover {
+    color: #374151;
+}
+
+.tabActive {
+    color: rgb(69 112 182);
+    border-bottom-color: rgb(69 112 182);
+}
+
+.tabCount {
+    padding: 1px 8px;
+    border-radius: 10px;
+    background: #f3f4f6;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.tabActive .tabCount {
+    background: #dbeafe;
+    color: rgb(69 112 182);
 }

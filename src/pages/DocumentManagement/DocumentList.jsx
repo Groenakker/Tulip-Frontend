@@ -10,6 +10,7 @@ export default function DocumentList() {
   const [page, setPage] = useState(1);
   const [inputValue, setInputValue] = useState("");
   const [pageSize, setPageSize] = useState(9);
+  const [activeTab, setActiveTab] = useState("active");
   const navigate = useNavigate();
   const [documentData, setDocumentData] = useState([]);
   const [filteredDocuments, setFilteredDocuments] = useState([]);
@@ -47,16 +48,22 @@ export default function DocumentList() {
   useEffect(() => {
     const value = inputValue.toLowerCase();
     setFilteredDocuments(
-      documentData.filter(
-        (document) =>
+      documentData.filter((document) => {
+        const isArchived = (document.status || "").toLowerCase() === "archived";
+        if (activeTab === "archived" && !isArchived) return false;
+        if (activeTab === "active" && isArchived) return false;
+
+        return (
           document.documentID?.toLowerCase().includes(value) ||
           document.title?.toLowerCase().includes(value) ||
           document.category?.toLowerCase().includes(value) ||
           document.status?.toLowerCase().includes(value) ||
           document.version?.toLowerCase().includes(value)
-      )
+        );
+      })
     );
-  }, [inputValue, documentData]);
+    setPage(1);
+  }, [inputValue, documentData, activeTab]);
 
   useEffect(() => {
     const updatePageSize = () => {
@@ -102,12 +109,15 @@ export default function DocumentList() {
         return styles.statusPublished;
       case "REVIEW":
         return styles.statusReview;
+      case "APPROVED":
+        return styles.statusApproved;
       case "CREATION":
       case "DRAFT":
         return styles.statusDraft;
-      case "UPDATE":
       case "REJECTED":
-        return styles.statusDefault;
+        return styles.statusRejected;
+      case "ARCHIVED":
+        return styles.statusArchived;
       default:
         return styles.statusDefault;
     }
@@ -121,6 +131,27 @@ export default function DocumentList() {
         <div className={styles.documentsPage}>
           <div className={styles.sectionHeader}>
             <h3 className={styles.sectionTitle}>All Documents</h3>
+          </div>
+
+          <div className={styles.tabBar}>
+            <button
+              className={`${styles.tab} ${activeTab === "active" ? styles.tabActive : ""}`}
+              onClick={() => setActiveTab("active")}
+            >
+              Active
+              <span className={styles.tabCount}>
+                {documentData.filter((d) => (d.status || "").toLowerCase() !== "archived").length}
+              </span>
+            </button>
+            <button
+              className={`${styles.tab} ${activeTab === "archived" ? styles.tabActive : ""}`}
+              onClick={() => setActiveTab("archived")}
+            >
+              Archived
+              <span className={styles.tabCount}>
+                {documentData.filter((d) => (d.status || "").toLowerCase() === "archived").length}
+              </span>
+            </button>
           </div>
 
           <header className={styles.addbtn}>

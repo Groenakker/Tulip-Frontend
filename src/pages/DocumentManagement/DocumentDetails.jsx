@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import WhiteIsland from "../../components/Whiteisland";
 import styles from "./DocumentDetails.module.css";
-import { FaPlus, FaTrash, FaDownload, FaCheckCircle } from "react-icons/fa";
+import { FaPlus, FaTrash, FaDownload, FaCheckCircle, FaArchive } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "../../components/Toaster/toast";
 import Modal from "../../components/Modal";
@@ -31,14 +31,14 @@ export default function DocumentDetails() {
   const [activeModal, setActiveModal] = useState(null);
   const [selectedVersion, setSelectedVersion] = useState(null);
 
-  // Lifecycle stages: Creation → Review (add stakeholder) → Update | Rejected → Publish → Archived
   const lifecycleStages = [
     { step: 1, label: "Creation", value: "Creation", description: "Document is being created; add stakeholders to send for approval" },
     { step: 2, label: "Review", value: "Review", description: "Document is under review; stakeholders are approving" },
-    { step: 3, label: "Update", value: "Update", description: "Document needs updates" },
-    { step: 4, label: "Rejected", value: "Rejected", description: "Document was rejected" },
-    { step: 5, label: "Published", value: "Published", description: "Document is published (final draft); no further edits" },
-    { step: 6, label: "Archived", value: "Archived", description: "Document is archived" },
+    { step: 3, label: "Approved", value: "Approved", description: "All approvers have approved; ready to publish" },
+    { step: 4, label: "Update", value: "Update", description: "Document needs updates" },
+    { step: 5, label: "Rejected", value: "Rejected", description: "Document was rejected" },
+    { step: 6, label: "Published", value: "Published", description: "Document is published (final draft); no further edits" },
+    { step: 7, label: "Archived", value: "Archived", description: "Document is archived" },
   ];
 
   const [versions, setVersions] = useState([]);
@@ -93,7 +93,6 @@ export default function DocumentDetails() {
           owner: ownerName,
         });
         const versionList = Array.isArray(data.versions) ? data.versions : [];
-        // Ensure version status shown in UI always matches the document lifecycle status
         setVersions(
           versionList.map((v) => ({
             id: v.id ?? v._id,
@@ -105,7 +104,7 @@ export default function DocumentDetails() {
               : "",
             author: v.author ?? "",
             changes: v.changes ?? "",
-            status: data.status ?? "Creation",
+            status: v.status ?? "Creation",
             fileName: v.fileName ?? "",
             fileUrl: v.fileUrl,
             files: Array.isArray(v.files) ? v.files : [],
@@ -182,8 +181,7 @@ export default function DocumentDetails() {
             : "",
           author: versionData.author ?? "",
           changes: versionData.changes ?? "",
-          // New versions also reflect the current document status
-          status: document.status ?? "Creation",
+          status: versionData.status ?? "Creation",
           fileName: versionData.fileName ?? "",
           fileUrl: versionData.fileUrl,
           files: versionData.files || [],
@@ -325,12 +323,15 @@ export default function DocumentDetails() {
   // Editable only in Creation, Update, or Rejected. Not editable in Review, Published, or Archived.
   const isDocumentEditable = ["Creation", "Update", "Rejected"].includes(document.status);
 
-  // Publish: only when in Review and all stakeholders (latest version) have approved
+  // Publish: only when all APPROVER-role stakeholders on the latest version have approved
   const latestVersion = versions[0];
-  const allStakeholdersApproved =
-    latestVersion?.stakeholders?.length > 0 &&
-    latestVersion.stakeholders.every((s) => (s.status || "").toLowerCase() === "approved");
-  const canPublish = document.status === "Review" && allStakeholdersApproved;
+  const approverStakeholders = (latestVersion?.stakeholders || []).filter(
+    (s) => (s.role || "").toUpperCase() === "APPROVER"
+  );
+  const allApproversApproved =
+    approverStakeholders.length > 0 &&
+    approverStakeholders.every((s) => (s.status || "").toLowerCase() === "approved");
+  const canPublish = ["Review", "Approved"].includes(document.status) && allApproversApproved;
 
   const handlePublish = async () => {
     if (!canPublish || !id) return;
@@ -348,9 +349,35 @@ export default function DocumentDetails() {
       }
       toast.success("Document published. It is now final and no longer editable.");
       setDocument((prev) => ({ ...prev, status: "Published" }));
+      setVersions((prev) =>
+        prev.map((v, i) => (i === 0 ? { ...v, status: "Published" } : v))
+      );
     } catch (error) {
       console.error("Error publishing document:", error);
       toast.error("Failed to publish document");
+    }
+  };
+
+  const handleArchive = async () => {
+    if (document.status !== "Published" || !id) return;
+    if (!window.confirm("Are you sure you want to archive this document? This action cannot be undone.")) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/documents/${id}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Archived" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.message || "Failed to archive document");
+        return;
+      }
+      toast.success("Document archived successfully.");
+      setDocument((prev) => ({ ...prev, status: "Archived" }));
+    } catch (error) {
+      console.error("Error archiving document:", error);
+      toast.error("Failed to archive document");
     }
   };
 
@@ -412,7 +439,6 @@ export default function DocumentDetails() {
                 const isCompleted = stage.step < currentStageIndex + 1;
                 const isActive = stage.value === document.status;
                 const isFuture = stage.step > currentStageIndex + 1;
-                console.log("Document status:", document.status);
                 return (
                   <div
                     key={stage.step}
@@ -552,7 +578,6 @@ export default function DocumentDetails() {
               </div>
             </div>
 
-            {/* Warning when in Review; info when Published/Archived */}
             {document.status === "Review" && (
               <div style={{
                 padding: "12px 16px",
@@ -564,8 +589,23 @@ export default function DocumentDetails() {
                 fontWeight: "500",
                 marginTop: "16px",
               }}>
-                <strong>⚠️ Document Under Review:</strong> This document is sent for approval.
-                Editing, deleting, and version management are disabled until stakeholders approve or reject.
+                <strong>Document Under Review:</strong> This document is sent for approval.
+                Editing, deleting, and version management are disabled until all approvers approve or reject.
+              </div>
+            )}
+            {document.status === "Approved" && (
+              <div style={{
+                padding: "12px 16px",
+                background: "#dbeafe",
+                border: "1px solid #3b82f6",
+                borderRadius: "8px",
+                color: "#1e40af",
+                fontSize: "14px",
+                fontWeight: "500",
+                marginTop: "16px",
+              }}>
+                <strong>All Approvers Approved!</strong> This document version has been approved by all required approvers.
+                You can now publish it using the Publish button below.
               </div>
             )}
             {(document.status === "Published" || document.status === "Archived") && (
@@ -579,7 +619,7 @@ export default function DocumentDetails() {
                 fontWeight: "500",
                 marginTop: "16px",
               }}>
-                <strong>✓ Final draft.</strong> This document is {document.status === "Published" ? "published" : "archived"} and cannot be edited. No further versions can be added.
+                <strong>Final draft.</strong> This document is {document.status === "Published" ? "published" : "archived"} and cannot be edited. No further versions can be added.
               </div>
             )}
 
@@ -604,6 +644,26 @@ export default function DocumentDetails() {
                   }}
                 >
                   <FaCheckCircle /> Publish
+                </button>
+              )}
+              {document.status === "Published" && (
+                <button
+                  type="button"
+                  onClick={handleArchive}
+                  style={{
+                    padding: "10px 20px",
+                    background: "#6b7280",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontWeight: "500",
+                  }}
+                >
+                  <FaArchive /> Archive
                 </button>
               )}
               <button
