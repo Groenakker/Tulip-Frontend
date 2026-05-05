@@ -97,6 +97,20 @@
     border-color: #2563eb;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
   }
+
+  /* When `.tableInput` is applied to a <select> (e.g. Mass Unit in the
+     customs items table), match the Shippo dropdown chevron so the
+     select doesn't fall back to the OS/browser default appearance. */
+  select.tableInput {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%23475467' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 24px;
+    cursor: pointer;
+  }
   
   .saves{
     display: flex;
@@ -492,6 +506,388 @@
 
   .scanCancelBtn:hover {
       background-color: #d1d5db;
+  }
+
+  /* =========================================================
+     Shippo integration UI
+     ========================================================= */
+  .customerCard {
+      margin: 8px 6px;
+      padding: 10px 14px;
+      border: 1px solid #e5e7eb;
+      background: #f8fafc;
+      border-radius: 10px;
+      font-size: 13px;
+  }
+
+  .customerCardHeader {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      color: #1e3a8a;
+      margin-bottom: 6px;
+  }
+
+  .customerCardGrid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px 16px;
+  }
+
+  .customerCardGrid > div {
+      min-width: 0;
+      overflow-wrap: anywhere;
+  }
+
+  .shippoNotConfigured {
+      font-size: 12px;
+      padding: 4px 10px;
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+      border-radius: 20px;
+  }
+
+  .shippoLayout {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 10px;
+  }
+
+  @media (max-width: 1100px) {
+      .shippoLayout {
+          grid-template-columns: 1fr;
+      }
+  }
+
+  .shippoBlock {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+  }
+
+  .shippoBlockTitle {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      color: #1e293b;
+  }
+
+  .shippoGrid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+  }
+
+  .shippoGrid label,
+  .parcelGrid label {
+      display: flex;
+      flex-direction: column;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      gap: 3px;
+  }
+
+  .shippoGrid input,
+  .shippoGrid select,
+  .parcelGrid input,
+  .parcelGrid select,
+  .shippoSavedAddress select {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid #d0d5dd;
+      font-size: 13px;
+      font-weight: 400;
+      background: #fff;
+      color: #111827;
+      width: 100%;
+      box-sizing: border-box;
+  }
+
+  /* Custom chevron for <select> so all Shippo dropdowns share the
+     same look regardless of OS/browser default select styling. */
+  .shippoGrid select,
+  .parcelGrid select,
+  .shippoSavedAddress select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1.5L6 6.5L11 1.5' stroke='%23475467' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 28px;
+      cursor: pointer;
+  }
+
+  .shippoGrid input:focus,
+  .shippoGrid select:focus,
+  .parcelGrid input:focus,
+  .parcelGrid select:focus,
+  .shippoSavedAddress select:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  }
+
+  /* Saved-address picker sits outside .shippoGrid (it spans the full
+     block width), so give it the same label/select look-and-feel. */
+  .shippoSavedAddress {
+      display: flex;
+      flex-direction: column;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      gap: 3px;
+      margin-bottom: 4px;
+  }
+
+  .parcelGrid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+  }
+
+  .shippoEmptyNotice {
+      font-size: 13px;
+      color: #6b7280;
+      padding: 16px 8px;
+      text-align: center;
+      background: #f9fafb;
+      border-radius: 8px;
+  }
+
+  .shippoActions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 8px;
+  }
+
+  .shippoPrimaryBtn,
+  .shippoSecondaryBtn,
+  .shippoDangerBtn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.15s ease;
+  }
+
+  .shippoPrimaryBtn {
+      background: #4570b6;
+      color: #fff;
+  }
+  .shippoPrimaryBtn:hover:not(:disabled) {
+      background: rgb(1, 49, 126);
+  }
+
+  .shippoSecondaryBtn {
+      background: #e0e7ff;
+      color: #1e3a8a;
+  }
+  .shippoSecondaryBtn:hover:not(:disabled) {
+      background: #c7d2fe;
+  }
+
+  .shippoDangerBtn {
+      background: #fee2e2;
+      color: #b91c1c;
+  }
+  .shippoDangerBtn:hover:not(:disabled) {
+      background: #fecaca;
+  }
+
+  .shippoPrimaryBtn:disabled,
+  .shippoSecondaryBtn:disabled,
+  .shippoDangerBtn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+  }
+
+  .ratesSection {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px dashed #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+  }
+
+  .rateRowSelected td {
+      background-color: #e0f2fe !important;
+  }
+
+  .carrierLogo {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      margin-right: 8px;
+      vertical-align: middle;
+  }
+
+  .labelCard {
+      margin-top: 16px;
+      padding: 14px 16px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+  }
+
+  .labelCardHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+  }
+
+  .labelCardHeader h4 {
+      margin: 0;
+      color: #0f172a;
+  }
+
+  .labelStatusBadge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #e2e8f0;
+      color: #0f172a;
+  }
+
+  .labelStatusBadge[data-status="DELIVERED"] { background: #d1fae5; color: #047857; }
+  .labelStatusBadge[data-status="TRANSIT"]   { background: #dbeafe; color: #1e40af; }
+  .labelStatusBadge[data-status="PRE_TRANSIT"] { background: #fef3c7; color: #92400e; }
+  .labelStatusBadge[data-status="RETURNED"]  { background: #fee2e2; color: #b91c1c; }
+  .labelStatusBadge[data-status="FAILURE"]   { background: #fee2e2; color: #b91c1c; }
+
+  .labelCardGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 6px 16px;
+      font-size: 13px;
+      color: #334155;
+  }
+
+  .trackingHistory {
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top: 1px dashed #cbd5e1;
+  }
+
+  .trackingEta {
+      font-size: 13px;
+      margin-bottom: 8px;
+      color: #0f172a;
+  }
+
+  .trackingList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 280px;
+      overflow-y: auto;
+  }
+
+  .trackingListItem {
+      padding: 8px 10px;
+      border: 1px solid #e2e8f0;
+      border-left: 3px solid #4570b6;
+      background: #fff;
+      border-radius: 6px;
+      font-size: 13px;
+  }
+
+  .trackingStatus {
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+  }
+
+  .trackingDetails {
+      color: #334155;
+      margin: 2px 0;
+  }
+
+  .trackingMeta {
+      color: #64748b;
+      font-size: 11px;
+  }
+
+  .shippoSecondaryBtn {
+      background: #eef4ff;
+      color: #1e40af;
+      border: 1px solid #c7d2fe;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+  }
+
+  .shippoSecondaryBtn:hover {
+      background: #dbeafe;
+      border-color: #93c5fd;
+  }
+
+  .shippoWarning {
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      color: #78350f;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin: 12px 0;
+      font-size: 13px;
+      line-height: 1.5;
+  }
+
+  .shippoInlineLink {
+      background: none;
+      border: none;
+      color: #1e40af;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0 4px;
+      text-decoration: underline;
+      font-size: inherit;
+  }
+
+  .shippoInlineLink:hover {
+      color: #1e3a8a;
+  }
+
+  /* Wrapper for the embedded <TrackingView/> block inside the Shipping
+     Details label card. Adds a subtle divider and a scroll-margin so that
+     deep-linking via #tracking-section lands cleanly below the page header. */
+  .inlineTrackingWrap {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px dashed #cbd5e1;
+      scroll-margin-top: 80px;
   }
   
   

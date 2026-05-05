@@ -139,3 +139,80 @@
     opacity: 0.4;
     cursor: default;
 }
+
+/* In-app tracking button rendered in the Tracking column of the list.
+   Clicking it opens the dedicated TrackingPage without triggering the
+   row's navigate-to-details handler. */
+.trackBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #eef4ff;
+    border: 1px solid #c7d2fe;
+    color: #1e40af;
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.15s ease;
+    max-width: 100%;
+}
+
+.trackBtn:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+
+.trackBtnText {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.3px;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.trackStatusPill {
+    background: #1e40af;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    text-transform: uppercase;
+}
+
+.trackBtn[data-status="DELIVERED"] {
+    background: #dcfce7;
+    border-color: #86efac;
+    color: #166534;
+}
+
+.trackBtn[data-status="DELIVERED"] .trackStatusPill {
+    background: #166534;
+}
+
+.trackBtn[data-status="OUT_FOR_DELIVERY"] {
+    background: #fef3c7;
+    border-color: #fcd34d;
+    color: #92400e;
+}
+
+.trackBtn[data-status="OUT_FOR_DELIVERY"] .trackStatusPill {
+    background: #92400e;
+}
+
+.trackBtn[data-status="FAILURE"],
+.trackBtn[data-status="RETURNED"] {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #991b1b;
+}
+
+.trackBtn[data-status="FAILURE"] .trackStatusPill,
+.trackBtn[data-status="RETURNED"] .trackStatusPill {
+    background: #991b1b;
+}

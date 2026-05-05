@@ -10,6 +10,8 @@ import {
   FaPlus,
   FaSave,
   FaImage,
+  FaTrash,
+  FaMapMarkerAlt,
 } from "react-icons/fa";
 import WhiteIsland from "../../components/Whiteisland";
 import styles from "./Settings.module.css";
@@ -53,6 +55,29 @@ export default function Settings() {
   const [companyUpdateLoading, setCompanyUpdateLoading] = useState(false);
   const [companyUpdateError, setCompanyUpdateError] = useState("");
   const [roleOptions, setRoleOptions] = useState([]);
+
+  // ----- Shipping addresses (Company tab) -----
+  const emptyShippingAddress = {
+    label: "",
+    name: "",
+    company: "",
+    street1: "",
+    street2: "",
+    city: "",
+    state: "",
+    zip: "",
+    country: "US",
+    phone: "",
+    email: "",
+    isDefault: false,
+  };
+  const [shippingAddresses, setShippingAddresses] = useState([]);
+  const [shippingAddressesLoading, setShippingAddressesLoading] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [addressForm, setAddressForm] = useState(emptyShippingAddress);
+  const [editingAddressId, setEditingAddressId] = useState(null);
+  const [addressFormError, setAddressFormError] = useState("");
+  const [addressFormLoading, setAddressFormLoading] = useState(false);
   
   // Roles & Permissions states
   const [roles, setRoles] = useState([]);
@@ -166,6 +191,34 @@ export default function Settings() {
 
     fetchCompanyDetails();
 
+    return () => controller.abort();
+  }, [user?.companyId]);
+
+  // Load shipping addresses whenever the company id changes.
+  useEffect(() => {
+    if (!user?.companyId) {
+      setShippingAddresses([]);
+      return;
+    }
+    const controller = new AbortController();
+    (async () => {
+      setShippingAddressesLoading(true);
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/companies/${user.companyId}/shipping-addresses`,
+          { credentials: "include", signal: controller.signal }
+        );
+        const data = await response.json().catch(() => []);
+        if (!response.ok) throw new Error(data?.message || "Failed to load shipping addresses");
+        setShippingAddresses(Array.isArray(data) ? data : []);
+      } catch (e) {
+        if (e.name !== "AbortError") {
+          console.error("Failed to load shipping addresses:", e);
+        }
+      } finally {
+        if (!controller.signal.aborted) setShippingAddressesLoading(false);
+      }
+    })();
     return () => controller.abort();
   }, [user?.companyId]);
 
@@ -621,6 +674,97 @@ export default function Settings() {
       );
     } finally {
       setCompanyUpdateLoading(false);
+    }
+  };
+
+  // ---------- Shipping Address handlers ----------
+  const openAddAddressModal = () => {
+    setEditingAddressId(null);
+    setAddressForm({ ...emptyShippingAddress });
+    setAddressFormError("");
+    setShowAddressModal(true);
+  };
+
+  const openEditAddressModal = (address) => {
+    setEditingAddressId(address._id);
+    setAddressForm({
+      label: address.label || "",
+      name: address.name || "",
+      company: address.company || "",
+      street1: address.street1 || "",
+      street2: address.street2 || "",
+      city: address.city || "",
+      state: address.state || "",
+      zip: address.zip || "",
+      country: address.country || "US",
+      phone: address.phone || "",
+      email: address.email || "",
+      isDefault: Boolean(address.isDefault),
+    });
+    setAddressFormError("");
+    setShowAddressModal(true);
+  };
+
+  const closeAddressModal = () => {
+    setShowAddressModal(false);
+    setEditingAddressId(null);
+    setAddressForm({ ...emptyShippingAddress });
+    setAddressFormError("");
+    setAddressFormLoading(false);
+  };
+
+  const handleAddressFieldChange = (field) => (e) => {
+    const { value, type, checked } = e.target;
+    setAddressForm((prev) => ({
+      ...prev,
+      [field]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleSaveAddress = async () => {
+    if (!user?.companyId) return;
+    if (!addressForm.label.trim()) {
+      setAddressFormError("Label is required (e.g. \"Main Warehouse\").");
+      return;
+    }
+
+    setAddressFormLoading(true);
+    setAddressFormError("");
+    try {
+      const url = editingAddressId
+        ? `${API_BASE_URL}/companies/${user.companyId}/shipping-addresses/${editingAddressId}`
+        : `${API_BASE_URL}/companies/${user.companyId}/shipping-addresses`;
+      const method = editingAddressId ? "PUT" : "POST";
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(addressForm),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.message || "Failed to save address");
+      setShippingAddresses(Array.isArray(data) ? data : []);
+      closeAddressModal();
+    } catch (err) {
+      setAddressFormError(err.message || "Failed to save address");
+    } finally {
+      setAddressFormLoading(false);
+    }
+  };
+
+  const handleDeleteAddress = async (addressId) => {
+    if (!user?.companyId || !addressId) return;
+    if (!window.confirm("Delete this shipping address?")) return;
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/companies/${user.companyId}/shipping-addresses/${addressId}`,
+        { method: "DELETE", credentials: "include" }
+      );
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.message || "Failed to delete");
+      setShippingAddresses(Array.isArray(data) ? data : []);
+    } catch (err) {
+      alert(err.message || "Failed to delete address");
     }
   };
 
@@ -1348,6 +1492,96 @@ export default function Settings() {
                     {companyUpdateLoading ? "Saving..." : "Save"}
                   </button>
                 </div>
+
+                {/* -----------------------------------------------------
+                    Shipping Addresses — a company can have multiple
+                    (Main HQ, warehouse, distribution centers, etc).
+                    These feed the "Ship From" dropdown when creating a
+                    Shippo label on the Shipping Details page.
+                ----------------------------------------------------- */}
+                <div style={{ marginTop: 28 }}>
+                  <div className={styles.shippingAddressesHeader}>
+                    <h4>
+                      <FaMapMarkerAlt style={{ marginRight: 6, verticalAlign: "middle" }} />
+                      Shipping Addresses
+                    </h4>
+                    <button
+                      type="button"
+                      className={styles.addAddressButton}
+                      onClick={openAddAddressModal}
+                    >
+                      <FaPlus /> Add Address
+                    </button>
+                  </div>
+
+                  {shippingAddressesLoading ? (
+                    <div className={styles.shippingAddressesEmpty}>
+                      Loading shipping addresses...
+                    </div>
+                  ) : shippingAddresses.length === 0 ? (
+                    <div className={styles.shippingAddressesEmpty}>
+                      No shipping addresses yet. Click "Add Address" to create one.
+                    </div>
+                  ) : (
+                    <div className={styles.shippingAddressList}>
+                      {shippingAddresses.map((addr) => (
+                        <div
+                          key={addr._id}
+                          className={`${styles.shippingAddressCard} ${addr.isDefault ? styles.defaultCard : ""}`}
+                        >
+                          <div className={styles.shippingAddressInfo}>
+                            <div className={styles.shippingAddressLabelRow}>
+                              <span className={styles.shippingAddressLabel}>
+                                {addr.label}
+                              </span>
+                              {addr.isDefault && (
+                                <span className={styles.defaultBadge}>Default</span>
+                              )}
+                            </div>
+                            <div className={styles.shippingAddressBody}>
+                              {addr.name || addr.company ? (
+                                <div>
+                                  {[addr.name, addr.company].filter(Boolean).join(" · ")}
+                                </div>
+                              ) : null}
+                              <div>
+                                {[addr.street1, addr.street2].filter(Boolean).join(", ") || "—"}
+                              </div>
+                              <div>
+                                {[addr.city, addr.state, addr.zip, addr.country]
+                                  .filter(Boolean)
+                                  .join(", ") || "—"}
+                              </div>
+                              {(addr.phone || addr.email) && (
+                                <div>
+                                  {[addr.phone, addr.email].filter(Boolean).join(" · ")}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className={styles.shippingAddressActions}>
+                            <button
+                              type="button"
+                              className={styles.iconButton}
+                              onClick={() => openEditAddressModal(addr)}
+                              title="Edit"
+                            >
+                              <FaEdit />
+                            </button>
+                            <button
+                              type="button"
+                              className={`${styles.iconButton} ${styles.danger}`}
+                              onClick={() => handleDeleteAddress(addr._id)}
+                              title="Delete"
+                            >
+                              <FaTrash />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </WhiteIsland>
             )}
           </>
@@ -1388,6 +1622,163 @@ export default function Settings() {
           <div className={styles.content}>{renderContent()}</div>
         </div>
       </WhiteIsland>
+      {showAddressModal && (
+        <Modal onClose={closeAddressModal}>
+          <div className={styles.inviteModalContent} style={{ maxWidth: 640 }}>
+            <h3>{editingAddressId ? "Edit Shipping Address" : "Add Shipping Address"}</h3>
+            <form
+              className={styles.inviteForm}
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSaveAddress();
+              }}
+            >
+              <div className={styles.addressFormGrid}>
+                <label className={styles.fullRow}>
+                  Label
+                  <input
+                    type="text"
+                    value={addressForm.label}
+                    onChange={handleAddressFieldChange("label")}
+                    placeholder='e.g. "Main Warehouse"'
+                    required
+                    disabled={addressFormLoading}
+                  />
+                </label>
+                <label>
+                  Name
+                  <input
+                    type="text"
+                    value={addressForm.name}
+                    onChange={handleAddressFieldChange("name")}
+                    disabled={addressFormLoading}
+                  />
+                </label>
+                <label>
+                  Company
+                  <input
+                    type="text"
+                    value={addressForm.company}
+                    onChange={handleAddressFieldChange("company")}
+                    disabled={addressFormLoading}
+                  />
+                </label>
+                <label className={styles.fullRow}>
+                  Street 1
+                  <input
+                    type="text"
+                    value={addressForm.street1}
+                    onChange={handleAddressFieldChange("street1")}
+                    disabled={addressFormLoading}
+                  />
+                </label>
+                <label className={styles.fullRow}>
+                  Street 2
+                  <input
+                    type="text"
+                    value={addressForm.street2}
+                    onChange={handleAddressFieldChange("street2")}
+                    disabled={addressFormLoading}
+                  />
+                </label>
+                <label>
+                  City
+                  <input
+                    type="text"
+                    value={addressForm.city}
+                    onChange={handleAddressFieldChange("city")}
+                    disabled={addressFormLoading}
+                  />
+                </label>
+                <label>
+                  State
+                  <input
+                    type="text"
+                    value={addressForm.state}
+                    onChange={handleAddressFieldChange("state")}
+                    disabled={addressFormLoading}
+                  />
+                </label>
+                <label>
+                  ZIP
+                  <input
+                    type="text"
+                    value={addressForm.zip}
+                    onChange={handleAddressFieldChange("zip")}
+                    disabled={addressFormLoading}
+                  />
+                </label>
+                <label>
+                  Country (2-letter)
+                  <input
+                    type="text"
+                    maxLength={2}
+                    value={addressForm.country}
+                    onChange={(e) =>
+                      setAddressForm((prev) => ({
+                        ...prev,
+                        country: e.target.value.toUpperCase(),
+                      }))
+                    }
+                    disabled={addressFormLoading}
+                  />
+                </label>
+                <label>
+                  Phone
+                  <input
+                    type="text"
+                    value={addressForm.phone}
+                    onChange={handleAddressFieldChange("phone")}
+                    disabled={addressFormLoading}
+                  />
+                </label>
+                <label>
+                  Email
+                  <input
+                    type="email"
+                    value={addressForm.email}
+                    onChange={handleAddressFieldChange("email")}
+                    disabled={addressFormLoading}
+                  />
+                </label>
+                <label className={styles.addressFormCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(addressForm.isDefault)}
+                    onChange={handleAddressFieldChange("isDefault")}
+                    disabled={addressFormLoading}
+                  />
+                  Set as default ship-from address
+                </label>
+              </div>
+              {addressFormError && (
+                <p className={styles.modalError}>{addressFormError}</p>
+              )}
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.modalSecondaryButton}
+                  onClick={closeAddressModal}
+                  disabled={addressFormLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={styles.modalPrimaryButton}
+                  disabled={!addressForm.label.trim() || addressFormLoading}
+                >
+                  {addressFormLoading
+                    ? "Saving..."
+                    : editingAddressId
+                    ? "Save Changes"
+                    : "Add Address"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </Modal>
+      )}
       {showInviteModal && (
         <Modal onClose={handleCloseInviteModal}>
           <div className={styles.inviteModalContent}>

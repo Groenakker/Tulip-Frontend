@@ -35,6 +35,7 @@ import ShippingDetails from "./pages/ContractManagement/ShippingLog/ShippingDeta
 import Warehouse from "./pages/Warehouse/Warehouse";
 import WarehouseDetails from "./pages/Warehouse/WarehouseDetails";
 import Settings from "./pages/SettingsPage/Settings";
+import ActivityLog from "./pages/ActivityLog/ActivityLog";
 import Unauthorized from "./pages/Unauthorized";
 import DocumentList from "./pages/DocumentManagement/DocumentList";
 import DocumentDetails from "./pages/DocumentManagement/DocumentDetails";
@@ -352,6 +353,14 @@ function AppContent() {
                 <Settings />
               </ProtectedRoute>
             } 
+          />
+          <Route
+            path="/ActivityLog"
+            element={
+              <ProtectedRoute module="Settings">
+                <ActivityLog />
+              </ProtectedRoute>
+            }
           />
           <Route 
             path="/not-authorized" 

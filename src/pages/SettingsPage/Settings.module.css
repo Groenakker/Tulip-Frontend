@@ -857,3 +857,182 @@
   user-select: none;
 }
 
+/* ============================================================
+   Shipping Addresses (Company > Shipping Addresses section)
+   ============================================================ */
+.shippingAddressesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.shippingAddressesHeader h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #111827;
+}
+
+.shippingAddressesEmpty {
+  padding: 18px;
+  text-align: center;
+  color: #6b7280;
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+}
+
+.shippingAddressList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shippingAddressCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.shippingAddressCard.defaultCard {
+  border-color: rgb(69 112 182);
+  background: #f5f9ff;
+}
+
+.shippingAddressInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.shippingAddressLabelRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.shippingAddressLabel {
+  font-weight: 600;
+  color: #111827;
+}
+
+.defaultBadge {
+  background: rgb(69 112 182);
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.shippingAddressBody {
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.shippingAddressActions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.iconButton:hover {
+  background: #f3f4f6;
+}
+
+.iconButton.danger {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.iconButton.danger:hover {
+  background: #fef2f2;
+}
+
+.addAddressButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background: rgb(69 112 182);
+  color: #fff;
+  cursor: pointer;
+}
+
+.addAddressButton:hover:not(:disabled) {
+  background: rgb(1, 49, 126);
+}
+
+.addAddressButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Address form modal content */
+.addressFormGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.addressFormGrid label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.addressFormGrid label.fullRow {
+  grid-column: 1 / -1;
+}
+
+.addressFormGrid input {
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.addressFormGrid input:focus {
+  outline: none;
+  border-color: rgb(69 112 182);
+  box-shadow: 0 0 0 3px rgba(69, 112, 182, 0.2);
+}
+
+.addressFormCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #374151;
+  grid-column: 1 / -1;
+}
+

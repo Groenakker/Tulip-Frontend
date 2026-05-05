@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import './Sidebar.css';
-import { FaWallet, FaRedo, FaHome, FaCog, FaQuestionCircle, FaChevronDown, FaShippingFast, FaWarehouse, FaFile } from 'react-icons/fa';
+import { FaWallet, FaRedo, FaHome, FaCog, FaQuestionCircle, FaChevronDown, FaShippingFast, FaWarehouse, FaFile, FaHistory } from 'react-icons/fa';
 import { GoSidebarExpand } from "react-icons/go";
 import { GiRolledCloth, GiTestTubes } from "react-icons/gi";
 import { RiHexagonFill } from "react-icons/ri";
@@ -21,7 +21,7 @@ const menuItems = [
   { label: 'Dashboard', icon: <FaHome />, path: '/Dashboard', permission: { module: 'Dashboard', actions: 'read' } },
   { label: 'Material Research', icon: <GiRolledCloth />, path: '/MaterialResearch', permission: { module: 'Material Research', actions: 'read' } },
   { label: 'Constituent Research', icon: <RiHexagonFill />, path: '/ConstituentResearch', permission: { module: 'Constituent Research', actions: 'read' } },
-  { label: 'Buisness Partner', icon: <IoBusiness />, path: '/BuisnessPartner', permission: { module: 'Business Partners', actions: 'read' } },
+  { label: 'Business Partner', icon: <IoBusiness />, path: '/BuisnessPartner', permission: { module: 'Business Partners', actions: 'read' } },
   { label: 'Projects', icon: <FaDiagramProject />, path: '/Projects', permission: { module: 'Projects', actions: 'read' } },
   { label: 'Document Management', icon: <FaFile />, path: '/DocumentManagement', permission: { module: 'Document Management', actions: 'read' } },
   {
@@ -113,6 +113,9 @@ const Sidebar = () => {
   }, [permissionsLoading, hasPermission]);
 
   const canAccessSettings = hasPermission('Settings', 'read');
+  // The Activity Log is gated behind the same Settings permission on the
+  // backend, so we reuse that flag for visibility here.
+  const canAccessActivityLog = canAccessSettings;
 
   return (
     <div className={`sidebarContainer ${collapsed ? 'collapsed' : ''}`}>
@@ -214,6 +217,16 @@ const Sidebar = () => {
             style={{ cursor: 'pointer' }}
           >
             <FaCog /> {!collapsed && <span>Settings</span>}
+          </div>
+        )}
+        {canAccessActivityLog && (
+          <div
+            className={`sidebarOption ${isPathActive('/ActivityLog') ? 'active' : ''}`}
+            title={collapsed ? 'Activity Log' : ''}
+            onClick={() => navigate('/ActivityLog')}
+            style={{ cursor: 'pointer' }}
+          >
+            <FaHistory /> {!collapsed && <span>Activity Log</span>}
           </div>
         )}
         <div className="sidebarOption" title={collapsed ? 'Help Center' : ''}><FaQuestionCircle /> {!collapsed && <span>Help Center</span>}

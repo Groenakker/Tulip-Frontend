@@ -1,0 +1,579 @@
+.page {
+    padding: 16px 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* ---------- Top bar ---------- */
+.topBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.backBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.backBtn:hover {
+    background: #f1f5f9;
+}
+
+.topBarRight {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lastRefreshed {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.refreshBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #4570b6;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.refreshBtn:hover:not(:disabled) {
+    background: #355a93;
+}
+
+.refreshBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ---------- Error / empty states ---------- */
+.errorBox {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.emptyState {
+    padding: 28px 20px;
+    text-align: center;
+    color: #64748b;
+    font-size: 14px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+}
+
+/* ---------- Summary card ---------- */
+.summaryCard {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef4ff 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px 24px;
+}
+
+.summaryLeft {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.codeRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.shippingCode {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: 0.3px;
+}
+
+.carrierChip {
+    background: #1e293b;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+
+.trackingNumberRow {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.trackingLabel {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.trackingNumber {
+    color: #0f172a;
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    font-size: 15px;
+}
+
+/* ---------- Status badge ---------- */
+.statusBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-weight: 600;
+    min-width: 220px;
+}
+
+.statusIcon {
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+}
+
+.statusText {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.statusLabel {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.statusDetails {
+    font-size: 12px;
+    font-weight: 400;
+    opacity: 0.85;
+    max-width: 280px;
+}
+
+.statusBadge[data-status="DELIVERED"] {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+}
+
+.statusBadge[data-status="OUT_FOR_DELIVERY"] {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+}
+
+.statusBadge[data-status="TRANSIT"] {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+}
+
+.statusBadge[data-status="PRE_TRANSIT"] {
+    background: #e0e7ff;
+    color: #3730a3;
+    border: 1px solid #a5b4fc;
+}
+
+.statusBadge[data-status="FAILURE"],
+.statusBadge[data-status="RETURNED"] {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.statusBadge[data-status="UNKNOWN"] {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+}
+
+/* ---------- Progress stepper ---------- */
+.progressWrap {
+    position: relative;
+    padding: 18px 30px 4px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+}
+
+.progressLine {
+    position: absolute;
+    top: 38px;
+    left: 60px;
+    right: 60px;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    z-index: 0;
+}
+
+.progressLineFill {
+    height: 100%;
+    background: linear-gradient(90deg, #4570b6, #22c55e);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+}
+
+.progressSteps {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+    z-index: 1;
+}
+
+.progressStep {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.progressDot {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #94a3b8;
+    transition: all 0.2s ease;
+}
+
+.progressStep.reached .progressDot {
+    background: #4570b6;
+    border-color: #4570b6;
+    color: #fff;
+}
+
+.progressStep.active .progressDot {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+    transform: scale(1.08);
+}
+
+.progressStepLabel {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.progressStep.reached .progressStepLabel {
+    color: #1e293b;
+}
+
+/* ---------- Route card ---------- */
+.routeCard {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 20px;
+    align-items: center;
+}
+
+.routeEnd {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.routeIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #eef4ff;
+    color: #4570b6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.routeLabel {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.routeCompany {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 2px;
+}
+
+.routeAddress {
+    font-size: 13px;
+    color: #475569;
+}
+
+.routeMiddle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: #4570b6;
+    font-size: 22px;
+}
+
+.etaPill {
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+/* ---------- Meta grid ---------- */
+.metaGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+.metaItem {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+
+.metaLabel {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.metaValue {
+    font-size: 14px;
+    color: #0f172a;
+    font-weight: 500;
+}
+
+/* ---------- Timeline ---------- */
+.timelineSection {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px 24px;
+}
+
+.sectionTitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 16px;
+}
+
+.timeline {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    position: relative;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: 15px;
+    width: 2px;
+    background: #e2e8f0;
+}
+
+.timelineItem {
+    position: relative;
+    padding-left: 48px;
+    padding-bottom: 18px;
+}
+
+.timelineItem:last-child {
+    padding-bottom: 0;
+}
+
+.timelineDot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #cbd5e1;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    z-index: 1;
+}
+
+.timelineDot[data-status="DELIVERED"] {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: #fff;
+}
+
+.timelineDot[data-status="OUT_FOR_DELIVERY"] {
+    background: #f59e0b;
+    border-color: #f59e0b;
+    color: #fff;
+}
+
+.timelineDot[data-status="TRANSIT"] {
+    background: #4570b6;
+    border-color: #4570b6;
+    color: #fff;
+}
+
+.timelineDot[data-status="PRE_TRANSIT"] {
+    background: #818cf8;
+    border-color: #818cf8;
+    color: #fff;
+}
+
+.timelineDot[data-status="FAILURE"],
+.timelineDot[data-status="RETURNED"] {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: #fff;
+}
+
+.timelineContent {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 14px;
+}
+
+.timelineHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+
+.timelineStatus {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: 0.4px;
+}
+
+.timelineDate {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.timelineDetails {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 4px;
+}
+
+.timelineLocation {
+    font-size: 12px;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+    .summaryCard {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .routeCard {
+        grid-template-columns: 1fr;
+    }
+
+    .routeMiddle {
+        transform: rotate(90deg);
+        margin: 8px 0;
+    }
+
+    .progressLine {
+        left: 30px;
+        right: 30px;
+    }
+
+    .progressStepLabel {
+        font-size: 10px;
+    }
+}

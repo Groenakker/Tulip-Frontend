@@ -2,7 +2,7 @@ import React from 'react';
 import WhiteIsland from '../../../components/Whiteisland';
 import styles from './ShippingLog.module.css';
 import { useState, useEffect } from 'react';
-import { FaSearch, FaPlus } from 'react-icons/fa';
+import { FaSearch, FaPlus, FaRoute } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header';
 // const shipData = [
@@ -89,6 +89,15 @@ export default function ShippingLog() {
     navigate(`/ShippingLog/${row._id}`);
   };
 
+  // Navigate to the shipping details page and jump to the inline tracking
+  // section. We append #tracking-section so ShippingDetails can scroll it
+  // into view after it mounts. Stop propagation so the row click (which
+  // also navigates to details, but without the hash) doesn't override this.
+  const handleTrackClick = (e, row) => {
+    e.stopPropagation();
+    navigate(`/ShippingLog/${row._id}#tracking-section`);
+  };
+
   return (
     <>
       {/* <h2 className={styles.title}>Shipping Log</h2> */}
@@ -120,20 +129,44 @@ export default function ShippingLog() {
                 <th>Shipping Code</th>
                 <th>Destination</th>
                 <th>Project</th>
+                <th>Carrier</th>
+                <th>Tracking</th>
                 <th>Departure</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="4" style={{textAlign:'center',padding:'20px'}}>Loading...</td></tr>
+                <tr><td colSpan="6" style={{textAlign:'center',padding:'20px'}}>Loading...</td></tr>
               ) : pagedData.length === 0 ? (
-                <tr><td colSpan="4" style={{textAlign:'center',padding:'20px'}}>No shipping records</td></tr>
+                <tr><td colSpan="6" style={{textAlign:'center',padding:'20px'}}>No shipping records</td></tr>
               ) : (
                 pagedData.map((shipping) => (
                   <tr key={shipping._id} onClick={() => handleRowClick(shipping)} style={{cursor:'pointer'}}>
                     <td>{shipping.shippingCode || '-'}</td>
                     <td>{shipping.shipmentDestination || '-'}</td>
                     <td>{shipping.projectDesc || shipping.projectID || '-'}</td>
+                    <td>{shipping.carrier ? shipping.carrier.toUpperCase() : '-'}</td>
+                    <td>
+                      {shipping.trackingNumber ? (
+                        <button
+                          type='button'
+                          className={styles.trackBtn}
+                          onClick={(e) => handleTrackClick(e, shipping)}
+                          title='View in-app tracking'
+                          data-status={shipping.trackingStatus || 'UNKNOWN'}
+                        >
+                          <FaRoute />
+                          <span className={styles.trackBtnText}>
+                            {shipping.trackingNumber}
+                          </span>
+                          {shipping.trackingStatus && (
+                            <span className={styles.trackStatusPill}>
+                              {shipping.trackingStatus.replace(/_/g, ' ')}
+                            </span>
+                          )}
+                        </button>
+                      ) : '-'}
+                    </td>
                     <td>{shipping.shipmentDate ? new Date(shipping.shipmentDate).toLocaleDateString() : '-'}</td>
                   </tr>
                 ))
