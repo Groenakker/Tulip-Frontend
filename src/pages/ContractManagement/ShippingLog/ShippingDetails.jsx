@@ -20,6 +20,14 @@ export default function ShipmentDetails() {
     const location = useLocation();
     const { user } = useAuth();
     //Current Log's data state
+    // NOTE: `logisticsProvider`, `shipmentDate`, `estimatedArrivalDate`,
+    // and `status` are intentionally NOT kept on the form. They are all
+    // populated server-side from the Shippo rate / label flow:
+    //   - carrier + service level come from the picked rate
+    //   - shipmentDate is stamped when a label is purchased
+    //   - estimatedArrivalDate is derived from the rate's `estimated_days`
+    //   - status transitions Pending -> Shipped -> Delivered as the
+    //     label is bought and the carrier reports tracking events.
     const [log, setLog] = useState({
         shippingCode: '',
         projectID: '',
@@ -27,11 +35,7 @@ export default function ShipmentDetails() {
         projectCode: '',
         shipmentOrigin: '',
         shipmentDestination: '',
-        logisticsProvider: '',
         note: '',
-        shipmentDate: '',
-        estimatedArrivalDate: '',
-        status: 'Pending',
         image: '',
         bPartnerID: '',
         bPartnerCode: '',
@@ -301,11 +305,7 @@ export default function ShipmentDetails() {
                             projectCode: data.projectCode || '',
                             shipmentOrigin: data.shipmentOrigin || '',
                             shipmentDestination: data.shipmentDestination || '',
-                            logisticsProvider: data.logisticsProvider || '',
                             note: data.note || '',
-                            shipmentDate: data.shipmentDate ? new Date(data.shipmentDate).toISOString().slice(0,10) : '',
-                            estimatedArrivalDate: data.estimatedArrivalDate ? new Date(data.estimatedArrivalDate).toISOString().slice(0,10) : '',
-                            status: data.status || 'Pending',
                             image: data.image || '',
                             bPartnerID: data.bPartnerID || '',
                             bPartnerCode: data.bPartnerCode || '',
@@ -1130,9 +1130,6 @@ export default function ShipmentDetails() {
         try {
             const payload = {
                 ...log,
-                shipmentDate: log.shipmentDate ? new Date(log.shipmentDate) : undefined,
-                estimatedArrivalDate: log.estimatedArrivalDate ? new Date(log.estimatedArrivalDate) : undefined,
-                estDate: log.estimatedArrivalDate ? new Date(log.estimatedArrivalDate) : undefined,
                 // Persist customer + Shippo-related snapshots so rates can be
                 // regenerated later without re-entering everything.
                 customerSnapshot: shipTo,
@@ -1334,11 +1331,9 @@ export default function ShipmentDetails() {
                 shippoTransactionId: s.shippoTransactionId || data.transaction?.object_id || '',
                 trackingStatus: s.trackingStatus || 'UNKNOWN',
             });
-            setLog(prev => ({
-                ...prev,
-                status: s.status || 'Shipped',
-                shipmentDate: s.shipmentDate ? new Date(s.shipmentDate).toISOString().slice(0, 10) : prev.shipmentDate,
-            }));
+            // `status` and `shipmentDate` are no longer kept in the form's
+            // `log` state — the server has them and the list/details pages
+            // read them directly from the saved shipping document.
             toast.success('Label purchased successfully!');
         } catch (err) {
             console.error(err);
@@ -1438,6 +1433,57 @@ export default function ShipmentDetails() {
             ...prev,
             items: prev.items.filter((_, i) => i !== index),
         }));
+    };
+
+    // Auto-fill customs items from the samples on this shipping log.
+    // Each Sample carries its own HS / Schedule B tariff code (set on the
+    // Sample submission form). The backend joins shipping lines to those
+    // samples and returns ready-to-use customs item rows. Items the user
+    // had typed in are replaced — that's the whole point of "auto-fill".
+    const [customsAutoFilling, setCustomsAutoFilling] = useState(false);
+    const autoFillCustomsFromSamples = async () => {
+        if (!id || id === 'add') {
+            toast.error('Save the shipping log first so we know which samples are on it.');
+            return;
+        }
+        setCustomsAutoFilling(true);
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/shippo/shipping/${id}/customs/auto-build`,
+                { method: 'POST' }
+            );
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                toast.error(data.message || 'Failed to build customs items from samples.');
+                return;
+            }
+            const items = Array.isArray(data.items) ? data.items : [];
+            if (items.length === 0) {
+                toast.error('No samples found on this shipping log.');
+                return;
+            }
+            setCustoms(prev => ({
+                ...prev,
+                enabled: true,
+                items,
+            }));
+            const missing = data.summary?.missingTariff || 0;
+            if (missing > 0) {
+                const codes = (data.summary.missingSamples || []).join(', ');
+                toast.warning(
+                    `Filled ${items.length} items, but ${missing} are missing an HS tariff code` +
+                    (codes ? `: ${codes}` : '') +
+                    '. Open those samples to set their Customs / Export Classification.'
+                );
+            } else {
+                toast.success(`Filled ${items.length} customs items from samples.`);
+            }
+        } catch (err) {
+            console.error('autoFillCustomsFromSamples error:', err);
+            toast.error('Failed to build customs items from samples.');
+        } finally {
+            setCustomsAutoFilling(false);
+        }
     };
     const handleShipToChange = (field, value) => {
         setShipTo(prev => ({ ...prev, [field]: value }));
@@ -1626,38 +1672,29 @@ export default function ShipmentDetails() {
                         )}
 
                         <div className={styles.details2}>
-                            <div className={styles.info2} style={{ width: '35%' }}>
+                            <div className={styles.info2} style={{ width: '50%' }}>
                                 <div className={styles.infoDetail}>Origin</div>
                                 <input name='shipmentOrigin' value={log.shipmentOrigin} onChange={handleChange}></input>
                             </div>
-                            <div className={styles.info2} style={{ width: '35%' }}>
+                            <div className={styles.info2} style={{ width: '50%' }}>
                                 <div className={styles.infoDetail}>Destination</div>
                                 <input name='shipmentDestination' value={log.shipmentDestination} onChange={handleChange}></input>
                             </div>
-                            <div className={styles.info2} style={{ width: '35%' }}>
-                                <div className={styles.infoDetail}>Logistics Provider</div>
-                                <input name='logisticsProvider' value={log.logisticsProvider} onChange={handleChange}></input>
-                            </div>
                         </div>
-                        <div className={styles.details3}>
-                            <div className={styles.info} style={{ width: '25%' }}>
-                                <div className={styles.infoDetail}>Shipment Date</div>
-                                <input type='date' name='shipmentDate' value={log.shipmentDate} onChange={handleChange}></input>
-                            </div>
-                            <div className={styles.info} style={{ width: '25%' }}>
-                                <div className={styles.infoDetail}>Est. Arrival</div>
-                                <input type='date' name='estimatedArrivalDate' value={log.estimatedArrivalDate} onChange={handleChange}></input>
-                            </div>
-                            <div className={styles.info} style={{ width: '25%' }}>
-                                <div className={styles.infoDetail}>Status</div>
-                                <select name='status' value={log.status} onChange={handleChange}>
-                                    <option value='Pending'>Pending</option>
-                                    <option value='Shipped'>Shipped</option>
-                                    <option value='Delivered'>Delivered</option>
-                                    <option value='Cancelled'>Cancelled</option>
-                                </select>
-                            </div>
-                        </div>
+                        {/*
+                          Carrier, Shipment Date, Estimated Arrival and
+                          Status used to live here. They are now driven
+                          entirely by the Shippo flow:
+                            - Carrier + service level come from the picked
+                              rate (shown in the "Shipment Purchased" card
+                              below once a label is bought).
+                            - shipmentDate is stamped on label purchase.
+                            - estimatedArrivalDate is derived from the
+                              chosen rate's `estimated_days`.
+                            - status moves Pending -> Shipped -> Delivered
+                              automatically as carrier tracking events
+                              come in.
+                        */}
                     </div>
                 </div>
                 <div className={styles.saves}>
@@ -2017,12 +2054,42 @@ export default function ShipmentDetails() {
                                         placeholder='Name of the person certifying'
                                     />
                                 </label>
-                                <label>EEL / PFC (optional)
-                                    <input
+                                <label>EEL / PFC
+                                    {/*
+                                      Electronic Export Information exemption claim.
+                                      USPS and most carriers require this on every US
+                                      export — blank => "customs_declaration.eel_pfc
+                                      must not be empty" at label purchase. The
+                                      backend will default to NOEEI_30_37_a for US
+                                      exports under $2,500/item, but exposing it
+                                      here lets the user override (e.g. with a real
+                                      AES ITN for high-value shipments).
+                                    */}
+                                    <select
                                         value={customs.eelPfc || ''}
                                         onChange={(e) => handleCustomsChange('eelPfc', e.target.value)}
-                                        placeholder='e.g. NOEEI_30_37_a'
-                                    />
+                                    >
+                                        <option value=''>Auto (recommended)</option>
+                                        <option value='NOEEI_30_37_a'>NOEEI 30.37(a) — value ≤ $2,500 per Schedule B code</option>
+                                        <option value='NOEEI_30_37_h'>NOEEI 30.37(h) — tools of trade</option>
+                                        <option value='NOEEI_30_36'>NOEEI 30.36 — shipments to Canada</option>
+                                        <option value='AES_ITN'>I have an AES ITN (enter below)</option>
+                                    </select>
+                                    {customs.eelPfc === 'AES_ITN' && (
+                                        <input
+                                            value={customs._eelPfcCustom || ''}
+                                            onChange={(e) => {
+                                                const itn = e.target.value.trim();
+                                                setCustoms(prev => ({
+                                                    ...prev,
+                                                    _eelPfcCustom: e.target.value,
+                                                    eelPfc: itn ? `AES_ITN_${itn.replace(/^AES_ITN_/, '')}` : 'AES_ITN',
+                                                }));
+                                            }}
+                                            placeholder='ITN from AESDirect (e.g. X20250601000001)'
+                                            style={{ marginTop: 6 }}
+                                        />
+                                    )}
                                 </label>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                     <input
@@ -2034,20 +2101,31 @@ export default function ShipmentDetails() {
                                 </label>
                             </div>
 
-                            <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                                 <strong>Items</strong>
-                                <button
-                                    type='button'
-                                    className={styles.shippoSecondaryBtn}
-                                    onClick={addCustomsItem}
-                                >
-                                    <FaPlus /> Add Item
-                                </button>
+                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                    <button
+                                        type='button'
+                                        className={styles.shippoSecondaryBtn}
+                                        onClick={autoFillCustomsFromSamples}
+                                        disabled={customsAutoFilling}
+                                        title='Pull description, value and HS tariff code from each sample on this shipping log'
+                                    >
+                                        <FaSyncAlt /> {customsAutoFilling ? 'Filling…' : 'Auto-fill from samples'}
+                                    </button>
+                                    <button
+                                        type='button'
+                                        className={styles.shippoSecondaryBtn}
+                                        onClick={addCustomsItem}
+                                    >
+                                        <FaPlus /> Add Item
+                                    </button>
+                                </div>
                             </div>
 
                             {customs.items.length === 0 ? (
                                 <div style={{ padding: 12, color: '#6b7280', fontStyle: 'italic' }}>
-                                    No customs items yet. Add one per distinct product you're shipping.
+                                    No customs items yet. Click <strong>Auto-fill from samples</strong> to populate from the samples on this shipping log, or add rows manually.
                                 </div>
                             ) : (
                                 <div className={styles.tableContainer}>
@@ -2136,7 +2214,11 @@ export default function ShipmentDetails() {
                                                             className={styles.tableInput}
                                                             value={it.tariffNumber || ''}
                                                             onChange={(e) => handleCustomsItemChange(idx, 'tariffNumber', e.target.value)}
-                                                            placeholder='Optional'
+                                                            placeholder='10-digit HS / Schedule B'
+                                                            style={!it.tariffNumber && shipFrom.country !== shipTo.country
+                                                                ? { borderColor: '#f59e0b', background: '#fffbeb' }
+                                                                : undefined}
+                                                            title={it.sourceSampleCode ? `From sample ${it.sourceSampleCode}` : undefined}
                                                         />
                                                     </td>
                                                     <td>
@@ -2302,7 +2384,7 @@ export default function ShipmentDetails() {
                                     <div className={styles.infoDetail}>Completed By</div>
                                     <input
                                         className={styles.signatureInput}
-                                        defaultValue="Michael R Groendyk"
+                                        defaultValue=""
                                     />
                                 </div>
                                 <div className={styles.signatureField}>

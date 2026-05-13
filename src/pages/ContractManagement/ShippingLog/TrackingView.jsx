@@ -255,6 +255,45 @@ export default function TrackingView({
                 </div>
             )}
 
+            {/*
+              TEST-MODE banner. When SHIPPO_API_TOKEN is a sandbox token the
+              backend redirects the tracking lookup to Shippo's fake-tracking
+              endpoint (see trackLabel in shippo.controller.js). Tell the
+              user so they understand the events shown aren't real.
+              This entire block becomes a no-op when the backend stops
+              setting `testOverride`, which happens automatically once you
+              switch to a `shippo_live_*` token.
+            */}
+            {tracking?.testOverride?.active && (
+                <div
+                    style={{
+                        margin: '8px 0 12px',
+                        padding: '10px 12px',
+                        background: '#fffbeb',
+                        border: '1px solid #fcd34d',
+                        borderRadius: 6,
+                        color: '#92400e',
+                        fontSize: 13,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                    }}
+                >
+                    <FaExclamationTriangle />
+                    <span>
+                        <strong>Simulated tracking (Shippo test mode).</strong>{' '}
+                        The carrier &amp; tracking number on this shipment are real, but the timeline
+                        below is generated from Shippo&apos;s sandbox state{' '}
+                        <code style={{ background: '#fde68a', padding: '0 4px', borderRadius: 3 }}>
+                            {tracking.testOverride.state}
+                        </code>
+                        . To change it, set <code>SHIPPO_TEST_TRACKING_STATE</code> in the backend{' '}
+                        <code>.env</code> (e.g. <code>SHIPPO_DELIVERED</code>) and restart, or switch
+                        to a <code>shippo_live_*</code> token to use live carrier tracking.
+                    </span>
+                </div>
+            )}
+
             {/* Summary header */}
             <div className={styles.summaryCard}>
                 <div className={styles.summaryLeft}>

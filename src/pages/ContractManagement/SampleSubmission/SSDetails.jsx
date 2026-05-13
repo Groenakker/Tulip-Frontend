@@ -6,6 +6,7 @@ import Modal from '../../../components/Modal';
 import SignatureCanvas from 'react-signature-canvas';
 import toast from '../../../components/Toaster/toast';
 import TestCodeChecklist from '../../../components/modals/TestCodeChecklist';
+import TariffCodePicker from '../../../components/TariffCodePicker/TariffCodePicker';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import Header from '../../../components/Header';
@@ -121,6 +122,10 @@ export default function SSDetail() {
         countryOrigin: '',
         sampleMass: '',
         surfaceArea: '',
+        // Customs / export classification
+        tariffCode: '',
+        tariffDescription: '',
+        customsValue: '',
         contactType: '',
         contactDuration: '',
         manufacturer: '',
@@ -528,6 +533,9 @@ export default function SSDetail() {
                             countryOrigin: '',
                             sampleMass: '',
                             surfaceArea: '',
+                            tariffCode: '',
+                            tariffDescription: '',
+                            customsValue: '',
                             contactType: loadedContactType || '',
                             contactDuration: '',
                             manufacturer: '',
@@ -614,6 +622,9 @@ export default function SSDetail() {
                         countryOrigin: '',
                         sampleMass: '',
                         surfaceArea: '',
+                        tariffCode: '',
+                        tariffDescription: '',
+                        customsValue: '',
                         contactType: '',
                         contactDuration: '',
                         manufacturer: '',
@@ -1121,6 +1132,102 @@ export default function SSDetail() {
                                         onChange={handleChange}
                                         className={styles.autoGrowInput}
                                         rows={1}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </WhiteIsland>
+
+                {/* ============================================================
+                    Customs / Export Classification
+                    ------------------------------------------------------------
+                    Captures the U.S. Schedule B (10-digit HS) code that
+                    eventually goes on the commercial invoice and is sent
+                    to Shippo as `tariff_number` on the customs item for
+                    any international shipment containing this sample.
+
+                    Picking the right code is the exporter's legal
+                    responsibility (Foreign Trade Regulations 30.6).
+                    Reference: https://www.census.gov/foreign-trade/schedules/b/
+                ============================================================ */}
+                <WhiteIsland className={styles.bigIsland}>
+                    <h3>Customs / Export Classification</h3>
+                    <p style={{ margin: '4px 0 14px', fontSize: 13, color: '#6b7280' }}>
+                        Used for international shipments only. The code travels with the sample,
+                        so once it&apos;s set here the shipping log will populate the customs declaration
+                        automatically.
+                    </p>
+                    <div className={styles.main}>
+                        <div className={styles.detailContainer}>
+                            <div className={styles.details2}>
+                                <div className={styles.info2} style={{ width: '100%' }}>
+                                    <div className={styles.infoDetail}>Customs Description (what will appear on the commercial invoice)</div>
+                                    <input
+                                        name="tariffDescription"
+                                        value={sample.tariffDescription || ''}
+                                        onChange={(e) => setSample(prev => ({ ...prev, tariffDescription: e.target.value }))}
+                                        placeholder="e.g. Biocompatibility test specimens, plastic"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className={styles.details2}>
+                                <div className={styles.info2} style={{ width: '100%' }}>
+                                    <div className={styles.infoDetail}>Schedule B / HS Tariff Code</div>
+                                    <TariffCodePicker
+                                        value={sample.tariffCode || ''}
+                                        description={sample.tariffDescription || ''}
+                                        onChange={({ code, description, descriptionLong }) => {
+                                            setSample(prev => ({
+                                                ...prev,
+                                                tariffCode: code || '',
+                                                // Only overwrite the human description when the user
+                                                // hasn't typed their own yet, or when clearing.
+                                                tariffDescription: !code
+                                                    ? ''
+                                                    : (prev.tariffDescription && prev.tariffDescription.trim() !== ''
+                                                        ? prev.tariffDescription
+                                                        : (description || descriptionLong || '')),
+                                            }));
+                                        }}
+                                    />
+                                    <div style={{ fontSize: 11, color: '#6b7280', marginTop: 6 }}>
+                                        Need help finding a code? Open the official Schedule B Search:&nbsp;
+                                        <a
+                                            href="https://uscensus.prod.3ceonline.com/"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{ color: '#2563eb' }}
+                                        >
+                                            Census Schedule B Search Tool
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '50%' }}>
+                                    <div className={styles.infoDetail}>Declared Value per Unit (USD)</div>
+                                    <input
+                                        name="customsValue"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={sample.customsValue || ''}
+                                        onChange={handleChange}
+                                        placeholder="e.g. 25.00"
+                                    />
+                                </div>
+                                <div className={styles.info} style={{ width: '50%' }}>
+                                    <div className={styles.infoDetail}>Country of Origin (ISO-2)</div>
+                                    <input
+                                        name="countryOrigin"
+                                        value={sample.countryOrigin || ''}
+                                        onChange={handleChange}
+                                        maxLength={2}
+                                        placeholder="US"
+                                        style={{ textTransform: 'uppercase' }}
                                     />
                                 </div>
                             </div>
