@@ -6,6 +6,11 @@ import { FaSearch, FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Header from "../../../components/Header";
 import ImportButton from "../../../components/ImportButton/ImportButton";
+import { useAuth } from "../../../context/AuthContext";
+import { useBulkSelection } from "../../../hooks/useBulkSelection";
+import BulkDeleteToolbar from "../../../components/BulkDelete/BulkDeleteToolbar";
+import ConfirmDeleteModal from "../../../components/BulkDelete/ConfirmDeleteModal";
+import { runBulkDelete } from "../../../components/BulkDelete/bulkDeleteApi";
 // const projectData = [
 //   {
 //     id: "GRK-25035-01",
@@ -46,6 +51,10 @@ export default function ProjectList() {
   const Navigate = useNavigate();
   const [projectData, setProjectData] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { hasPermission } = useAuth();
+  const canDelete = hasPermission("Projects", "delete");
 
   const fetchProjects = () => {
     fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects`, {
@@ -94,6 +103,26 @@ export default function ProjectList() {
   const totalPages = Math.ceil(filteredProjects.length / pageSize);
   const pagedData = filteredProjects.slice((page - 1) * pageSize, page * pageSize);
 
+  const selection = useBulkSelection({
+    visibleItems: pagedData,
+    allItems: filteredProjects,
+  });
+
+  const handleBulkDelete = async () => {
+    setDeleting(true);
+    const result = await runBulkDelete({
+      url: `${import.meta.env.VITE_BACKEND_URL}/api/projects/bulk-delete`,
+      ids: selection.selectedIdArray,
+      entityLabel: "project",
+    });
+    setDeleting(false);
+    if (result) {
+      setConfirmOpen(false);
+      selection.clear();
+      fetchProjects();
+    }
+  };
+
   const handleChangePage = (p) => {
     if (p < 1 || p > totalPages) return;
     setPage(p);
@@ -128,6 +157,15 @@ export default function ProjectList() {
             </div>
 
             <div className={styles.headerActions}>
+              {canDelete && (
+                <BulkDeleteToolbar
+                  count={selection.count}
+                  onClear={selection.clear}
+                  onDelete={() => setConfirmOpen(true)}
+                  disabled={deleting}
+                  entityLabel="project"
+                />
+              )}
               <ImportButton
                 endpoint={`${import.meta.env.VITE_BACKEND_URL}/api/projects/import`}
                 entityName="project"
@@ -146,6 +184,11 @@ export default function ProjectList() {
           <table className={styles.partnerTable}>
             <thead>
               <tr>
+                {canDelete && (
+                  <th className="bulkCheckboxCell">
+                    <input {...selection.headerCheckboxProps} />
+                  </th>
+                )}
                 <th>Project ID</th>
                 <th>Description</th>
                 <th>Start</th>
@@ -153,17 +196,38 @@ export default function ProjectList() {
               </tr>
             </thead>
             <tbody>
-              {pagedData.map((project) => (
-                <tr
-                  key={project._id}
-                  onClick={() => Navigate(`/Projects/ProjectDetails/${project._id}`)}
-                >
-                  <td>{project.projectID}</td>
-                  <td>{project.description}</td>
-                  <td>{project.startDate ? project.startDate.split("T")[0] : ""}</td>
-                  <td>{project.endDate ? project.endDate.split("T")[0] : ""}</td>
-                </tr>
-              ))}
+              {pagedData.map((project) => {
+                const isSelected = selection.isSelected(project._id);
+                return (
+                  <tr
+                    key={project._id}
+                    className={isSelected ? "bulkSelectedRow" : ""}
+                    onClick={() => Navigate(`/Projects/ProjectDetails/${project._id}`)}
+                  >
+                    {canDelete && (
+                      <td
+                        className="bulkCheckboxCell"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selection.toggleItem(project._id);
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => selection.toggleItem(project._id)}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`Select project ${project.projectID || project._id}`}
+                        />
+                      </td>
+                    )}
+                    <td>{project.projectID}</td>
+                    <td>{project.description}</td>
+                    <td>{project.startDate ? project.startDate.split("T")[0] : ""}</td>
+                    <td>{project.endDate ? project.endDate.split("T")[0] : ""}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -191,6 +255,16 @@ export default function ProjectList() {
           </button>
         </div>
       </WhiteIsland>
+
+      <ConfirmDeleteModal
+        open={confirmOpen}
+        count={selection.count}
+        entityLabel="project"
+        previewItems={selection.selectedItems}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleBulkDelete}
+        deleting={deleting}
+      />
     </>
   );
 }

@@ -5,6 +5,11 @@ import { useState, useEffect } from 'react';
 import { FaSearch, FaPlus, FaRoute } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header';
+import { useAuth } from "../../../context/AuthContext";
+import { useBulkSelection } from "../../../hooks/useBulkSelection";
+import BulkDeleteToolbar from "../../../components/BulkDelete/BulkDeleteToolbar";
+import ConfirmDeleteModal from "../../../components/BulkDelete/ConfirmDeleteModal";
+import { runBulkDelete } from "../../../components/BulkDelete/bulkDeleteApi";
 // const shipData = [
 //   { id: 'GRK-25035-01', destination: 'Element Material Technology - Cincinnati', project: 'Eakin Healthcare ISO 18562 Gas Pathway Remediation', departure: '2/21/2025' },
 //   { id: 'GRK-25035-02', destination: 'Element Material Technology - Cincinnati', project: 'Eakin Healthcare ISO 18562 Gas Pathway Remediation', departure: '2/21/2025' },
@@ -25,7 +30,25 @@ export default function ShippingLog() {
   const [rows, setRows] = useState([]);
   const [filteredRows, setFilteredRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
+  const { hasPermission } = useAuth();
+  const canDelete = hasPermission("Shipping", "delete");
+
+  const fetchRows = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch shipping');
+      const data = await res.json();
+      setRows(data);
+      setFilteredRows(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const updatePageSize = () => {
@@ -41,19 +64,6 @@ export default function ShippingLog() {
   }, []);
 
   useEffect(() => {
-    const fetchRows = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping`);
-        if (!res.ok) throw new Error('Failed to fetch shipping');
-        const data = await res.json();
-        setRows(data);
-        setFilteredRows(data);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchRows();
   }, []);
 
@@ -72,6 +82,26 @@ export default function ShippingLog() {
   
   const totalPages = Math.ceil(filteredRows.length / pageSize);
   const pagedData = filteredRows.slice((page - 1) * pageSize, page * pageSize);
+
+  const selection = useBulkSelection({
+    visibleItems: pagedData,
+    allItems: filteredRows,
+  });
+
+  const handleBulkDelete = async () => {
+    setDeleting(true);
+    const result = await runBulkDelete({
+      url: `${import.meta.env.VITE_BACKEND_URL}/api/shipping/bulk-delete`,
+      ids: selection.selectedIdArray,
+      entityLabel: "shipment",
+    });
+    setDeleting(false);
+    if (result) {
+      setConfirmOpen(false);
+      selection.clear();
+      fetchRows();
+    }
+  };
 
   const handleChangePage = (p) => {
     if (p < 1 || p > totalPages) return;
@@ -117,15 +147,31 @@ export default function ShippingLog() {
               <button className={styles.searchButton} onClick={handleSubmit}><FaSearch /></button>
             </div>
 
-            <button className={styles.addButton} onClick={() => HandleAddShipping()}>
-              <FaPlus />
-              <span>Add Shipping Log</span>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {canDelete && (
+                <BulkDeleteToolbar
+                  count={selection.count}
+                  onClear={selection.clear}
+                  onDelete={() => setConfirmOpen(true)}
+                  disabled={deleting}
+                  entityLabel="shipment"
+                />
+              )}
+              <button className={styles.addButton} onClick={() => HandleAddShipping()}>
+                <FaPlus />
+                <span>Add Shipping Log</span>
+              </button>
+            </div>
           </header>
 
           <table className={styles.shippingTable}>
             <thead>
               <tr>
+                {canDelete && (
+                  <th className="bulkCheckboxCell">
+                    <input {...selection.headerCheckboxProps} />
+                  </th>
+                )}
                 <th>Shipping Code</th>
                 <th>Destination</th>
                 <th>Project</th>
@@ -136,40 +182,65 @@ export default function ShippingLog() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="6" style={{textAlign:'center',padding:'20px'}}>Loading...</td></tr>
+                <tr><td colSpan={canDelete ? "7" : "6"} style={{textAlign:'center',padding:'20px'}}>Loading...</td></tr>
               ) : pagedData.length === 0 ? (
-                <tr><td colSpan="6" style={{textAlign:'center',padding:'20px'}}>No shipping records</td></tr>
+                <tr><td colSpan={canDelete ? "7" : "6"} style={{textAlign:'center',padding:'20px'}}>No shipping records</td></tr>
               ) : (
-                pagedData.map((shipping) => (
-                  <tr key={shipping._id} onClick={() => handleRowClick(shipping)} style={{cursor:'pointer'}}>
-                    <td>{shipping.shippingCode || '-'}</td>
-                    <td>{shipping.shipmentDestination || '-'}</td>
-                    <td>{shipping.projectDesc || shipping.projectID || '-'}</td>
-                    <td>{shipping.carrier ? shipping.carrier.toUpperCase() : '-'}</td>
-                    <td>
-                      {shipping.trackingNumber ? (
-                        <button
-                          type='button'
-                          className={styles.trackBtn}
-                          onClick={(e) => handleTrackClick(e, shipping)}
-                          title='View in-app tracking'
-                          data-status={shipping.trackingStatus || 'UNKNOWN'}
+                pagedData.map((shipping) => {
+                  const isSelected = selection.isSelected(shipping._id);
+                  return (
+                    <tr
+                      key={shipping._id}
+                      className={isSelected ? "bulkSelectedRow" : ""}
+                      onClick={() => handleRowClick(shipping)}
+                      style={{cursor:'pointer'}}
+                    >
+                      {canDelete && (
+                        <td
+                          className="bulkCheckboxCell"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            selection.toggleItem(shipping._id);
+                          }}
                         >
-                          <FaRoute />
-                          <span className={styles.trackBtnText}>
-                            {shipping.trackingNumber}
-                          </span>
-                          {shipping.trackingStatus && (
-                            <span className={styles.trackStatusPill}>
-                              {shipping.trackingStatus.replace(/_/g, ' ')}
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => selection.toggleItem(shipping._id)}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Select shipment ${shipping.shippingCode || shipping._id}`}
+                          />
+                        </td>
+                      )}
+                      <td>{shipping.shippingCode || '-'}</td>
+                      <td>{shipping.shipmentDestination || '-'}</td>
+                      <td>{shipping.projectDesc || shipping.projectID || '-'}</td>
+                      <td>{shipping.carrier ? shipping.carrier.toUpperCase() : '-'}</td>
+                      <td>
+                        {shipping.trackingNumber ? (
+                          <button
+                            type='button'
+                            className={styles.trackBtn}
+                            onClick={(e) => handleTrackClick(e, shipping)}
+                            title='View in-app tracking'
+                            data-status={shipping.trackingStatus || 'UNKNOWN'}
+                          >
+                            <FaRoute />
+                            <span className={styles.trackBtnText}>
+                              {shipping.trackingNumber}
                             </span>
-                          )}
-                        </button>
-                      ) : '-'}
-                    </td>
-                    <td>{shipping.shipmentDate ? new Date(shipping.shipmentDate).toLocaleDateString() : '-'}</td>
-                  </tr>
-                ))
+                            {shipping.trackingStatus && (
+                              <span className={styles.trackStatusPill}>
+                                {shipping.trackingStatus.replace(/_/g, ' ')}
+                              </span>
+                            )}
+                          </button>
+                        ) : '-'}
+                      </td>
+                      <td>{shipping.shipmentDate ? new Date(shipping.shipmentDate).toLocaleDateString() : '-'}</td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -194,6 +265,16 @@ export default function ShippingLog() {
           </button>
         </div>
       </WhiteIsland>
+
+      <ConfirmDeleteModal
+        open={confirmOpen}
+        count={selection.count}
+        entityLabel="shipment"
+        previewItems={selection.selectedItems}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleBulkDelete}
+        deleting={deleting}
+      />
     </>
   );
 }

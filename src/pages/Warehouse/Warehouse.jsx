@@ -7,6 +7,11 @@ import { FaSearch, FaPlus, FaEdit, FaTrash, FaEllipsisV } from 'react-icons/fa';
 import toast from '../../components/Toaster/toast';
 import Modal from '../../components/Modal';
 import Header from '../../components/Header';
+import { useAuth } from "../../context/AuthContext";
+import { useBulkSelection } from "../../hooks/useBulkSelection";
+import BulkDeleteToolbar from "../../components/BulkDelete/BulkDeleteToolbar";
+import ConfirmDeleteModal from "../../components/BulkDelete/ConfirmDeleteModal";
+import { runBulkDelete } from "../../components/BulkDelete/bulkDeleteApi";
 
 export default function Warehouse() {
     const navigate = useNavigate();
@@ -25,23 +30,27 @@ export default function Warehouse() {
         storage: '',
         capacity: 0
     });
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const { hasPermission } = useAuth();
+    const canDelete = hasPermission("Warehouse", "delete");
 
-    // Fetch warehouses from backend
+    const fetchWarehouses = async () => {
+        try {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/warehouses`, { credentials: 'include' });
+            if (!res.ok) throw new Error('Failed to fetch warehouses');
+            const data = await res.json();
+            setWarehouseData(data);
+            setFilteredData(data);
+        } catch (error) {
+            console.error('Error fetching warehouses:', error);
+            toast.error('Failed to load warehouses');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchWarehouses = async () => {
-            try {
-                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/warehouses`);
-                if (!res.ok) throw new Error('Failed to fetch warehouses');
-                const data = await res.json();
-                setWarehouseData(data);
-                setFilteredData(data);
-            } catch (error) {
-                console.error('Error fetching warehouses:', error);
-                toast.error('Failed to load warehouses');
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchWarehouses();
     }, []);
 
@@ -95,6 +104,30 @@ export default function Warehouse() {
 
     const totalPages = Math.ceil(filteredData.length / pageSize);
     const pagedData = filteredData.slice((page - 1) * pageSize, page * pageSize);
+
+    const selection = useBulkSelection({
+        visibleItems: pagedData,
+        allItems: filteredData,
+    });
+
+    const handleBulkDelete = async () => {
+        setDeleting(true);
+        const result = await runBulkDelete({
+            url: `${import.meta.env.VITE_BACKEND_URL}/api/warehouses/bulk-delete`,
+            ids: selection.selectedIdArray,
+            entityLabel: "warehouse",
+        });
+        setDeleting(false);
+        if (result) {
+            setConfirmOpen(false);
+            // Refresh local list directly so the UI doesn't show stale rows
+            // before the next fetch completes.
+            const deletedSet = new Set(selection.selectedIdArray);
+            setWarehouseData(prev => prev.filter(w => !deletedSet.has(w._id)));
+            selection.clear();
+            fetchWarehouses();
+        }
+    };
 
     const handleChangePage = (p) => {
         if (p < 1 || p > totalPages) return;
@@ -202,15 +235,31 @@ export default function Warehouse() {
                             <button className={styles.searchButton} onClick={handleSubmit}><FaSearch /></button>
                         </div>
 
-                        <button className={styles.addButton} onClick={openAddModal}>
-                            <FaPlus />
-                            <span>Add Warehouse</span>
-                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            {canDelete && (
+                                <BulkDeleteToolbar
+                                    count={selection.count}
+                                    onClear={selection.clear}
+                                    onDelete={() => setConfirmOpen(true)}
+                                    disabled={deleting}
+                                    entityLabel="warehouse"
+                                />
+                            )}
+                            <button className={styles.addButton} onClick={openAddModal}>
+                                <FaPlus />
+                                <span>Add Warehouse</span>
+                            </button>
+                        </div>
                     </header>
 
                     <table className={styles.warehouseTable}>
                         <thead>
                             <tr>
+                                {canDelete && (
+                                    <th className="bulkCheckboxCell">
+                                        <input {...selection.headerCheckboxProps} />
+                                    </th>
+                                )}
                                 <th>Warehouse ID</th>
                                 <th>Address</th>
                                 <th>Storage</th>
@@ -221,24 +270,43 @@ export default function Warehouse() {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>
+                                    <td colSpan={canDelete ? "6" : "5"} style={{ textAlign: 'center', padding: '20px' }}>
                                         Loading...
                                     </td>
                                 </tr>
                             ) : pagedData.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>
+                                    <td colSpan={canDelete ? "6" : "5"} style={{ textAlign: 'center', padding: '20px' }}>
                                         No warehouses found
                                     </td>
                                 </tr>
                             ) : (
                                 pagedData.map((warehouse) => {
+                                    const isSelected = selection.isSelected(warehouse._id);
                                     return (
                                         <tr
                                             key={warehouse._id}
+                                            className={isSelected ? "bulkSelectedRow" : ""}
                                             onClick={() => navigate(`/Warehouse/${warehouse._id}`)}
                                             style={{ cursor: 'pointer' }}
                                         >
+                                            {canDelete && (
+                                                <td
+                                                    className="bulkCheckboxCell"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        selection.toggleItem(warehouse._id);
+                                                    }}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={() => selection.toggleItem(warehouse._id)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        aria-label={`Select warehouse ${warehouse.warehouseID}`}
+                                                    />
+                                                </td>
+                                            )}
                                             <td>
                                                 <span className={styles.tableText}>{warehouse.warehouseID}</span>
                                             </td>
@@ -317,6 +385,15 @@ export default function Warehouse() {
                         Next →
                     </button>
                 </div>
+                <ConfirmDeleteModal
+                    open={confirmOpen}
+                    count={selection.count}
+                    entityLabel="warehouse"
+                    previewItems={selection.selectedItems}
+                    onCancel={() => setConfirmOpen(false)}
+                    onConfirm={handleBulkDelete}
+                    deleting={deleting}
+                />
                 {activeModal === 'warehouse' && (
                     <Modal onClose={() => setActiveModal(null)}>
                         <div className={styles.modalContent}>

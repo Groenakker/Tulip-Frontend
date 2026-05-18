@@ -5,6 +5,11 @@ import { useState, useEffect } from 'react';
 import { FaSearch, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import Header from "../../../components/Header";
+import { useAuth } from "../../../context/AuthContext";
+import { useBulkSelection } from "../../../hooks/useBulkSelection";
+import BulkDeleteToolbar from "../../../components/BulkDelete/BulkDeleteToolbar";
+import ConfirmDeleteModal from "../../../components/BulkDelete/ConfirmDeleteModal";
+import { runBulkDelete } from "../../../components/BulkDelete/bulkDeleteApi";
 
 
 
@@ -16,25 +21,28 @@ export default function InstanceList() {
     const [instances, setInstances] = useState([]);
     const [filteredInstances, setFilteredInstances] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const { hasPermission } = useAuth();
+    const canDelete = hasPermission("Instances", "delete");
 
-    // Fetch instances from API
-    useEffect(() => {
-        const fetchInstances = async () => {
-            try {
-                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances`);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch instances');
-                }
-                const data = await response.json();
-                setInstances(data);
-                setFilteredInstances(data);
-            } catch (error) {
-                console.error('Error fetching instances:', error);
-            } finally {
-                setLoading(false);
+    const fetchInstances = async () => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances`, { credentials: 'include' });
+            if (!response.ok) {
+                throw new Error('Failed to fetch instances');
             }
-        };
+            const data = await response.json();
+            setInstances(data);
+            setFilteredInstances(data);
+        } catch (error) {
+            console.error('Error fetching instances:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchInstances();
     }, []);
 
@@ -67,6 +75,26 @@ export default function InstanceList() {
 
     const totalPages = Math.ceil(filteredInstances.length / pageSize);
     const pagedData = filteredInstances.slice((page - 1) * pageSize, page * pageSize);
+
+    const selection = useBulkSelection({
+        visibleItems: pagedData,
+        allItems: filteredInstances,
+    });
+
+    const handleBulkDelete = async () => {
+        setDeleting(true);
+        const result = await runBulkDelete({
+            url: `${import.meta.env.VITE_BACKEND_URL}/api/instances/bulk-delete`,
+            ids: selection.selectedIdArray,
+            entityLabel: "instance",
+        });
+        setDeleting(false);
+        if (result) {
+            setConfirmOpen(false);
+            selection.clear();
+            fetchInstances();
+        }
+    };
 
     const handleChangePage = (p) => {
         if (p < 1 || p > totalPages) return;
@@ -106,15 +134,31 @@ export default function InstanceList() {
                             <button className={styles.searchButton} onClick={handleSubmit}><FaSearch /></button>
                         </div>
 
-                        <button className={styles.addButton} onClick={() => HandleAddInstance()}>
-                            <FaPlus />
-                            <span>Add Instance</span>
-                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            {canDelete && (
+                                <BulkDeleteToolbar
+                                    count={selection.count}
+                                    onClear={selection.clear}
+                                    onDelete={() => setConfirmOpen(true)}
+                                    disabled={deleting}
+                                    entityLabel="instance"
+                                />
+                            )}
+                            <button className={styles.addButton} onClick={() => HandleAddInstance()}>
+                                <FaPlus />
+                                <span>Add Instance</span>
+                            </button>
+                        </div>
                     </header>
 
                     <table className={styles.partnerTable}>
                         <thead>
                             <tr>
+                                {canDelete && (
+                                    <th className="bulkCheckboxCell">
+                                        <input {...selection.headerCheckboxProps} />
+                                    </th>
+                                )}
                                 <th>Instance Code</th>
                                 <th>Sample Code</th>
                                 <th>Lot No</th>
@@ -126,37 +170,56 @@ export default function InstanceList() {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>
+                                    <td colSpan={canDelete ? "7" : "6"} style={{ textAlign: 'center', padding: '20px' }}>
                                         Loading instances...
                                     </td>
                                 </tr>
                             ) : pagedData.length === 0 ? (
                                 <tr>
-                                    <td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>
+                                    <td colSpan={canDelete ? "7" : "6"} style={{ textAlign: 'center', padding: '20px' }}>
                                         No instances found
                                     </td>
                                 </tr>
                             ) : (
-                                pagedData.map((instance) => (
-                                    <tr 
-                                        key={instance._id}
-                                        onClick={() => navigate(`/Instance/${instance._id}`)}
-                                        style={{ cursor: 'pointer' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ''}
-                                    >
-                                        <td>{instance.instanceCode || '-'}</td>
-                                        <td>{instance.sampleCode || '-'}</td>
-                                        <td>{instance.lotNo || '-'}</td>
-                                        <td>
-                                            <span className={`${styles.statusBadge} ${styles[instance.status?.toLowerCase().replace(' ', '') || 'pending']}`}>
-                                                {instance.status || 'Pending'}
-                                            </span>
-                                        </td>
-                                        <td>{formatDate(instance.createdAt)}</td>
-                                        <td>{formatDate(instance.updatedAt)}</td>
-                                    </tr>
-                                ))
+                                pagedData.map((instance) => {
+                                    const isSelected = selection.isSelected(instance._id);
+                                    return (
+                                        <tr
+                                            key={instance._id}
+                                            className={isSelected ? "bulkSelectedRow" : ""}
+                                            onClick={() => navigate(`/Instance/${instance._id}`)}
+                                            style={{ cursor: 'pointer' }}
+                                        >
+                                            {canDelete && (
+                                                <td
+                                                    className="bulkCheckboxCell"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        selection.toggleItem(instance._id);
+                                                    }}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={() => selection.toggleItem(instance._id)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        aria-label={`Select instance ${instance.instanceCode || instance._id}`}
+                                                    />
+                                                </td>
+                                            )}
+                                            <td>{instance.instanceCode || '-'}</td>
+                                            <td>{instance.sampleCode || '-'}</td>
+                                            <td>{instance.lotNo || '-'}</td>
+                                            <td>
+                                                <span className={`${styles.statusBadge} ${styles[instance.status?.toLowerCase().replace(' ', '') || 'pending']}`}>
+                                                    {instance.status || 'Pending'}
+                                                </span>
+                                            </td>
+                                            <td>{formatDate(instance.createdAt)}</td>
+                                            <td>{formatDate(instance.updatedAt)}</td>
+                                        </tr>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>
@@ -181,6 +244,16 @@ export default function InstanceList() {
                     </button>
                 </div>
             </WhiteIsland>
+
+            <ConfirmDeleteModal
+                open={confirmOpen}
+                count={selection.count}
+                entityLabel="instance"
+                previewItems={selection.selectedItems}
+                onCancel={() => setConfirmOpen(false)}
+                onConfirm={handleBulkDelete}
+                deleting={deleting}
+            />
         </>
     );
 }

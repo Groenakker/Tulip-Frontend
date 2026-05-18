@@ -5,55 +5,11 @@ import styles from "./Bpartner.module.css";
 import { useNavigate } from "react-router-dom";
 import Header from "../../../components/Header";
 import ImportButton from "../../../components/ImportButton/ImportButton";
-
-
-
-// const samplePeople = Array.from({ length: 40 }, (_, i) => {
-//   const num = 102100 + i;
-//   const first = [
-//     "John",
-//     "Jane",
-//     "Alex",
-//     "Priya",
-//     "Li",
-//     "Arjun",
-//     "Sara",
-//     "Mateo",
-//     "Aisha",
-//     "Omar",
-//   ][i % 10];
-//   const last = [
-//     "Smith",
-//     "Khan",
-//     "Patel",
-//     "Garcia",
-//     "Kim",
-//     "Singh",
-//     "Brown",
-//     "Lopez",
-//     "Chen",
-//     "Das",
-//   ][9 - (i % 10)];
-//   const cities = [
-//     "New York",
-//     "Delhi",
-//     "London",
-//     "Tokyo",
-//     "Berlin",
-//     "Sydney",
-//     "Dubai",
-//     "Toronto",
-//     "Cape Town",
-//     "São Paulo",
-//   ];
-//   return {
-//     bookingNumber: `#${num}`,
-//     name: `${first} ${last}`,
-//     address: `${cities[i % 10]}, ${i % 2 ? "USA" : "India"}`,
-//     category: i % 2 === 0 ? "Vendor" : "Client",
-//     status: i % 3 === 0 ? "Inactive" : "Active",
-//   };
-// });
+import { useAuth } from "../../../context/AuthContext";
+import { useBulkSelection } from "../../../hooks/useBulkSelection";
+import BulkDeleteToolbar from "../../../components/BulkDelete/BulkDeleteToolbar";
+import ConfirmDeleteModal from "../../../components/BulkDelete/ConfirmDeleteModal";
+import { runBulkDelete } from "../../../components/BulkDelete/bulkDeleteApi";
 
 export default function Bpartner() {
   const [page, setPage] = useState(1);
@@ -62,6 +18,11 @@ export default function Bpartner() {
   const Navigate = useNavigate();
   const [partners, setPartners] = useState([]);
   const [filteredPartners, setFilteredPartners] = useState([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const { hasPermission } = useAuth();
+  const canDelete = hasPermission("Business Partners", "delete");
 
   const fetchPartners = () => {
     fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners`, {
@@ -120,6 +81,11 @@ export default function Bpartner() {
     page * pageSize
   );
 
+  const selection = useBulkSelection({
+    visibleItems: pagedData,
+    allItems: filteredPartners,
+  });
+
   const handleChangePage = (p) => {
     if (p < 1 || p > totalPages) return;
     setPage(p);
@@ -128,16 +94,28 @@ export default function Bpartner() {
   const handleSubmit = () => {
     console.log("Input submitted:", inputValue);
   };
+
   const HandleAddPartner = () => {
     Navigate("/BuisnessPartner/PartnerDetails/add");
-    console.log("Add Project button clicked");
+  };
+
+  const handleBulkDelete = async () => {
+    setDeleting(true);
+    const result = await runBulkDelete({
+      url: `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/bulk-delete`,
+      ids: selection.selectedIdArray,
+      entityLabel: "business partner",
+    });
+    setDeleting(false);
+    if (result) {
+      setConfirmOpen(false);
+      selection.clear();
+      fetchPartners();
+    }
   };
 
   return (
     <>
-      {/* <h2 className={styles.title}>
-        Business Partner List
-      </h2> */}
       <Header title="Business Partner List" />
       <WhiteIsland className="WhiteIsland">
         <div className={styles.partnerPage}>
@@ -156,6 +134,15 @@ export default function Bpartner() {
             </div>
 
             <div className={styles.headerActions}>
+              {canDelete && (
+                <BulkDeleteToolbar
+                  count={selection.count}
+                  onClear={selection.clear}
+                  onDelete={() => setConfirmOpen(true)}
+                  disabled={deleting}
+                  entityLabel="business partner"
+                />
+              )}
               <ImportButton
                 endpoint={`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/import`}
                 entityName="business partner"
@@ -172,9 +159,13 @@ export default function Bpartner() {
           </header>
 
           <table className={styles.partnerTable}>
-            
             <thead>
               <tr>
+                {canDelete && (
+                  <th className="bulkCheckboxCell">
+                    <input {...selection.headerCheckboxProps} />
+                  </th>
+                )}
                 <th>Business No</th>
                 <th>Name of Partner</th>
                 <th>Address</th>
@@ -183,25 +174,49 @@ export default function Bpartner() {
               </tr>
             </thead>
             <tbody>
-              {pagedData.map((row) => (
-                // Use Navigate from react-router-dom to handle navigation
-                
-                <tr key={row._id} onClick = {() => Navigate(`/BuisnessPartner/PartnerDetails/${row._id}`)}>
-                  <td>{row.partnerNumber}</td>
-                  <td>{row.name}</td>
-                  <td>{`${row.city}, ${row.country}`}</td>
-                  <td>{row.category}</td>
-                  <td>
-                    <span
-                      className={`${styles.statusBadge} ${
-                        styles[row.status.toLowerCase()]
-                      }`}
-                    >
-                      {row.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {pagedData.map((row) => {
+                const isSelected = selection.isSelected(row._id);
+                return (
+                  <tr
+                    key={row._id}
+                    className={isSelected ? "bulkSelectedRow" : ""}
+                    onClick={() =>
+                      Navigate(`/BuisnessPartner/PartnerDetails/${row._id}`)
+                    }
+                  >
+                    {canDelete && (
+                      <td
+                        className="bulkCheckboxCell"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selection.toggleItem(row._id);
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => selection.toggleItem(row._id)}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`Select ${row.name || row.partnerNumber}`}
+                        />
+                      </td>
+                    )}
+                    <td>{row.partnerNumber}</td>
+                    <td>{row.name}</td>
+                    <td>{`${row.city || ""}${row.city && row.country ? ", " : ""}${row.country || ""}`}</td>
+                    <td>{row.category}</td>
+                    <td>
+                      <span
+                        className={`${styles.statusBadge} ${
+                          styles[(row.status || "").toLowerCase()] || ""
+                        }`}
+                      >
+                        {row.status}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -229,6 +244,16 @@ export default function Bpartner() {
           </button>
         </div>
       </WhiteIsland>
+
+      <ConfirmDeleteModal
+        open={confirmOpen}
+        count={selection.count}
+        entityLabel="business partner"
+        previewItems={selection.selectedItems}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleBulkDelete}
+        deleting={deleting}
+      />
     </>
   );
 }

@@ -5,6 +5,11 @@ import { useState, useEffect } from 'react';
 import { FaSearch, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header';
+import { useAuth } from "../../../context/AuthContext";
+import { useBulkSelection } from "../../../hooks/useBulkSelection";
+import BulkDeleteToolbar from "../../../components/BulkDelete/BulkDeleteToolbar";
+import ConfirmDeleteModal from "../../../components/BulkDelete/ConfirmDeleteModal";
+import { runBulkDelete } from "../../../components/BulkDelete/bulkDeleteApi";
 
 
 
@@ -15,7 +20,25 @@ export default function RecieveLog() {
   const [rows, setRows] = useState([]);
   const [filteredRows, setFilteredRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
+  const { hasPermission } = useAuth();
+  const canDelete = hasPermission("Receiving", "delete");
+
+  const fetchRows = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch receivings');
+      const data = await res.json();
+      setRows(data);
+      setFilteredRows(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const updatePageSize = () => {
@@ -31,19 +54,6 @@ export default function RecieveLog() {
   }, []);
 
   useEffect(() => {
-    const fetchRows = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings`);
-        if (!res.ok) throw new Error('Failed to fetch receivings');
-        const data = await res.json();
-        setRows(data);
-        setFilteredRows(data);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchRows();
   }, []);
 
@@ -58,6 +68,26 @@ export default function RecieveLog() {
 
   const totalPages = Math.ceil(filteredRows.length / pageSize);
   const pagedData = filteredRows.slice((page - 1) * pageSize, page * pageSize);
+
+  const selection = useBulkSelection({
+    visibleItems: pagedData,
+    allItems: filteredRows,
+  });
+
+  const handleBulkDelete = async () => {
+    setDeleting(true);
+    const result = await runBulkDelete({
+      url: `${import.meta.env.VITE_BACKEND_URL}/api/receivings/bulk-delete`,
+      ids: selection.selectedIdArray,
+      entityLabel: "receiving",
+    });
+    setDeleting(false);
+    if (result) {
+      setConfirmOpen(false);
+      selection.clear();
+      fetchRows();
+    }
+  };
 
   const handleChangePage = (p) => {
     if (p < 1 || p > totalPages) return;
@@ -94,15 +124,31 @@ export default function RecieveLog() {
               <button className={styles.searchButton} onClick={handleSubmit}><FaSearch /></button>
             </div>
 
-            <button className={styles.addButton} onClick={() => HandleAddrecieve()}>
-              <FaPlus />
-              <span>Add Recieve Log</span>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {canDelete && (
+                <BulkDeleteToolbar
+                  count={selection.count}
+                  onClear={selection.clear}
+                  onDelete={() => setConfirmOpen(true)}
+                  disabled={deleting}
+                  entityLabel="receiving"
+                />
+              )}
+              <button className={styles.addButton} onClick={() => HandleAddrecieve()}>
+                <FaPlus />
+                <span>Add Recieve Log</span>
+              </button>
+            </div>
           </header>
 
           <table className={styles.recieveTable}>
             <thead>
               <tr>
+                {canDelete && (
+                  <th className="bulkCheckboxCell">
+                    <input {...selection.headerCheckboxProps} />
+                  </th>
+                )}
                 <th>Receiving Code</th>
                 <th>Origin</th>
                 <th>Project</th>
@@ -111,18 +157,43 @@ export default function RecieveLog() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="4" style={{textAlign:'center',padding:'20px'}}>Loading...</td></tr>
+                <tr><td colSpan={canDelete ? "5" : "4"} style={{textAlign:'center',padding:'20px'}}>Loading...</td></tr>
               ) : pagedData.length === 0 ? (
-                <tr><td colSpan="4" style={{textAlign:'center',padding:'20px'}}>No receivings</td></tr>
+                <tr><td colSpan={canDelete ? "5" : "4"} style={{textAlign:'center',padding:'20px'}}>No receivings</td></tr>
               ) : (
-                pagedData.map((recieve) => (
-                  <tr key={recieve._id} onClick={() => handleRowClick(recieve)} style={{cursor:'pointer'}}>
-                    <td>{recieve.receivingCode}</td>
-                    <td>{recieve.origin}</td>
-                    <td>{recieve.projectDesc}</td>
-                    <td>{recieve.arrivedDate ? new Date(recieve.arrivedDate).toLocaleDateString() : '-'}</td>
-                  </tr>
-                ))
+                pagedData.map((recieve) => {
+                  const isSelected = selection.isSelected(recieve._id);
+                  return (
+                    <tr
+                      key={recieve._id}
+                      className={isSelected ? "bulkSelectedRow" : ""}
+                      onClick={() => handleRowClick(recieve)}
+                      style={{cursor:'pointer'}}
+                    >
+                      {canDelete && (
+                        <td
+                          className="bulkCheckboxCell"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            selection.toggleItem(recieve._id);
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => selection.toggleItem(recieve._id)}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Select receiving ${recieve.receivingCode || recieve._id}`}
+                          />
+                        </td>
+                      )}
+                      <td>{recieve.receivingCode}</td>
+                      <td>{recieve.origin}</td>
+                      <td>{recieve.projectDesc}</td>
+                      <td>{recieve.arrivedDate ? new Date(recieve.arrivedDate).toLocaleDateString() : '-'}</td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -147,6 +218,16 @@ export default function RecieveLog() {
           </button>
         </div>
       </WhiteIsland>
+
+      <ConfirmDeleteModal
+        open={confirmOpen}
+        count={selection.count}
+        entityLabel="receiving"
+        previewItems={selection.selectedItems}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleBulkDelete}
+        deleting={deleting}
+      />
     </>
   );
 }

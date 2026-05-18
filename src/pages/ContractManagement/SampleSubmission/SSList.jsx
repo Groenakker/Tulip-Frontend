@@ -4,6 +4,11 @@ import { useState, useEffect } from "react";
 import { FaSearch, FaPlus } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header';
+import { useAuth } from "../../../context/AuthContext";
+import { useBulkSelection } from "../../../hooks/useBulkSelection";
+import BulkDeleteToolbar from "../../../components/BulkDelete/BulkDeleteToolbar";
+import ConfirmDeleteModal from "../../../components/BulkDelete/ConfirmDeleteModal";
+import { runBulkDelete } from "../../../components/BulkDelete/bulkDeleteApi";
 const SampleData = [];
 
 export default function SSList() {
@@ -13,7 +18,22 @@ export default function SSList() {
   const [rows, setRows] = useState([]);
   const [filteredRows, setFilteredRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
+  const { hasPermission } = useAuth();
+  const canDelete = hasPermission("Samples", "delete");
+
+  const fetchSamples = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch samples');
+      const data = await res.json();
+      setRows(data);
+      setFilteredRows(data);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
 
   useEffect(() => {
     const updatePageSize = () => {
@@ -31,17 +51,7 @@ export default function SSList() {
   }, []);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`);
-        if (!res.ok) throw new Error('Failed to fetch samples');
-        const data = await res.json();
-        setRows(data);
-        setFilteredRows(data);
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
-    };
-    load();
+    fetchSamples();
   }, []);
 
   useEffect(() => {
@@ -55,6 +65,26 @@ export default function SSList() {
 
   const totalPages = Math.ceil(filteredRows.length / pageSize);
   const pagedData = filteredRows.slice((page - 1) * pageSize, page * pageSize);
+
+  const selection = useBulkSelection({
+    visibleItems: pagedData,
+    allItems: filteredRows,
+  });
+
+  const handleBulkDelete = async () => {
+    setDeleting(true);
+    const result = await runBulkDelete({
+      url: `${import.meta.env.VITE_BACKEND_URL}/api/samples/bulk-delete`,
+      ids: selection.selectedIdArray,
+      entityLabel: "sample",
+    });
+    setDeleting(false);
+    if (result) {
+      setConfirmOpen(false);
+      selection.clear();
+      fetchSamples();
+    }
+  };
 
   const handleChangePage = (p) => {
     if (p < 1 || p > totalPages) return;
@@ -96,18 +126,34 @@ export default function SSList() {
               </button>
             </div>
 
-            <button
-              className={styles.addButton}
-              onClick={() => HandleAddSample()}
-            >
-              <FaPlus />
-              <span>Add Sample</span>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {canDelete && (
+                <BulkDeleteToolbar
+                  count={selection.count}
+                  onClear={selection.clear}
+                  onDelete={() => setConfirmOpen(true)}
+                  disabled={deleting}
+                  entityLabel="sample"
+                />
+              )}
+              <button
+                className={styles.addButton}
+                onClick={() => HandleAddSample()}
+              >
+                <FaPlus />
+                <span>Add Sample</span>
+              </button>
+            </div>
           </header>
 
           <table className={styles.partnerTable}>
             <thead>
               <tr>
+                {canDelete && (
+                  <th className="bulkCheckboxCell">
+                    <input {...selection.headerCheckboxProps} />
+                  </th>
+                )}
                 <th>Sample ID</th>
                 <th>Client</th>
                 <th>Description</th>
@@ -116,18 +162,43 @@ export default function SSList() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="4" style={{textAlign:'center',padding:'10px'}}>Loading...</td></tr>
+                <tr><td colSpan={canDelete ? "5" : "4"} style={{textAlign:'center',padding:'10px'}}>Loading...</td></tr>
               ) : pagedData.length === 0 ? (
-                <tr><td colSpan="4" style={{textAlign:'center',padding:'10px'}}>No submissions</td></tr>
+                <tr><td colSpan={canDelete ? "5" : "4"} style={{textAlign:'center',padding:'10px'}}>No submissions</td></tr>
               ) : (
-                pagedData.map((row) => (
-                  <tr key={row._id} onClick={() => navigate(`/SampleSubmission/SSDetail/${row._id}`)} style={{cursor:'pointer'}}>
-                    <td>{row.sampleCode || row._id}</td>
-                    <td>{row.formData?.client || row.bPartnerCode || '-'}</td>
-                    <td>{row.formData?.sampleDescription || row.description || '-'}</td>
-                    <td>{row.status}</td>
-                  </tr>
-                ))
+                pagedData.map((row) => {
+                  const isSelected = selection.isSelected(row._id);
+                  return (
+                    <tr
+                      key={row._id}
+                      className={isSelected ? "bulkSelectedRow" : ""}
+                      onClick={() => navigate(`/SampleSubmission/SSDetail/${row._id}`)}
+                      style={{cursor:'pointer'}}
+                    >
+                      {canDelete && (
+                        <td
+                          className="bulkCheckboxCell"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            selection.toggleItem(row._id);
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => selection.toggleItem(row._id)}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Select sample ${row.sampleCode || row._id}`}
+                          />
+                        </td>
+                      )}
+                      <td>{row.sampleCode || row._id}</td>
+                      <td>{row.formData?.client || row.bPartnerCode || '-'}</td>
+                      <td>{row.formData?.sampleDescription || row.description || '-'}</td>
+                      <td>{row.status}</td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -156,6 +227,16 @@ export default function SSList() {
           </button>
         </div>
       </WhiteIsland>
+
+      <ConfirmDeleteModal
+        open={confirmOpen}
+        count={selection.count}
+        entityLabel="sample"
+        previewItems={selection.selectedItems}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleBulkDelete}
+        deleting={deleting}
+      />
     </>
   );
 }

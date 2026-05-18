@@ -6,6 +6,11 @@ import { FaSearch, FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Header from '../../../components/Header';
 import ImportButton from "../../../components/ImportButton/ImportButton";
+import { useAuth } from "../../../context/AuthContext";
+import { useBulkSelection } from "../../../hooks/useBulkSelection";
+import BulkDeleteToolbar from "../../../components/BulkDelete/BulkDeleteToolbar";
+import ConfirmDeleteModal from "../../../components/BulkDelete/ConfirmDeleteModal";
+import { runBulkDelete } from "../../../components/BulkDelete/bulkDeleteApi";
 // const testData = [
 //   {
 //     "GRK  test code": "BC-GP-VOCP",
@@ -46,6 +51,10 @@ export default function TestCodesList() {
   const Navigate = useNavigate();
   const [testData, setTestData] = useState([]);
   const [filteredTests, setFilteredTests] = useState([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { hasPermission } = useAuth();
+  const canDelete = hasPermission("Test Codes", "delete");
 
   const fetchTestCodes = () => {
     fetch(`${import.meta.env.VITE_BACKEND_URL}/api/testcodes`, {
@@ -92,6 +101,26 @@ export default function TestCodesList() {
   const totalPages = Math.ceil(filteredTests.length / pageSize);
   const pagedData = filteredTests.slice((page - 1) * pageSize, page * pageSize);
 
+  const selection = useBulkSelection({
+    visibleItems: pagedData,
+    allItems: filteredTests,
+  });
+
+  const handleBulkDelete = async () => {
+    setDeleting(true);
+    const result = await runBulkDelete({
+      url: `${import.meta.env.VITE_BACKEND_URL}/api/testcodes/bulk-delete`,
+      ids: selection.selectedIdArray,
+      entityLabel: "test code",
+    });
+    setDeleting(false);
+    if (result) {
+      setConfirmOpen(false);
+      selection.clear();
+      fetchTestCodes();
+    }
+  };
+
   const handleChangePage = (p) => {
     if (p < 1 || p > totalPages) return;
     setPage(p);
@@ -126,6 +155,15 @@ export default function TestCodesList() {
             </div>
 
             <div className={styles.headerActions}>
+              {canDelete && (
+                <BulkDeleteToolbar
+                  count={selection.count}
+                  onClear={selection.clear}
+                  onDelete={() => setConfirmOpen(true)}
+                  disabled={deleting}
+                  entityLabel="test code"
+                />
+              )}
               <ImportButton
                 endpoint={`${import.meta.env.VITE_BACKEND_URL}/api/testcodes/import`}
                 entityName="test code"
@@ -144,6 +182,11 @@ export default function TestCodesList() {
           <table className={styles.partnerTable}>
             <thead>
               <tr>
+                {canDelete && (
+                  <th className="bulkCheckboxCell">
+                    <input {...selection.headerCheckboxProps} />
+                  </th>
+                )}
                 <th>GRK Test Code</th>
                 <th>Description</th>
                 <th>Category</th>
@@ -151,14 +194,38 @@ export default function TestCodesList() {
               </tr>
             </thead>
             <tbody>
-              {pagedData.map((test) => (
-                <tr key={test._id} onClick={() => Navigate(`/TestCodes/TestCodesDetails/${test._id}`)}>
-                  <td>{test.code}</td>
-                  <td>{test.descriptionShort}</td>
-                  <td>{test.category}</td>
-                  <td>{test.extractBased}</td>
-                </tr>
-              ))}
+              {pagedData.map((test) => {
+                const isSelected = selection.isSelected(test._id);
+                return (
+                  <tr
+                    key={test._id}
+                    className={isSelected ? "bulkSelectedRow" : ""}
+                    onClick={() => Navigate(`/TestCodes/TestCodesDetails/${test._id}`)}
+                  >
+                    {canDelete && (
+                      <td
+                        className="bulkCheckboxCell"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selection.toggleItem(test._id);
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => selection.toggleItem(test._id)}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`Select test code ${test.code || test._id}`}
+                        />
+                      </td>
+                    )}
+                    <td>{test.code}</td>
+                    <td>{test.descriptionShort}</td>
+                    <td>{test.category}</td>
+                    <td>{test.extractBased}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -186,6 +253,16 @@ export default function TestCodesList() {
           </button>
         </div>
       </WhiteIsland>
+
+      <ConfirmDeleteModal
+        open={confirmOpen}
+        count={selection.count}
+        entityLabel="test code"
+        previewItems={selection.selectedItems}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleBulkDelete}
+        deleting={deleting}
+      />
     </>
   );
 }

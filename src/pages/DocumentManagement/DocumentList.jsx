@@ -5,6 +5,11 @@ import { useState, useEffect } from "react";
 import { FaSearch, FaPlus, FaFile, FaEllipsisV } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
+import { useAuth } from "../../context/AuthContext";
+import { useBulkSelection } from "../../hooks/useBulkSelection";
+import BulkDeleteToolbar from "../../components/BulkDelete/BulkDeleteToolbar";
+import ConfirmDeleteModal from "../../components/BulkDelete/ConfirmDeleteModal";
+import { runBulkDelete } from "../../components/BulkDelete/bulkDeleteApi";
 
 export default function DocumentList() {
   const [page, setPage] = useState(1);
@@ -16,33 +21,33 @@ export default function DocumentList() {
   const [filteredDocuments, setFilteredDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { hasPermission } = useAuth();
+  const canDelete = hasPermission("Documents", "delete");
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchDocuments = () => {
     setLoading(true);
     setError(null);
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/documents`, { credentials: "include" })
+    return fetch(`${import.meta.env.VITE_BACKEND_URL}/api/documents`, { credentials: "include" })
       .then((res) => {
         if (!res.ok) throw new Error(res.status === 403 ? "Access denied" : "Failed to load documents");
         return res.json();
       })
       .then((data) => {
-        if (!cancelled) {
-          setDocumentData(Array.isArray(data) ? data : []);
-          setFilteredDocuments(Array.isArray(data) ? data : []);
-        }
+        setDocumentData(Array.isArray(data) ? data : []);
+        setFilteredDocuments(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
-        if (!cancelled) {
-          setError(err.message);
-          setDocumentData([]);
-          setFilteredDocuments([]);
-        }
+        setError(err.message);
+        setDocumentData([]);
+        setFilteredDocuments([]);
       })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => { cancelled = true; };
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchDocuments();
   }, []);
 
   useEffect(() => {
@@ -82,6 +87,33 @@ export default function DocumentList() {
 
   const totalPages = Math.ceil(filteredDocuments.length / pageSize);
   const pagedData = filteredDocuments.slice((page - 1) * pageSize, page * pageSize);
+
+  const selection = useBulkSelection({
+    visibleItems: pagedData,
+    allItems: filteredDocuments,
+  });
+
+  // Documents in Published / Archived state can't be deleted (server enforces
+  // this too). Surface the warning up-front so the user isn't surprised when
+  // the server skips some rows.
+  const selectedHasProtected = selection.selectedItems.some((d) =>
+    ["published", "archived"].includes((d.status || "").toLowerCase())
+  );
+
+  const handleBulkDelete = async () => {
+    setDeleting(true);
+    const result = await runBulkDelete({
+      url: `${import.meta.env.VITE_BACKEND_URL}/api/documents/bulk-delete`,
+      ids: selection.selectedIdArray,
+      entityLabel: "document",
+    });
+    setDeleting(false);
+    if (result) {
+      setConfirmOpen(false);
+      selection.clear();
+      fetchDocuments();
+    }
+  };
 
   const handleChangePage = (p) => {
     if (p < 1 || p > totalPages) return;
@@ -168,18 +200,34 @@ export default function DocumentList() {
               </button>
             </div>
 
-            <button
-              className={styles.addButton}
-              onClick={() => handleAddDocument()}
-            >
-              <FaPlus />
-              <span>Add Document</span>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {canDelete && (
+                <BulkDeleteToolbar
+                  count={selection.count}
+                  onClear={selection.clear}
+                  onDelete={() => setConfirmOpen(true)}
+                  disabled={deleting}
+                  entityLabel="document"
+                />
+              )}
+              <button
+                className={styles.addButton}
+                onClick={() => handleAddDocument()}
+              >
+                <FaPlus />
+                <span>Add Document</span>
+              </button>
+            </div>
           </header>
 
           <table className={styles.documentTable}>
             <thead>
               <tr>
+                {canDelete && (
+                  <th className="bulkCheckboxCell">
+                    <input {...selection.headerCheckboxProps} />
+                  </th>
+                )}
                 <th>ID</th>
                 <th>Title</th>
                 <th>Category</th>
@@ -191,55 +239,75 @@ export default function DocumentList() {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={6} className={styles.loadingCell}>
+                  <td colSpan={canDelete ? 7 : 6} className={styles.loadingCell}>
                     Loading documents…
                   </td>
                 </tr>
               )}
               {!loading && error && (
                 <tr>
-                  <td colSpan={6} className={styles.errorCell}>
+                  <td colSpan={canDelete ? 7 : 6} className={styles.errorCell}>
                     {error}
                   </td>
                 </tr>
               )}
               {!loading && !error && pagedData.length === 0 && (
                 <tr>
-                  <td colSpan={6} className={styles.emptyCell}>
+                  <td colSpan={canDelete ? 7 : 6} className={styles.emptyCell}>
                     No documents found
                   </td>
                 </tr>
               )}
-              {!loading && !error && pagedData.map((document) => (
-                <tr
-                  key={document._id}
-                  onClick={() => navigate(`/DocumentManagement/DocumentDetails/${document._id}`)}
-                  className={styles.rowClickable}
-                >
-                  <td>{document.documentID}</td>
-                  <td>
-                    <div className={styles.titleCell}>
-                      <FaFile className={styles.documentIcon} />
-                      <span>{document.title ?? document.name}</span>
-                    </div>
-                  </td>
-                  <td>{document.category}</td>
-                  <td>
-                    <span className={`${styles.statusBadge} ${getStatusClass(document.status)}`}>
-                      {document.status}
-                    </span>
-                  </td>
-                  <td>{document.version ?? document.currentVersion}</td>
-                  <td>
-                    <button
-                      className={styles.actionButton}
-                      onClick={(e) => handleActionClick(e, document._id)}
-                    >
-                      <FaEllipsisV />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {!loading && !error && pagedData.map((document) => {
+                const isSelected = selection.isSelected(document._id);
+                return (
+                  <tr
+                    key={document._id}
+                    onClick={() => navigate(`/DocumentManagement/DocumentDetails/${document._id}`)}
+                    className={`${styles.rowClickable} ${isSelected ? "bulkSelectedRow" : ""}`}
+                  >
+                    {canDelete && (
+                      <td
+                        className="bulkCheckboxCell"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selection.toggleItem(document._id);
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => selection.toggleItem(document._id)}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`Select document ${document.documentID || document.title || document._id}`}
+                        />
+                      </td>
+                    )}
+                    <td>{document.documentID}</td>
+                    <td>
+                      <div className={styles.titleCell}>
+                        <FaFile className={styles.documentIcon} />
+                        <span>{document.title ?? document.name}</span>
+                      </div>
+                    </td>
+                    <td>{document.category}</td>
+                    <td>
+                      <span className={`${styles.statusBadge} ${getStatusClass(document.status)}`}>
+                        {document.status}
+                      </span>
+                    </td>
+                    <td>{document.version ?? document.currentVersion}</td>
+                    <td>
+                      <button
+                        className={styles.actionButton}
+                        onClick={(e) => handleActionClick(e, document._id)}
+                      >
+                        <FaEllipsisV />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -267,6 +335,21 @@ export default function DocumentList() {
           </button>
         </div>
       </WhiteIsland>
+
+      <ConfirmDeleteModal
+        open={confirmOpen}
+        count={selection.count}
+        entityLabel="document"
+        previewItems={selection.selectedItems}
+        description={
+          selectedHasProtected
+            ? "This action is permanent. Published or Archived documents will be skipped automatically to preserve audit history."
+            : undefined
+        }
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleBulkDelete}
+        deleting={deleting}
+      />
     </>
   );
 }

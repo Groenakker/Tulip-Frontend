@@ -1,0 +1,214 @@
+/* ---------- Toolbar bits ---------- */
+
+.selectionCount {
+  font-size: 12px;
+  color: #374151;
+  font-weight: 600;
+  background: #f1f5f9;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.clearBtn {
+  background: transparent;
+  color: #475569;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.clearBtn:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #1f2937;
+}
+
+.clearBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.deleteBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.05s ease;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.deleteBtn:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.deleteBtn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.deleteBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---------- Row + checkbox cell helpers (consumers add these classes) -- */
+
+:global(.bulkCheckboxCell) {
+  width: 36px;
+  text-align: center;
+  padding: 10px 6px;
+}
+
+:global(.bulkCheckboxCell input[type="checkbox"]) {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: rgb(69 112 182);
+  margin: 0;
+}
+
+:global(.bulkSelectedRow) {
+  background-color: #eef4ff !important;
+}
+
+:global(.bulkSelectedRow:hover) {
+  background-color: #dde8fc !important;
+}
+
+/* ---------- Confirm modal ---------- */
+
+.confirmModal {
+  width: min(460px, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.confirmHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.confirmHeader h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+
+.confirmIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.confirmBody {
+  color: #374151;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.previewBox {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.previewLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.previewList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.previewList li {
+  font-size: 12.5px;
+  color: #1f2937;
+}
+
+.previewList li strong {
+  color: #111827;
+}
+
+.previewMore {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.cancelBtn {
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 9px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.cancelBtn:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.cancelBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirmDeleteBtn {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.confirmDeleteBtn:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.confirmDeleteBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
