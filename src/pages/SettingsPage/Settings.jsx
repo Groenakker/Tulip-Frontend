@@ -218,6 +218,15 @@ export default function Settings() {
   }, [user?.companyId]);
 
   // Load shipping addresses whenever the company id changes.
+  //
+  // Older backend builds may not have the dedicated
+  //   GET /companies/:id/shipping-addresses
+  // sub-route (it 404s). In that case we transparently fall back to
+  //   GET /companies/:id
+  // and read the embedded `shippingAddresses` array directly. This keeps
+  // the Settings page working against any backend version that ships the
+  // addresses on the company document, even before the new sub-routes are
+  // deployed.
   useEffect(() => {
     if (!user?.companyId) {
       setShippingAddresses([]);
@@ -231,6 +240,23 @@ export default function Settings() {
           `${API_BASE_URL}/companies/${user.companyId}/shipping-addresses`,
           { credentials: "include", signal: controller.signal }
         );
+
+        if (response.status === 404) {
+          // Sub-route not deployed yet — pull from the main company doc.
+          const fallback = await fetch(
+            `${API_BASE_URL}/companies/${user.companyId}`,
+            { credentials: "include", signal: controller.signal }
+          );
+          const company = await fallback.json().catch(() => null);
+          if (!fallback.ok) {
+            throw new Error(company?.message || "Failed to load shipping addresses");
+          }
+          setShippingAddresses(
+            Array.isArray(company?.shippingAddresses) ? company.shippingAddresses : []
+          );
+          return;
+        }
+
         const data = await response.json().catch(() => []);
         if (!response.ok) throw new Error(data?.message || "Failed to load shipping addresses");
         setShippingAddresses(Array.isArray(data) ? data : []);
@@ -798,6 +824,39 @@ export default function Settings() {
     }));
   };
 
+  // Build the next-state shipping addresses array locally so we can fall
+  // back to "PUT /companies/:id" (which the older deployed backend supports)
+  // when the dedicated sub-routes aren't available.
+  const buildNextAddressList = (action, payload) => {
+    const current = Array.isArray(shippingAddresses) ? shippingAddresses : [];
+    if (action === "delete") {
+      return current.filter((a) => String(a._id) !== String(payload));
+    }
+    if (action === "update") {
+      return current.map((a) =>
+        String(a._id) === String(payload.id) ? { ...a, ...payload.entry } : a
+      );
+    }
+    // create
+    return [...current, payload];
+  };
+
+  // Persist the next shippingAddresses array via the legacy whole-doc update
+  // endpoint. Returns the saved array on success.
+  const saveAddressesViaCompanyUpdate = async (nextList) => {
+    const response = await fetch(`${API_BASE_URL}/companies/${user.companyId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ shippingAddresses: nextList }),
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(data?.message || "Failed to save shipping address");
+    }
+    return Array.isArray(data?.shippingAddresses) ? data.shippingAddresses : nextList;
+  };
+
   const handleSaveAddress = async () => {
     if (!user?.companyId) return;
     if (!addressForm.label.trim()) {
@@ -818,6 +877,19 @@ export default function Settings() {
         credentials: "include",
         body: JSON.stringify(addressForm),
       });
+
+      if (response.status === 404) {
+        // Legacy backend without sub-routes — recompute the array and PUT
+        // the whole company instead.
+        const nextList = editingAddressId
+          ? buildNextAddressList("update", { id: editingAddressId, entry: addressForm })
+          : buildNextAddressList("create", { ...addressForm });
+        const saved = await saveAddressesViaCompanyUpdate(nextList);
+        setShippingAddresses(saved);
+        closeAddressModal();
+        return;
+      }
+
       const data = await response.json().catch(() => null);
       if (!response.ok) throw new Error(data?.message || "Failed to save address");
       setShippingAddresses(Array.isArray(data) ? data : []);
@@ -837,6 +909,15 @@ export default function Settings() {
         `${API_BASE_URL}/companies/${user.companyId}/shipping-addresses/${addressId}`,
         { method: "DELETE", credentials: "include" }
       );
+
+      if (response.status === 404) {
+        // Same legacy fallback as the save handler above.
+        const nextList = buildNextAddressList("delete", addressId);
+        const saved = await saveAddressesViaCompanyUpdate(nextList);
+        setShippingAddresses(saved);
+        return;
+      }
+
       const data = await response.json().catch(() => null);
       if (!response.ok) throw new Error(data?.message || "Failed to delete");
       setShippingAddresses(Array.isArray(data) ? data : []);
