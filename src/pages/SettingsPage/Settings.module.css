@@ -1036,3 +1036,161 @@
   grid-column: 1 / -1;
 }
 
+/* System Configuration — Shippo */
+.systemConfigDescription {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.shippoStatusBadge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.shippoStatusActive {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.shippoStatusInactive {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.systemConfigSection {
+  margin-bottom: 28px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.systemConfigSection:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.systemConfigSectionTitle {
+  margin: 0 0 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.systemConfigGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 14px;
+  width: 100%;
+}
+
+.systemConfigField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 6px;
+}
+
+.systemConfigFieldFull {
+  grid-column: 1 / -1;
+}
+
+.systemConfigFieldWide {
+  grid-column: 1 / -1;
+  max-width: 420px;
+}
+
+.systemConfigField .infoDetail {
+  margin: 0;
+  padding: 0 4px;
+  line-height: 1.3;
+}
+
+.systemConfigField input,
+.systemConfigField select {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #d0d5dd;
+  background-color: #ffffff;
+  font-size: 13px;
+  color: #111827;
+  line-height: 1.4;
+}
+
+.systemConfigField input::placeholder {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.systemConfigField select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M3 4.5L6 7.5L9 4.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+.systemConfigField input:focus,
+.systemConfigField select:focus {
+  outline: none;
+  border-color: rgb(69 112 182);
+  box-shadow: 0 0 0 3px rgba(69, 112, 182, 0.15);
+}
+
+.systemConfigField input:disabled,
+.systemConfigField select:disabled {
+  background-color: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.systemConfigHint {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.systemConfigHint code {
+  font-size: 12px;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.shippoLoadWarning {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .systemConfigGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .systemConfigGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .systemConfigFieldWide {
+    max-width: none;
+  }
+}
+

@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { FaSearch, FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Header from "../../../components/Header";
+import ImportButton from "../../../components/ImportButton/ImportButton";
 // const projectData = [
 //   {
 //     id: "GRK-25035-01",
@@ -46,14 +47,20 @@ export default function ProjectList() {
   const [projectData, setProjectData] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
 
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects`)
+  const fetchProjects = () => {
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects`, {
+      credentials: "include",
+    })
       .then((response) => response.json())
       .then((data) => {
         setProjectData(data);
         setFilteredProjects(data);
       })
       .catch((error) => console.error("Error fetching project data:", error));
+  };
+
+  useEffect(() => {
+    fetchProjects();
   }, []);
 
   useEffect(() => {
@@ -120,13 +127,20 @@ export default function ProjectList() {
               </button>
             </div>
 
-            <button
-              className={styles.addButton}
-              onClick={() => HandleAddProject()}
-            >
-              <FaPlus />
-              <span>Add</span>
-            </button>
+            <div className={styles.headerActions}>
+              <ImportButton
+                endpoint={`${import.meta.env.VITE_BACKEND_URL}/api/projects/import`}
+                entityName="project"
+                onComplete={fetchProjects}
+              />
+              <button
+                className={styles.addButton}
+                onClick={() => HandleAddProject()}
+              >
+                <FaPlus />
+                <span>Add</span>
+              </button>
+            </div>
           </header>
 
           <table className={styles.partnerTable}>

@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { FaSearch, FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Header from '../../../components/Header';
+import ImportButton from "../../../components/ImportButton/ImportButton";
 // const testData = [
 //   {
 //     "GRK  test code": "BC-GP-VOCP",
@@ -46,14 +47,20 @@ export default function TestCodesList() {
   const [testData, setTestData] = useState([]);
   const [filteredTests, setFilteredTests] = useState([]);
 
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/testcodes`)
+  const fetchTestCodes = () => {
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/testcodes`, {
+      credentials: "include",
+    })
       .then((response) => response.json())
       .then((data) => {
         setTestData(data);
         setFilteredTests(data);
       })
       .catch((error) => console.error("Error fetching test data:", error));
+  };
+
+  useEffect(() => {
+    fetchTestCodes();
   }, []);
 
   useEffect(() => {
@@ -118,13 +125,20 @@ export default function TestCodesList() {
               </button>
             </div>
 
-            <button
-              className={styles.addButton}
-              onClick={() => HandleAddTestCode()}
-            >
-              <FaPlus />
-              <span>Add</span>
-            </button>
+            <div className={styles.headerActions}>
+              <ImportButton
+                endpoint={`${import.meta.env.VITE_BACKEND_URL}/api/testcodes/import`}
+                entityName="test code"
+                onComplete={fetchTestCodes}
+              />
+              <button
+                className={styles.addButton}
+                onClick={() => HandleAddTestCode()}
+              >
+                <FaPlus />
+                <span>Add</span>
+              </button>
+            </div>
           </header>
 
           <table className={styles.partnerTable}>

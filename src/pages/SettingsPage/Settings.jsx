@@ -100,6 +100,29 @@ export default function Settings() {
   const [roleFormLoading, setRoleFormLoading] = useState(false);
   const [permissionFormLoading, setPermissionFormLoading] = useState(false);
 
+  // System Configuration — Shippo API credentials (per company)
+  const emptyShippoForm = {
+    apiToken: "",
+    apiVersion: "",
+    labelFileType: "PDF_4x6",
+    length: "10",
+    width: "8",
+    height: "4",
+    weight: "2",
+    distance_unit: "in",
+    mass_unit: "lb",
+    testTrackingState: "SHIPPO_TRANSIT",
+  };
+  const [shippoForm, setShippoForm] = useState(emptyShippoForm);
+  const [shippoHasToken, setShippoHasToken] = useState(false);
+  const [shippoTokenMasked, setShippoTokenMasked] = useState("");
+  const [shippoConfigured, setShippoConfigured] = useState(false);
+  const [shippoIsTestMode, setShippoIsTestMode] = useState(false);
+  const [shippoLoading, setShippoLoading] = useState(false);
+  const [shippoError, setShippoError] = useState("");
+  const [shippoSaveLoading, setShippoSaveLoading] = useState(false);
+  const [shippoSaveError, setShippoSaveError] = useState("");
+
   useEffect(() => {
     const value = searchValue.toLowerCase();
     setFilteredUsers(
@@ -414,6 +437,60 @@ export default function Settings() {
 
     return () => controller.abort();
   }, [activeMenu]);
+
+  // Load Shippo configuration when System Configuration tab is active
+  useEffect(() => {
+    if (activeMenu !== "system" || !user?.companyId) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const fetchShippoConfig = async () => {
+      setShippoLoading(true);
+      setShippoError("");
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/companies/${user.companyId}/shippo-config`,
+          { credentials: "include", signal: controller.signal }
+        );
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(data?.message || "Failed to load Shippo configuration.");
+        }
+
+        const parcel = data?.defaultParcel || {};
+        setShippoConfigured(Boolean(data?.configured));
+        setShippoHasToken(Boolean(data?.hasApiToken));
+        setShippoTokenMasked(data?.apiTokenMasked || "");
+        setShippoIsTestMode(Boolean(data?.isTestMode));
+        setShippoForm({
+          apiToken: "",
+          apiVersion: data?.apiVersion || "",
+          labelFileType: data?.labelFileType || "PDF_4x6",
+          length: parcel.length || "10",
+          width: parcel.width || "8",
+          height: parcel.height || "4",
+          weight: parcel.weight || "2",
+          distance_unit: parcel.distance_unit || "in",
+          mass_unit: parcel.mass_unit || "lb",
+          testTrackingState: data?.testTrackingState || "SHIPPO_TRANSIT",
+        });
+      } catch (error) {
+        if (error.name === "AbortError") return;
+        // Non-blocking: still show the form so the user can enter credentials.
+        setShippoError(
+          error.message ||
+            "Could not load saved settings. You can still enter credentials below."
+        );
+      } finally {
+        if (!controller.signal.aborted) setShippoLoading(false);
+      }
+    };
+
+    fetchShippoConfig();
+    return () => controller.abort();
+  }, [activeMenu, user?.companyId]);
 
   // Filter roles based on search
   useEffect(() => {
@@ -1095,6 +1172,81 @@ export default function Settings() {
 
   const availableActionsList = ["read", "write", "update", "delete"];
 
+  const handleShippoFieldChange = (field) => (event) => {
+    const { value } = event.target;
+    setShippoForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleShippoSave = async () => {
+    if (!user?.companyId) {
+      setShippoSaveError("No company is associated with your account.");
+      return;
+    }
+
+    const trimmedToken = shippoForm.apiToken.trim();
+    if (!shippoHasToken && !trimmedToken) {
+      setShippoSaveError("Shippo API token is required.");
+      return;
+    }
+
+    setShippoSaveError("");
+    setShippoSaveLoading(true);
+
+    try {
+      const payload = {
+        apiVersion: shippoForm.apiVersion.trim(),
+        labelFileType: shippoForm.labelFileType,
+        length: shippoForm.length,
+        width: shippoForm.width,
+        height: shippoForm.height,
+        weight: shippoForm.weight,
+        distance_unit: shippoForm.distance_unit,
+        mass_unit: shippoForm.mass_unit,
+        testTrackingState: shippoForm.testTrackingState,
+      };
+      if (trimmedToken) payload.apiToken = trimmedToken;
+
+      const response = await fetch(
+        `${API_BASE_URL}/companies/${user.companyId}/shippo-config`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        }
+      );
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.message || "Failed to save Shippo configuration.");
+      }
+
+      const parcel = data?.defaultParcel || {};
+      setShippoConfigured(Boolean(data?.configured));
+      setShippoHasToken(Boolean(data?.hasApiToken));
+      setShippoTokenMasked(data?.apiTokenMasked || "");
+      setShippoIsTestMode(Boolean(data?.isTestMode));
+      setShippoForm((prev) => ({
+        ...prev,
+        apiToken: "",
+        apiVersion: data?.apiVersion || prev.apiVersion,
+        labelFileType: data?.labelFileType || prev.labelFileType,
+        length: parcel.length || prev.length,
+        width: parcel.width || prev.width,
+        height: parcel.height || prev.height,
+        weight: parcel.weight || prev.weight,
+        distance_unit: parcel.distance_unit || prev.distance_unit,
+        mass_unit: parcel.mass_unit || prev.mass_unit,
+        testTrackingState: data?.testTrackingState || prev.testTrackingState,
+      }));
+      alert("Shippo configuration saved successfully!");
+      setShippoError("");
+    } catch (error) {
+      setShippoSaveError(error.message || "Failed to save Shippo configuration.");
+    } finally {
+      setShippoSaveLoading(false);
+    }
+  };
+
   const renderContent = () => {
     switch (activeMenu) {
       case "users":
@@ -1589,7 +1741,201 @@ export default function Settings() {
       case "notifications":
         return <div className={styles.placeholderContent}>Notification settings coming soon...</div>;
       case "system":
-        return <div className={styles.placeholderContent}>System Configuration coming soon...</div>;
+        return (
+          <>
+            {!user?.companyId ? (
+              <div className={styles.placeholderContent}>
+                No company is associated with your account.
+              </div>
+            ) : shippoLoading ? (
+              <div className={styles.placeholderContent}>
+                Loading system configuration...
+              </div>
+            ) : (
+              <WhiteIsland className={styles.bigIsland}>
+                <h3>Shippo Integration</h3>
+                <p className={styles.systemConfigDescription}>
+                  Connect your company&apos;s Shippo account to create shipping labels,
+                  fetch rates, and track shipments. Credentials are stored securely and
+                  never exposed to the browser.
+                </p>
+
+                {shippoError && (
+                  <div className={styles.shippoLoadWarning}>{shippoError}</div>
+                )}
+
+                <div
+                  className={`${styles.shippoStatusBadge} ${
+                    shippoConfigured ? styles.shippoStatusActive : styles.shippoStatusInactive
+                  }`}
+                >
+                  {shippoConfigured
+                    ? shippoIsTestMode
+                      ? "Configured (Test Mode)"
+                      : "Configured (Live)"
+                    : "Not Configured"}
+                </div>
+
+                <div className={styles.systemConfigSection}>
+                  <h4 className={styles.systemConfigSectionTitle}>API Credentials</h4>
+                  <div className={styles.systemConfigGrid}>
+                    <label className={`${styles.systemConfigField} ${styles.systemConfigFieldFull}`}>
+                      <span className={styles.infoDetail}>API Token</span>
+                      <input
+                        type="password"
+                        value={shippoForm.apiToken}
+                        onChange={handleShippoFieldChange("apiToken")}
+                        placeholder={
+                          shippoHasToken
+                            ? `Current: ${shippoTokenMasked} (leave blank to keep)`
+                            : "shippo_test_... or shippo_live_..."
+                        }
+                        disabled={shippoSaveLoading}
+                        autoComplete="off"
+                      />
+                    </label>
+                    <label className={styles.systemConfigField}>
+                      <span className={styles.infoDetail}>API Version (optional)</span>
+                      <input
+                        type="text"
+                        value={shippoForm.apiVersion}
+                        onChange={handleShippoFieldChange("apiVersion")}
+                        placeholder="e.g. 2018-02-08"
+                        disabled={shippoSaveLoading}
+                      />
+                    </label>
+                    <label className={styles.systemConfigField}>
+                      <span className={styles.infoDetail}>Label File Type</span>
+                      <select
+                        value={shippoForm.labelFileType}
+                        onChange={handleShippoFieldChange("labelFileType")}
+                        disabled={shippoSaveLoading}
+                      >
+                        <option value="PDF_4x6">PDF 4x6</option>
+                        <option value="PDF">PDF</option>
+                        <option value="PDF_4x8">PDF 4x8</option>
+                        <option value="PNG">PNG</option>
+                        <option value="PNG_2.3x7.5">PNG 2.3x7.5</option>
+                        <option value="ZPLII">ZPLII</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+
+                <div className={styles.systemConfigSection}>
+                  <h4 className={styles.systemConfigSectionTitle}>Default Parcel</h4>
+                  <div className={styles.systemConfigGrid}>
+                    <label className={styles.systemConfigField}>
+                      <span className={styles.infoDetail}>Length</span>
+                      <input
+                        type="text"
+                        value={shippoForm.length}
+                        onChange={handleShippoFieldChange("length")}
+                        disabled={shippoSaveLoading}
+                      />
+                    </label>
+                    <label className={styles.systemConfigField}>
+                      <span className={styles.infoDetail}>Width</span>
+                      <input
+                        type="text"
+                        value={shippoForm.width}
+                        onChange={handleShippoFieldChange("width")}
+                        disabled={shippoSaveLoading}
+                      />
+                    </label>
+                    <label className={styles.systemConfigField}>
+                      <span className={styles.infoDetail}>Height</span>
+                      <input
+                        type="text"
+                        value={shippoForm.height}
+                        onChange={handleShippoFieldChange("height")}
+                        disabled={shippoSaveLoading}
+                      />
+                    </label>
+                    <label className={styles.systemConfigField}>
+                      <span className={styles.infoDetail}>Weight</span>
+                      <input
+                        type="text"
+                        value={shippoForm.weight}
+                        onChange={handleShippoFieldChange("weight")}
+                        disabled={shippoSaveLoading}
+                      />
+                    </label>
+                    <label className={styles.systemConfigField}>
+                      <span className={styles.infoDetail}>Distance Unit</span>
+                      <select
+                        value={shippoForm.distance_unit}
+                        onChange={handleShippoFieldChange("distance_unit")}
+                        disabled={shippoSaveLoading}
+                      >
+                        <option value="in">Inches (in)</option>
+                        <option value="cm">Centimeters (cm)</option>
+                      </select>
+                    </label>
+                    <label className={styles.systemConfigField}>
+                      <span className={styles.infoDetail}>Mass Unit</span>
+                      <select
+                        value={shippoForm.mass_unit}
+                        onChange={handleShippoFieldChange("mass_unit")}
+                        disabled={shippoSaveLoading}
+                      >
+                        <option value="lb">Pounds (lb)</option>
+                        <option value="oz">Ounces (oz)</option>
+                        <option value="kg">Kilograms (kg)</option>
+                        <option value="g">Grams (g)</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+
+                {(shippoIsTestMode ||
+                  shippoForm.apiToken.trim().startsWith("shippo_test_")) && (
+                  <div className={styles.systemConfigSection}>
+                    <h4 className={styles.systemConfigSectionTitle}>Test Mode Tracking</h4>
+                    <p className={styles.systemConfigHint}>
+                      When using a <code>shippo_test_</code> token, Shippo&apos;s sandbox
+                      requires special tracking numbers. Choose the simulated tracking state
+                      for test shipments.
+                    </p>
+                    <label className={`${styles.systemConfigField} ${styles.systemConfigFieldWide}`}>
+                      <span className={styles.infoDetail}>Test Tracking State</span>
+                      <select
+                        value={shippoForm.testTrackingState}
+                        onChange={handleShippoFieldChange("testTrackingState")}
+                        disabled={shippoSaveLoading}
+                      >
+                        <option value="SHIPPO_PRE_TRANSIT">Pre-Transit</option>
+                        <option value="SHIPPO_TRANSIT">In Transit</option>
+                        <option value="SHIPPO_DELIVERED">Delivered</option>
+                        <option value="SHIPPO_RETURNED">Returned</option>
+                        <option value="SHIPPO_FAILURE">Failure</option>
+                        <option value="SHIPPO_UNKNOWN">Unknown</option>
+                      </select>
+                    </label>
+                  </div>
+                )}
+
+                {shippoSaveError && (
+                  <div className={styles.errorText} style={{ marginTop: 10 }}>
+                    {shippoSaveError}
+                  </div>
+                )}
+
+                <div className={styles.saves}>
+                  <button
+                    type="button"
+                    className={styles.companySaveButton}
+                    onClick={handleShippoSave}
+                    disabled={shippoSaveLoading}
+                  >
+                    <FaSave />
+                    {shippoSaveLoading ? "Saving..." : "Save Configuration"}
+                  </button>
+                </div>
+              </WhiteIsland>
+            )}
+          </>
+        );
       default:
         return null;
     }

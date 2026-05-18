@@ -4,6 +4,7 @@ import WhiteIsland from "../../../components/Whiteisland";
 import styles from "./Bpartner.module.css";
 import { useNavigate } from "react-router-dom";
 import Header from "../../../components/Header";
+import ImportButton from "../../../components/ImportButton/ImportButton";
 
 
 
@@ -62,7 +63,7 @@ export default function Bpartner() {
   const [partners, setPartners] = useState([]);
   const [filteredPartners, setFilteredPartners] = useState([]);
 
-  useEffect(() => {
+  const fetchPartners = () => {
     fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners`, {
       credentials: "include",
     })
@@ -77,6 +78,10 @@ export default function Bpartner() {
         setFilteredPartners(data);
       })
       .catch((err) => console.error("Failed to fetch partners:", err));
+  };
+
+  useEffect(() => {
+    fetchPartners();
   }, []);
 
   useEffect(() => {
@@ -150,13 +155,20 @@ export default function Bpartner() {
               </button>
             </div>
 
-            <button
-              className={styles.addButton}
-              onClick={() => HandleAddPartner()}
-            >
-              <FaPlus />
-              <span>Add</span>
-            </button>
+            <div className={styles.headerActions}>
+              <ImportButton
+                endpoint={`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/import`}
+                entityName="business partner"
+                onComplete={fetchPartners}
+              />
+              <button
+                className={styles.addButton}
+                onClick={() => HandleAddPartner()}
+              >
+                <FaPlus />
+                <span>Add</span>
+              </button>
+            </div>
           </header>
 
           <table className={styles.partnerTable}>

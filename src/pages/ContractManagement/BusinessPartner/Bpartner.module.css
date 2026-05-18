@@ -25,6 +25,12 @@
     font-size : 12px;
 }
 
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .searchInput {
     padding: 10px 12px;
     border: 1px solid #d1d5db;

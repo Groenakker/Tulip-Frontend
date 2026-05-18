@@ -1,0 +1,219 @@
+.importButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: rgb(69 112 182);
+  border: 1px solid rgb(69 112 182);
+  padding: 9px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.importButton:hover:not(:disabled) {
+  background: rgb(69 112 182);
+  color: #ffffff;
+}
+
+.importButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 460px;
+  max-width: 640px;
+}
+
+.modalContent h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.fileNameLabel {
+  margin: -4px 0 0;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.loadingBlock {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.loadingBlock p {
+  margin: 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid #d1d5db;
+  border-top-color: rgb(69 112 182);
+  animation: importSpinner 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes importSpinner {
+  to { transform: rotate(360deg); }
+}
+
+.errorMessage {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  text-align: center;
+}
+
+.summaryLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #6b7280;
+  letter-spacing: 0.04em;
+}
+
+.summaryValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.summaryCreated {
+  background: #d1fae5;
+}
+.summaryCreated .summaryValue {
+  color: #047857;
+}
+
+.summaryUpdated {
+  background: #dbeafe;
+}
+.summaryUpdated .summaryValue {
+  color: #1d4ed8;
+}
+
+.summarySkipped {
+  background: #fef3c7;
+}
+.summarySkipped .summaryValue {
+  color: #92400e;
+}
+
+.summaryFailed {
+  background: #fee2e2;
+}
+.summaryFailed .summaryValue {
+  color: #b91c1c;
+}
+
+.failuresSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.failuresSection h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.failuresList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.failureRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.failureRowLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #991b1b;
+}
+
+.failureRowMessage {
+  font-size: 12px;
+  color: #7f1d1d;
+  line-height: 1.4;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.modalPrimaryBtn {
+  background: rgb(69 112 182);
+  color: #ffffff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.modalPrimaryBtn:hover {
+  background: rgb(1, 49, 126);
+}
+
+@media (max-width: 600px) {
+  .modalContent {
+    min-width: 0;
+    width: 100%;
+  }
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
