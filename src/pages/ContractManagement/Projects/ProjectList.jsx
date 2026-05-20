@@ -8,6 +8,8 @@ import Header from "../../../components/Header";
 import ImportButton from "../../../components/ImportButton/ImportButton";
 import { useAuth } from "../../../context/AuthContext";
 import { useBulkSelection } from "../../../hooks/useBulkSelection";
+import { useTableControls } from "../../../hooks/useTableControls";
+import SortableTh from "../../../components/SortableTh";
 import BulkDeleteToolbar from "../../../components/BulkDelete/BulkDeleteToolbar";
 import ConfirmDeleteModal from "../../../components/BulkDelete/ConfirmDeleteModal";
 import { runBulkDelete } from "../../../components/BulkDelete/bulkDeleteApi";
@@ -50,7 +52,6 @@ export default function ProjectList() {
   const [pageSize, setPageSize] = useState(9);
   const Navigate = useNavigate();
   const [projectData, setProjectData] = useState([]);
-  const [filteredProjects, setFilteredProjects] = useState([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const { hasPermission } = useAuth();
@@ -63,7 +64,6 @@ export default function ProjectList() {
       .then((response) => response.json())
       .then((data) => {
         setProjectData(data);
-        setFilteredProjects(data);
       })
       .catch((error) => console.error("Error fetching project data:", error));
   };
@@ -72,18 +72,14 @@ export default function ProjectList() {
     fetchProjects();
   }, []);
 
+  const { processed: filteredProjects, getSortProps } = useTableControls(
+    projectData,
+    inputValue
+  );
+
   useEffect(() => {
-    const value = inputValue.toLowerCase();
-    setFilteredProjects(
-      projectData.filter(
-        (project) =>
-          project.projectID?.toLowerCase().includes(value) ||
-          project.description?.toLowerCase().includes(value) ||
-          project.startDate?.toLowerCase().includes(value) ||
-          project.endDate?.toLowerCase().includes(value)
-      )
-    );
-  }, [inputValue, projectData]);
+    setPage(1);
+  }, [inputValue]);
 
   useEffect(() => {
     const updatePageSize = () => {
@@ -189,10 +185,10 @@ export default function ProjectList() {
                     <input {...selection.headerCheckboxProps} />
                   </th>
                 )}
-                <th>Project ID</th>
-                <th>Description</th>
-                <th>Start</th>
-                <th>Due</th>
+                <SortableTh sortProps={getSortProps("projectID")}>Project ID</SortableTh>
+                <SortableTh sortProps={getSortProps("description")}>Description</SortableTh>
+                <SortableTh sortProps={getSortProps("startDate")}>Start</SortableTh>
+                <SortableTh sortProps={getSortProps("endDate")}>Due</SortableTh>
               </tr>
             </thead>
             <tbody>

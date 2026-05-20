@@ -1,0 +1,46 @@
+.sortableTh {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+.sortableTh:hover {
+  background-color: rgba(69, 111, 182, 0.06);
+}
+
+.sortableTh:focus-visible {
+  outline: 2px solid #456fb6;
+  outline-offset: -2px;
+}
+
+.sortableThActive {
+  color: #456fb6;
+}
+
+.sortableThInner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.sortableThLabel {
+  display: inline-block;
+}
+
+.sortableThIndicator {
+  font-size: 0.75em;
+  line-height: 1;
+  display: inline-block;
+  min-width: 0.9em;
+  text-align: center;
+}
+
+.sortableThIndicatorIdle {
+  color: rgba(31, 41, 55, 0.35);
+}
+
+.sortableThIndicatorActive {
+  color: #456fb6;
+}

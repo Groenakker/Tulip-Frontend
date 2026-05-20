@@ -6,6 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header';
 import { useAuth } from "../../../context/AuthContext";
 import { useBulkSelection } from "../../../hooks/useBulkSelection";
+import { useTableControls } from "../../../hooks/useTableControls";
+import SortableTh from "../../../components/SortableTh";
 import BulkDeleteToolbar from "../../../components/BulkDelete/BulkDeleteToolbar";
 import ConfirmDeleteModal from "../../../components/BulkDelete/ConfirmDeleteModal";
 import { runBulkDelete } from "../../../components/BulkDelete/bulkDeleteApi";
@@ -16,7 +18,6 @@ export default function SSList() {
   const [inputValue, setInputValue] = useState("");
   const [pageSize, setPageSize] = useState(9);
   const [rows, setRows] = useState([]);
-  const [filteredRows, setFilteredRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -30,7 +31,6 @@ export default function SSList() {
       if (!res.ok) throw new Error('Failed to fetch samples');
       const data = await res.json();
       setRows(data);
-      setFilteredRows(data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -54,14 +54,11 @@ export default function SSList() {
     fetchSamples();
   }, []);
 
+  const { processed: filteredRows, getSortProps } = useTableControls(rows, inputValue);
+
   useEffect(() => {
-    const v = inputValue.toLowerCase();
-    setFilteredRows(rows.filter(r =>
-      (r._id || '').toLowerCase().includes(v) ||
-      (r.status || '').toLowerCase().includes(v) ||
-      (r.description || '').toLowerCase().includes(v)
-    ));
-  }, [inputValue, rows]);
+    setPage(1);
+  }, [inputValue]);
 
   const totalPages = Math.ceil(filteredRows.length / pageSize);
   const pagedData = filteredRows.slice((page - 1) * pageSize, page * pageSize);
@@ -154,10 +151,10 @@ export default function SSList() {
                     <input {...selection.headerCheckboxProps} />
                   </th>
                 )}
-                <th>Sample ID</th>
-                <th>Client</th>
-                <th>Description</th>
-                <th>Status</th>
+                <SortableTh sortProps={getSortProps("sampleCode")}>Sample ID</SortableTh>
+                <SortableTh sortProps={getSortProps("bPartnerCode")}>Client</SortableTh>
+                <SortableTh sortProps={getSortProps("description")}>Description</SortableTh>
+                <SortableTh sortProps={getSortProps("status")}>Status</SortableTh>
               </tr>
             </thead>
             <tbody>

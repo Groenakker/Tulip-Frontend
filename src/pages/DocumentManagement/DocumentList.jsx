@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import WhiteIsland from "../../components/Whiteisland";
 import styles from "./DocumentList.module.css";
 import { useState, useEffect } from "react";
@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
 import { useAuth } from "../../context/AuthContext";
 import { useBulkSelection } from "../../hooks/useBulkSelection";
+import { useTableControls } from "../../hooks/useTableControls";
+import SortableTh from "../../components/SortableTh";
 import BulkDeleteToolbar from "../../components/BulkDelete/BulkDeleteToolbar";
 import ConfirmDeleteModal from "../../components/BulkDelete/ConfirmDeleteModal";
 import { runBulkDelete } from "../../components/BulkDelete/bulkDeleteApi";
@@ -18,7 +20,6 @@ export default function DocumentList() {
   const [activeTab, setActiveTab] = useState("active");
   const navigate = useNavigate();
   const [documentData, setDocumentData] = useState([]);
-  const [filteredDocuments, setFilteredDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -36,12 +37,10 @@ export default function DocumentList() {
       })
       .then((data) => {
         setDocumentData(Array.isArray(data) ? data : []);
-        setFilteredDocuments(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
         setError(err.message);
         setDocumentData([]);
-        setFilteredDocuments([]);
       })
       .finally(() => setLoading(false));
   };
@@ -50,25 +49,25 @@ export default function DocumentList() {
     fetchDocuments();
   }, []);
 
-  useEffect(() => {
-    const value = inputValue.toLowerCase();
-    setFilteredDocuments(
-      documentData.filter((document) => {
-        const isArchived = (document.status || "").toLowerCase() === "archived";
-        if (activeTab === "archived" && !isArchived) return false;
-        if (activeTab === "active" && isArchived) return false;
+  // Pre-filter by the Active/Archived tab before the deep-search hook runs,
+  // so search + sort only operate on rows the tab is currently showing.
+  const tabFilteredDocuments = useMemo(() => {
+    return documentData.filter((document) => {
+      const isArchived = (document.status || "").toLowerCase() === "archived";
+      if (activeTab === "archived") return isArchived;
+      return !isArchived;
+    });
+  }, [documentData, activeTab]);
 
-        return (
-          document.documentID?.toLowerCase().includes(value) ||
-          document.title?.toLowerCase().includes(value) ||
-          document.category?.toLowerCase().includes(value) ||
-          document.status?.toLowerCase().includes(value) ||
-          document.version?.toLowerCase().includes(value)
-        );
-      })
-    );
+  const { processed: filteredDocuments, getSortProps } = useTableControls(
+    tabFilteredDocuments,
+    inputValue
+  );
+
+  // Reset paging whenever the visible result set could shift.
+  useEffect(() => {
     setPage(1);
-  }, [inputValue, documentData, activeTab]);
+  }, [inputValue, activeTab]);
 
   useEffect(() => {
     const updatePageSize = () => {
@@ -228,11 +227,11 @@ export default function DocumentList() {
                     <input {...selection.headerCheckboxProps} />
                   </th>
                 )}
-                <th>ID</th>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Status</th>
-                <th>Version</th>
+                <SortableTh sortProps={getSortProps("documentID")}>ID</SortableTh>
+                <SortableTh sortProps={getSortProps("title")}>Title</SortableTh>
+                <SortableTh sortProps={getSortProps("category")}>Category</SortableTh>
+                <SortableTh sortProps={getSortProps("status")}>Status</SortableTh>
+                <SortableTh sortProps={getSortProps("version")}>Version</SortableTh>
                 <th>Action</th>
               </tr>
             </thead>

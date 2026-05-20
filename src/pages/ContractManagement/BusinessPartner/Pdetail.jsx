@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import WhiteIsland from "../../../components/Whiteisland";
 import styles from "./Pdetail.module.css";
 import TabbedTable from "../../../components/TabbedTable";
-import { FaSave, FaTrash, FaImage } from "react-icons/fa";
+import { FaSave, FaTrash, FaImage, FaEdit } from "react-icons/fa";
 import { useNavigate, useParams } from "react-router-dom";
 import Modal from "../../../components/Modal";
 import TestCodesChecklist from "../../../components/modals/TestCodeChecklist";
@@ -28,7 +28,10 @@ export default function Pdetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   console.log("ID from params:", id);
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
+  // Editing/deleting contacts on a partner is gated behind the same
+  // "update" permission used to save the partner record itself.
+  const canEditContacts = hasPermission("Business Partners", "update");
   const [partner, setPartner] = useState({
     partnerNumber: "",
     name: "",
@@ -336,15 +339,48 @@ export default function Pdetail() {
           email: c.email || "",
           phone: c.phone || "",
           jobTitle: c.jobTitle || "",
-          actions: (
-            <button
-              className={styles.deleteButton}
-              style={{ padding: "4px 10px", fontSize: "12px", display: "inline-flex", float: "inline-end" }}
-              onClick={() => handleDeleteContact(c._id)}
+          actions: canEditContacts ? (
+            <div
+              style={{
+                display: "inline-flex",
+                gap: 6,
+                float: "inline-end",
+              }}
             >
-              <FaTrash />
-            </button>
-          ),
+              <button
+                type="button"
+                className={styles.saveButton}
+                style={{
+                  padding: "4px 10px",
+                  fontSize: "12px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+                onClick={() => handleEditContact(c)}
+                aria-label={`Edit contact ${c.name || ""}`}
+                title="Edit contact"
+              >
+                <FaEdit />
+              </button>
+              <button
+                type="button"
+                className={styles.deleteButton}
+                style={{
+                  padding: "4px 10px",
+                  fontSize: "12px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+                onClick={() => handleDeleteContact(c._id)}
+                aria-label={`Delete contact ${c.name || ""}`}
+                title="Delete contact"
+              >
+                <FaTrash />
+              </button>
+            </div>
+          ) : null,
         })),
       },
     };
@@ -385,9 +421,13 @@ export default function Pdetail() {
     }
 
     return nextData;
-  }, [related, partner]);
+  }, [related, partner, canEditContacts]);
 
   const [activeModal, setActiveModal] = useState(null);
+  // When editing an existing contact this holds the contact object so the
+  // ContactsForm can pre-populate the inputs.
+  const [editingContact, setEditingContact] = useState(null);
+
   const handleAddClick = (tab) => {
     if (tab === "Projects") {
       navigate("/Projects/ProjectDetails/add", {
@@ -400,14 +440,22 @@ export default function Pdetail() {
         },
       });
     } else if (tab === "Contacts") {
+      setEditingContact(null);
       setActiveModal("contacts");
     } else if (tab === "Test Codes" && partner?.category === "Vendor") {
       setActiveModal("testcodes");
     }
   };
 
+  const handleEditContact = (contact) => {
+    if (!canEditContacts || !contact || !contact._id) return;
+    setEditingContact(contact);
+    setActiveModal("contacts");
+  };
+
   const handleOnClose = () => {
     setActiveModal(null);
+    setEditingContact(null);
   };
 
   return (
@@ -583,21 +631,23 @@ export default function Pdetail() {
           {/* Table data passing with clicks and modalWindows */}
           <TabbedTable
             data={data}
-            showAddButtonForTabs={
-              partner?.category === "Vendor"
-                ? ["Projects", "Contacts", "Test Codes"]
-                : ["Projects", "Contacts"]
-            }
+            showAddButtonForTabs={(() => {
+              const tabs = ["Projects"];
+              if (canEditContacts) tabs.push("Contacts");
+              if (partner?.category === "Vendor" && canEditContacts) tabs.push("Test Codes");
+              return tabs;
+            })()}
             onAddClick={handleAddClick}
           />
           {loadingRelated && <div style={{ padding: 12 }}>Loading related data...</div>}
           {activeModal && (
-            <Modal onClose={() => setActiveModal(null)}>
+            <Modal onClose={handleOnClose}>
               {activeModal === "contacts" && (
                 <ContactsForm
                   onClose={handleOnClose}
                   bPartnerID={id}
                   onSaved={loadRelated}
+                  existingContact={editingContact}
                 />
               )}
               {activeModal === "testcodes" && (

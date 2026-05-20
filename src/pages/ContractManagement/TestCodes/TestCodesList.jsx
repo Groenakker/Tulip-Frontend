@@ -8,6 +8,8 @@ import Header from '../../../components/Header';
 import ImportButton from "../../../components/ImportButton/ImportButton";
 import { useAuth } from "../../../context/AuthContext";
 import { useBulkSelection } from "../../../hooks/useBulkSelection";
+import { useTableControls } from "../../../hooks/useTableControls";
+import SortableTh from "../../../components/SortableTh";
 import BulkDeleteToolbar from "../../../components/BulkDelete/BulkDeleteToolbar";
 import ConfirmDeleteModal from "../../../components/BulkDelete/ConfirmDeleteModal";
 import { runBulkDelete } from "../../../components/BulkDelete/bulkDeleteApi";
@@ -50,7 +52,6 @@ export default function TestCodesList() {
   const [pageSize, setPageSize] = useState(9);
   const Navigate = useNavigate();
   const [testData, setTestData] = useState([]);
-  const [filteredTests, setFilteredTests] = useState([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const { hasPermission } = useAuth();
@@ -63,7 +64,6 @@ export default function TestCodesList() {
       .then((response) => response.json())
       .then((data) => {
         setTestData(data);
-        setFilteredTests(data);
       })
       .catch((error) => console.error("Error fetching test data:", error));
   };
@@ -72,16 +72,11 @@ export default function TestCodesList() {
     fetchTestCodes();
   }, []);
 
+  const { processed: filteredTests, getSortProps } = useTableControls(testData, inputValue);
+
   useEffect(() => {
-    const value = inputValue.toLowerCase();
-    setFilteredTests(
-      testData.filter((test) =>
-        Object.values(test).some((val) =>
-          String(val).toLowerCase().includes(value)
-        )
-      )
-    );
-  }, [inputValue, testData]);
+    setPage(1);
+  }, [inputValue]);
 
   useEffect(() => {
     const updatePageSize = () => {
@@ -187,10 +182,10 @@ export default function TestCodesList() {
                     <input {...selection.headerCheckboxProps} />
                   </th>
                 )}
-                <th>GRK Test Code</th>
-                <th>Description</th>
-                <th>Category</th>
-                <th>Extracted Basis</th>
+                <SortableTh sortProps={getSortProps("code")}>GRK Test Code</SortableTh>
+                <SortableTh sortProps={getSortProps("descriptionShort")}>Description</SortableTh>
+                <SortableTh sortProps={getSortProps("category")}>Category</SortableTh>
+                <SortableTh sortProps={getSortProps("extractBased")}>Extracted Basis</SortableTh>
               </tr>
             </thead>
             <tbody>

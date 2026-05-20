@@ -7,6 +7,8 @@ import Header from "../../../components/Header";
 import ImportButton from "../../../components/ImportButton/ImportButton";
 import { useAuth } from "../../../context/AuthContext";
 import { useBulkSelection } from "../../../hooks/useBulkSelection";
+import { useTableControls } from "../../../hooks/useTableControls";
+import SortableTh from "../../../components/SortableTh";
 import BulkDeleteToolbar from "../../../components/BulkDelete/BulkDeleteToolbar";
 import ConfirmDeleteModal from "../../../components/BulkDelete/ConfirmDeleteModal";
 import { runBulkDelete } from "../../../components/BulkDelete/bulkDeleteApi";
@@ -17,7 +19,6 @@ export default function Bpartner() {
   const [pageSize, setPageSize] = useState(9);
   const Navigate = useNavigate();
   const [partners, setPartners] = useState([]);
-  const [filteredPartners, setFilteredPartners] = useState([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -36,7 +37,6 @@ export default function Bpartner() {
       })
       .then((data) => {
         setPartners(data);
-        setFilteredPartners(data);
       })
       .catch((err) => console.error("Failed to fetch partners:", err));
   };
@@ -45,20 +45,16 @@ export default function Bpartner() {
     fetchPartners();
   }, []);
 
+  // Deep search across every field on the record (including nested data
+  // like contacts) plus per-column sorting via the shared hook.
+  const { processed: filteredPartners, getSortProps } = useTableControls(
+    partners,
+    inputValue
+  );
+
   useEffect(() => {
-    const value = inputValue.toLowerCase();
-    setFilteredPartners(
-      partners.filter(
-        (row) =>
-          row.partnerNumber?.toLowerCase().includes(value) ||
-          row.name?.toLowerCase().includes(value) ||
-          row.city?.toLowerCase().includes(value) ||
-          row.country?.toLowerCase().includes(value) ||
-          row.category?.toLowerCase().includes(value) ||
-          row.status?.toLowerCase().includes(value)
-      )
-    );
-  }, [inputValue, partners]);
+    setPage(1);
+  }, [inputValue]);
 
   useEffect(() => {
     const updatePageSize = () => {
@@ -166,11 +162,11 @@ export default function Bpartner() {
                     <input {...selection.headerCheckboxProps} />
                   </th>
                 )}
-                <th>Business No</th>
-                <th>Name of Partner</th>
-                <th>Address</th>
-                <th>Category</th>
-                <th>Status</th>
+                <SortableTh sortProps={getSortProps("partnerNumber")}>Business No</SortableTh>
+                <SortableTh sortProps={getSortProps("name")}>Name of Partner</SortableTh>
+                <SortableTh sortProps={getSortProps("city")}>Address</SortableTh>
+                <SortableTh sortProps={getSortProps("category")}>Category</SortableTh>
+                <SortableTh sortProps={getSortProps("status")}>Status</SortableTh>
               </tr>
             </thead>
             <tbody>

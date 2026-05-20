@@ -9,6 +9,8 @@ import Modal from '../../components/Modal';
 import Header from '../../components/Header';
 import { useAuth } from "../../context/AuthContext";
 import { useBulkSelection } from "../../hooks/useBulkSelection";
+import { useTableControls } from "../../hooks/useTableControls";
+import SortableTh from "../../components/SortableTh";
 import BulkDeleteToolbar from "../../components/BulkDelete/BulkDeleteToolbar";
 import ConfirmDeleteModal from "../../components/BulkDelete/ConfirmDeleteModal";
 import { runBulkDelete } from "../../components/BulkDelete/bulkDeleteApi";
@@ -19,7 +21,6 @@ export default function Warehouse() {
     const [inputValue, setInputValue] = useState('');
     const [pageSize, setPageSize] = useState(9);
     const [warehouseData, setWarehouseData] = useState([]);
-    const [filteredData, setFilteredData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [openActionMenuId, setOpenActionMenuId] = useState(null);
     const [activeModal, setActiveModal] = useState(null);
@@ -41,7 +42,6 @@ export default function Warehouse() {
             if (!res.ok) throw new Error('Failed to fetch warehouses');
             const data = await res.json();
             setWarehouseData(data);
-            setFilteredData(data);
         } catch (error) {
             console.error('Error fetching warehouses:', error);
             toast.error('Failed to load warehouses');
@@ -54,18 +54,14 @@ export default function Warehouse() {
         fetchWarehouses();
     }, []);
 
-    // Filter warehouses based on search input
+    const { processed: filteredData, getSortProps } = useTableControls(
+        warehouseData,
+        inputValue
+    );
+
     useEffect(() => {
-        const searchTerm = inputValue.toLowerCase();
-        const filtered = warehouseData.filter(warehouse =>
-            warehouse.warehouseID?.toLowerCase().includes(searchTerm) ||
-            warehouse.address?.toLowerCase().includes(searchTerm) ||
-            warehouse.storage?.toLowerCase().includes(searchTerm) ||
-            warehouse.space?.toLowerCase().includes(searchTerm)
-        );
-        setFilteredData(filtered);
-        setPage(1); // Reset to first page when filtering
-    }, [inputValue, warehouseData]);
+        setPage(1);
+    }, [inputValue]);
 
     const openAddModal = () => {
         setFormData({
@@ -260,10 +256,10 @@ export default function Warehouse() {
                                         <input {...selection.headerCheckboxProps} />
                                     </th>
                                 )}
-                                <th>Warehouse ID</th>
-                                <th>Address</th>
-                                <th>Storage</th>
-                                <th>Space</th>
+                                <SortableTh sortProps={getSortProps("warehouseID")}>Warehouse ID</SortableTh>
+                                <SortableTh sortProps={getSortProps("address")}>Address</SortableTh>
+                                <SortableTh sortProps={getSortProps("storage")}>Storage</SortableTh>
+                                <SortableTh sortProps={getSortProps("space")}>Space</SortableTh>
                                 <th>Actions</th>
                             </tr>
                         </thead>

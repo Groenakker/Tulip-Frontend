@@ -7,6 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header';
 import { useAuth } from "../../../context/AuthContext";
 import { useBulkSelection } from "../../../hooks/useBulkSelection";
+import { useTableControls } from "../../../hooks/useTableControls";
+import SortableTh from "../../../components/SortableTh";
 import BulkDeleteToolbar from "../../../components/BulkDelete/BulkDeleteToolbar";
 import ConfirmDeleteModal from "../../../components/BulkDelete/ConfirmDeleteModal";
 import { runBulkDelete } from "../../../components/BulkDelete/bulkDeleteApi";
@@ -18,7 +20,6 @@ export default function RecieveLog() {
   const [inputValue, setInputValue] = useState('');
   const [pageSize, setPageSize] = useState(9);
   const [rows, setRows] = useState([]);
-  const [filteredRows, setFilteredRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -32,7 +33,6 @@ export default function RecieveLog() {
       if (!res.ok) throw new Error('Failed to fetch receivings');
       const data = await res.json();
       setRows(data);
-      setFilteredRows(data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -57,14 +57,11 @@ export default function RecieveLog() {
     fetchRows();
   }, []);
 
+  const { processed: filteredRows, getSortProps } = useTableControls(rows, inputValue);
+
   useEffect(() => {
-    const v = inputValue.toLowerCase();
-    setFilteredRows(rows.filter(r =>
-      r.receivingCode?.toLowerCase().includes(v) ||
-      r.origin?.toLowerCase().includes(v) ||
-      r.projectDesc?.toLowerCase().includes(v)
-    ));
-  }, [inputValue, rows]);
+    setPage(1);
+  }, [inputValue]);
 
   const totalPages = Math.ceil(filteredRows.length / pageSize);
   const pagedData = filteredRows.slice((page - 1) * pageSize, page * pageSize);
@@ -149,10 +146,10 @@ export default function RecieveLog() {
                     <input {...selection.headerCheckboxProps} />
                   </th>
                 )}
-                <th>Receiving Code</th>
-                <th>Origin</th>
-                <th>Project</th>
-                <th>Arrival</th>
+                <SortableTh sortProps={getSortProps("receivingCode")}>Receiving Code</SortableTh>
+                <SortableTh sortProps={getSortProps("origin")}>Origin</SortableTh>
+                <SortableTh sortProps={getSortProps("projectDesc")}>Project</SortableTh>
+                <SortableTh sortProps={getSortProps("arrivedDate")}>Arrival</SortableTh>
               </tr>
             </thead>
             <tbody>

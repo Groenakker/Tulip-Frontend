@@ -1,15 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./ContactsForm.module.css";
+import toast from "../Toaster/toast";
 
-const ContactsForm = ({ onClose , bPartnerID, onSaved }) => {
+// `existingContact` is optional. When supplied (with at least an _id) the
+// form switches to edit mode and PUTs to the per-contact endpoint instead
+// of POSTing a new contact.
+const ContactsForm = ({ onClose, bPartnerID, onSaved, existingContact = null }) => {
+  const isEdit = Boolean(existingContact && existingContact._id);
+
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    jobTitle: "",
+    name: existingContact?.name || "",
+    email: existingContact?.email || "",
+    phone: existingContact?.phone || "",
+    jobTitle: existingContact?.jobTitle || "",
   });
   const [loading, setLoading] = useState(false);
 
+  // If the parent swaps the contact (rare, but possible if the modal is
+  // reused), keep the form values in sync.
+  useEffect(() => {
+    setFormData({
+      name: existingContact?.name || "",
+      email: existingContact?.email || "",
+      phone: existingContact?.phone || "",
+      jobTitle: existingContact?.jobTitle || "",
+    });
+  }, [existingContact?._id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -19,33 +35,39 @@ const ContactsForm = ({ onClose , bPartnerID, onSaved }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${bPartnerID}/contacts`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const baseUrl = `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${bPartnerID}/contacts`;
+      const url = isEdit ? `${baseUrl}/${existingContact._id}` : baseUrl;
+      const method = isEdit ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(formData),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to add contact");
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.message || `Failed to ${isEdit ? "update" : "add"} contact`);
       }
 
-      console.log("Form submitted:", formData); // replace with real save logic later
+      toast.success(isEdit ? "Contact updated" : "Contact added");
       onSaved?.();
       onClose();
     } catch (error) {
-      console.error("Error submitting form:", error);
+      console.error("Error saving contact:", error);
+      toast.error(error.message || "Failed to save contact");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className={styles.overlay}>
       <div className={styles.modalContent}>
-        <h2 className={styles.title}>Add Contact</h2>
+        <h2 className={styles.title}>{isEdit ? "Edit Contact" : "Add Contact"}</h2>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <label className={styles.field}>
@@ -94,7 +116,7 @@ const ContactsForm = ({ onClose , bPartnerID, onSaved }) => {
 
           <div className={styles.buttonGroup}>
             <button type="submit" className={styles.saveBtn} disabled={loading}>
-              Save
+              {loading ? "Saving..." : isEdit ? "Save Changes" : "Save"}
             </button>
             <button
               type="button"

@@ -7,6 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import Header from "../../../components/Header";
 import { useAuth } from "../../../context/AuthContext";
 import { useBulkSelection } from "../../../hooks/useBulkSelection";
+import { useTableControls } from "../../../hooks/useTableControls";
+import SortableTh from "../../../components/SortableTh";
 import BulkDeleteToolbar from "../../../components/BulkDelete/BulkDeleteToolbar";
 import ConfirmDeleteModal from "../../../components/BulkDelete/ConfirmDeleteModal";
 import { runBulkDelete } from "../../../components/BulkDelete/bulkDeleteApi";
@@ -19,7 +21,6 @@ export default function InstanceList() {
     const [inputValue, setInputValue] = useState('');
     const [pageSize, setPageSize] = useState(9);
     const [instances, setInstances] = useState([]);
-    const [filteredInstances, setFilteredInstances] = useState([]);
     const [loading, setLoading] = useState(true);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -34,7 +35,6 @@ export default function InstanceList() {
             }
             const data = await response.json();
             setInstances(data);
-            setFilteredInstances(data);
         } catch (error) {
             console.error('Error fetching instances:', error);
         } finally {
@@ -46,19 +46,14 @@ export default function InstanceList() {
         fetchInstances();
     }, []);
 
-    // Filter instances based on search input
+    const { processed: filteredInstances, getSortProps } = useTableControls(
+        instances,
+        inputValue
+    );
+
     useEffect(() => {
-        const value = inputValue.toLowerCase();
-        setFilteredInstances(
-            instances.filter(
-                (instance) =>
-                    instance.instanceCode?.toLowerCase().includes(value) ||
-                    instance.sampleCode?.toLowerCase().includes(value) ||
-                    instance.lotNo?.toLowerCase().includes(value) ||
-                    instance.status?.toLowerCase().includes(value)
-            )
-        );
-    }, [inputValue, instances]);
+        setPage(1);
+    }, [inputValue]);
 
     useEffect(() => {
         const updatePageSize = () => {
@@ -159,12 +154,12 @@ export default function InstanceList() {
                                         <input {...selection.headerCheckboxProps} />
                                     </th>
                                 )}
-                                <th>Instance Code</th>
-                                <th>Sample Code</th>
-                                <th>Lot No</th>
-                                <th>Status</th>
-                                <th>Created At</th>
-                                <th>Updated At</th>
+                                <SortableTh sortProps={getSortProps("instanceCode")}>Instance Code</SortableTh>
+                                <SortableTh sortProps={getSortProps("sampleCode")}>Sample Code</SortableTh>
+                                <SortableTh sortProps={getSortProps("lotNo")}>Lot No</SortableTh>
+                                <SortableTh sortProps={getSortProps("status")}>Status</SortableTh>
+                                <SortableTh sortProps={getSortProps("createdAt")}>Created At</SortableTh>
+                                <SortableTh sortProps={getSortProps("updatedAt")}>Updated At</SortableTh>
                             </tr>
                         </thead>
                         <tbody>

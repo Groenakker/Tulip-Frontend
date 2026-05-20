@@ -7,6 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../../components/Header';
 import { useAuth } from "../../../context/AuthContext";
 import { useBulkSelection } from "../../../hooks/useBulkSelection";
+import { useTableControls } from "../../../hooks/useTableControls";
+import SortableTh from "../../../components/SortableTh";
 import BulkDeleteToolbar from "../../../components/BulkDelete/BulkDeleteToolbar";
 import ConfirmDeleteModal from "../../../components/BulkDelete/ConfirmDeleteModal";
 import { runBulkDelete } from "../../../components/BulkDelete/bulkDeleteApi";
@@ -28,7 +30,6 @@ export default function ShippingLog() {
   const [inputValue, setInputValue] = useState('');
   const [pageSize, setPageSize] = useState(9);
   const [rows, setRows] = useState([]);
-  const [filteredRows, setFilteredRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -42,7 +43,6 @@ export default function ShippingLog() {
       if (!res.ok) throw new Error('Failed to fetch shipping');
       const data = await res.json();
       setRows(data);
-      setFilteredRows(data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -67,17 +67,11 @@ export default function ShippingLog() {
     fetchRows();
   }, []);
 
+  const { processed: filteredRows, getSortProps } = useTableControls(rows, inputValue);
+
   useEffect(() => {
-    const v = inputValue.toLowerCase();
-    setFilteredRows(rows.filter(r =>
-      r.shippingCode?.toLowerCase().includes(v) ||
-      r._id?.toLowerCase().includes(v) ||
-      r.shipmentOrigin?.toLowerCase().includes(v) ||
-      r.shipmentDestination?.toLowerCase().includes(v) ||
-      r.projectDesc?.toLowerCase().includes(v) ||
-      r.projectID?.toLowerCase().includes(v)
-    ));
-  }, [inputValue, rows]);
+    setPage(1);
+  }, [inputValue]);
 
   
   const totalPages = Math.ceil(filteredRows.length / pageSize);
@@ -172,12 +166,12 @@ export default function ShippingLog() {
                     <input {...selection.headerCheckboxProps} />
                   </th>
                 )}
-                <th>Shipping Code</th>
-                <th>Destination</th>
-                <th>Project</th>
-                <th>Carrier</th>
-                <th>Tracking</th>
-                <th>Departure</th>
+                <SortableTh sortProps={getSortProps("shippingCode")}>Shipping Code</SortableTh>
+                <SortableTh sortProps={getSortProps("shipmentDestination")}>Destination</SortableTh>
+                <SortableTh sortProps={getSortProps("projectDesc")}>Project</SortableTh>
+                <SortableTh sortProps={getSortProps("carrier")}>Carrier</SortableTh>
+                <SortableTh sortProps={getSortProps("trackingNumber")}>Tracking</SortableTh>
+                <SortableTh sortProps={getSortProps("shipmentDate")}>Departure</SortableTh>
               </tr>
             </thead>
             <tbody>
