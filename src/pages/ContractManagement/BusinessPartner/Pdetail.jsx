@@ -10,6 +10,7 @@ import ContactsForm from "../../../components/modals/ContactsForm";
 import toast from "../../../components/Toaster/toast";
 import { useAuth } from "../../../context/AuthContext";
 import Header from "../../../components/Header";
+import BPDocuments from "../../../components/BPDocuments/BPDocuments";
 // export default function Pdetail() {
 //   const [partner, setPartner] = useState({
 //     id: "C00030",
@@ -305,7 +306,7 @@ export default function Pdetail() {
         ],
         rows: shipments.map((s) => ({
           id: s._id || "",
-          desc: s.note || `${s.shipmentOrigin || ""} → ${s.shipmentDestination || ""}`.trim(),
+          desc: s.note || `${s.shipmentOrigin || ""} -> ${s.shipmentDestination || ""}`.trim(),
           start: formatDate(s.shipmentDate),
           due: formatDate(s.estimatedArrivalDate || s.estDate),
         })),
@@ -383,6 +384,22 @@ export default function Pdetail() {
           ) : null,
         })),
       },
+
+      // Sample Documents tab. Custom-content tab (the BPDocuments
+      // component renders its own upload UI and document list).
+      // We keep the same tab UX as Projects / Contacts / Test Codes
+      // so the entire "related to this BP" area lives in one place.
+      // The component talks to /api/bpartners/:id/documents directly
+      // and manages its own state, including the current-version
+      // selection that drives Sample Submission + Shipping Log.
+      "Sample Documents": {
+        content: (
+          <BPDocuments
+            bPartnerID={id}
+            canEdit={canEditContacts}
+          />
+        ),
+      },
     };
 
     if (isVendor) {
@@ -421,7 +438,7 @@ export default function Pdetail() {
     }
 
     return nextData;
-  }, [related, partner, canEditContacts]);
+  }, [related, partner, canEditContacts, id]);
 
   const [activeModal, setActiveModal] = useState(null);
   // When editing an existing contact this holds the contact object so the
@@ -628,7 +645,11 @@ export default function Pdetail() {
         </div>
 
         <div className="table">
-          {/* Table data passing with clicks and modalWindows */}
+          {/* Table data passing with clicks and modalWindows.
+              Sample Documents now lives as a tab inside TabbedTable
+              (custom-content tab) instead of a separate WhiteIsland
+              below the table, so it shares the same tabbed UX as
+              Projects / Contacts / Test Codes. */}
           <TabbedTable
             data={data}
             showAddButtonForTabs={(() => {
@@ -640,6 +661,7 @@ export default function Pdetail() {
             onAddClick={handleAddClick}
           />
           {loadingRelated && <div style={{ padding: 12 }}>Loading related data...</div>}
+
           {activeModal && (
             <Modal onClose={handleOnClose}>
               {activeModal === "contacts" && (

@@ -1,6 +1,20 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./TabbedTable.css";
 
+// Tabbed list / detail panel used across the app for the
+// "related records" section of a detail page.
+//
+// `data` is an object keyed by tab label. Each entry can be
+// either of two shapes:
+//   1. A standard table tab:
+//        { columns: [{label, key}], rows: [{...}] }
+//   2. A custom-content tab (e.g. embedded component):
+//        { content: <ReactNode /> }
+//
+// When `content` is present it is rendered in place of the
+// generated table, so consumers can embed editors or other
+// components alongside ordinary tabular data without breaking
+// the tab navigation pattern users already know.
 export default function TabbedTable({
   data,
   showAddButtonForTabs = [],
@@ -20,10 +34,12 @@ export default function TabbedTable({
     }
   }, [tabs, activeTab]);
 
-  const columns = data[activeTab]?.columns || [];
-  const rows = data[activeTab]?.rows || [];
+  const activeEntry = data[activeTab] || {};
+  const isCustomContent = activeEntry.content !== undefined;
+  const columns = activeEntry.columns || [];
+  const rows = activeEntry.rows || [];
 
-  const showAddButton = showAddButtonForTabs.includes(activeTab);
+  const showAddButton = !isCustomContent && showAddButtonForTabs.includes(activeTab);
 
   return (
     <div className="tabbedTableIsland">
@@ -49,6 +65,8 @@ export default function TabbedTable({
       <div className="tabContent">
         {!tabs.length ? (
           <div className="noData">No data available</div>
+        ) : isCustomContent ? (
+          activeEntry.content
         ) : (
           <>
             <div

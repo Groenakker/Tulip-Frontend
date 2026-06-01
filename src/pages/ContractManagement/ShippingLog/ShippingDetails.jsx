@@ -9,11 +9,25 @@ import Modal from '../../../components/Modal';
 import SampleForm from '../../../components/modals/SampleModal';
 import SampleSelect from '../../../components/modals/SampleSelect'
 import InstanceList from '../../../components/modals/InstanceListModal';
+import PrintBPDocsModal from '../../../components/modals/PrintBPDocsModal';
 import toast from '../../../components/Toaster/toast';
 import SignatureCanvas from 'react-signature-canvas';
 import { useAuth } from '../../../context/AuthContext';  
 import Header from '../../../components/Header';
 import { FaPlus, FaGlobe } from 'react-icons/fa';
+import SearchableSelect from '../../../components/SearchableSelect/SearchableSelect';
+
+// All shipping endpoints (and the bpartners/projects/companies/shippo
+// helpers used on this page) sit behind verifyToken, which reads the
+// JWT from an httpOnly cookie. Cross-origin fetches don't send cookies
+// unless we explicitly opt in with credentials: 'include' — without it
+// the server returns 401, the response body fails to parse, and the
+// user sees "Failed to save" with no other clue. Wrapping fetch in
+// this tiny helper keeps every call on this page authenticated by
+// default while still letting individual call sites override the
+// credentials option if they ever need to.
+const fetchAuth = (url, opts = {}) => fetch(url, { credentials: 'include', ...opts });
+
 export default function ShipmentDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -46,6 +60,10 @@ export default function ShipmentDetails() {
     const [loading, setLoading] = useState(true);
     const [projects, setProjects] = useState([]);
     const [projectsLoading, setProjectsLoading] = useState(true);
+    // Print BP Sample Documents modal — opens from the header
+    // action; lists the linked BP's sample documents and lets
+    // the user print/open any of them.
+    const [showPrintBPDocs, setShowPrintBPDocs] = useState(false);
 
     // ----------------------------------------------------------------
     // Shippo-related state
@@ -155,7 +173,7 @@ export default function ShipmentDetails() {
                     try {
                         const lineId = selectedItem._id || selectedItem.id;
                         if (lineId && id && id !== 'add') {
-                            const lineRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${lineId}`);
+                            const lineRes = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${lineId}`);
                             if (lineRes.ok) {
                                 const lineData = await lineRes.json();
                                 const lineInstances = lineData.instances || [];
@@ -188,16 +206,33 @@ export default function ShipmentDetails() {
         }
     };
 
+    // Set right before we navigate from /add to /:realId after a save.
+    // The page-load effect below short-circuits for that one re-run so
+    // we don't re-fetch projects / bpartners / shippo / shipping doc /
+    // lines when we already have the saved record in local state. This
+    // is what makes the "first save" transition flicker-free.
+    const justSavedIdRef = useRef(null);
+
     useEffect(() => {
+        // If we just saved this record locally and navigated to its
+        // real id, all the state is already up to date — skip the
+        // heavy refetch that would otherwise flash the loading row in
+        // the items table and re-clear+repopulate the dropdowns.
+        if (justSavedIdRef.current && String(justSavedIdRef.current) === String(id)) {
+            justSavedIdRef.current = null;
+            setLoading(false);
+            return;
+        }
+
         const load = async () => {
             try {
                 // Kick off these fetches in parallel — they're independent.
                 const [projRes, bpRes, shippoCfgRes, shippingAddrRes] = await Promise.all([
-                    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects`).catch(() => null),
-                    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners`).catch(() => null),
-                    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shippo/config`).catch(() => null),
+                    fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/projects`).catch(() => null),
+                    fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners`).catch(() => null),
+                    fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shippo/config`).catch(() => null),
                     user?.companyId
-                        ? fetch(`${import.meta.env.VITE_BACKEND_URL}/api/companies/${user.companyId}/shipping-addresses`).catch(() => null)
+                        ? fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/companies/${user.companyId}/shipping-addresses`).catch(() => null)
                         : Promise.resolve(null),
                 ]);
 
@@ -222,14 +257,17 @@ export default function ShipmentDetails() {
                 } catch (e) { console.error('Error loading projects:', e); }
                 finally { setProjectsLoading(false); }
 
-                // Customers (bPartners) — only those that can be shipped to.
+                // Customers (bPartners). We deliberately load EVERY
+                // partner here — clients, vendors, suppliers, etc. —
+                // because a shipment can legitimately go to any of
+                // them (e.g. returning samples to a vendor, drop-
+                // shipping to a partner of a partner). The picker
+                // itself is searchable so users still find clients
+                // quickly by typing.
                 try {
                     if (bpRes && bpRes.ok) {
                         const bpData = await bpRes.json() || [];
-                        const clients = bpData.filter(
-                            b => !b.category || b.category === 'Client' || b.category === 'Client & Vendor'
-                        );
-                        setCustomers(clients);
+                        setCustomers(bpData);
                     }
                 } catch (e) { console.error('Error loading customers:', e); }
                 finally { setCustomersLoading(false); }
@@ -295,7 +333,7 @@ export default function ShipmentDetails() {
 
                 if (id && id !== 'add') {
                     try {
-                        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}`);
+                        const res = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}`);
                         if (!res.ok) throw new Error('Failed to fetch shipping');
                         const data = await res.json();
                         setLog({
@@ -350,7 +388,7 @@ export default function ShipmentDetails() {
                             trackingStatus: data.trackingStatus || '',
                         });
 
-                        const linesRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`);
+                        const linesRes = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`);
                         if (linesRes.ok) {
                             const lines = await linesRes.json();
                             setItems(lines.map(l => {
@@ -662,7 +700,7 @@ export default function ShipmentDetails() {
         // Search for the instance directly from the database by instance code
         try {
             // Try to fetch the specific instance by code using query parameter
-            const instanceRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances/instance-code/${encodeURIComponent(value)}`);
+            const instanceRes = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/instances/instance-code/${encodeURIComponent(value)}`);
             if (!instanceRes.ok) {
                 throw new Error('Failed to search instance in database.');
             }
@@ -797,7 +835,7 @@ export default function ShipmentDetails() {
             }
     
             // Fetch all samples to build a map by sampleCode
-            const samplesRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`);
+            const samplesRes = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/samples`);
             if (!samplesRes.ok) throw new Error('Failed to load sample catalog.');
             
             const allSamples = await samplesRes.json();
@@ -873,7 +911,7 @@ export default function ShipmentDetails() {
                     } else {
                         // Create new shipping line for this sample
                         console.log(`Creating new shipping line for sample ${sampleCode}`);
-                        const createLineRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`, {
+                        const createLineRes = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -923,7 +961,7 @@ export default function ShipmentDetails() {
                     // Add instance to shipping line's instances array
                     try {
                         // Fetch current shipping line to get existing instances
-                        const getLineRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${shippingLineId}`);
+                        const getLineRes = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${shippingLineId}`);
                         if (!getLineRes.ok) {
                             throw new Error(`Failed to fetch current shipping line data: ${getLineRes.status} ${getLineRes.statusText}`);
                         }
@@ -942,7 +980,7 @@ export default function ShipmentDetails() {
                                 const updatedInstances = [...currentInstances, instanceData];
                                 const newQuantity = updatedInstances.length;
                                 
-                                const updateLineRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${shippingLineId}`, {
+                                const updateLineRes = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${shippingLineId}`, {
                                     method: 'PUT',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
@@ -971,7 +1009,7 @@ export default function ShipmentDetails() {
                                         notes: `Instance shipped via shipping log ${log.shippingCode || id}`
                                     };
                                     
-                                    const movementRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instance-movements`, {
+                                    const movementRes = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/instance-movements`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify(movementData)
@@ -985,7 +1023,7 @@ export default function ShipmentDetails() {
                                     // Clear warehouseID from instance since it's been shipped
                                     if (instance.warehouseID) {
                                         try {
-                                            await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances/${instance._id}`, {
+                                            await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/instances/${instance._id}`, {
                                                 method: 'PUT',
                                                 headers: { 'Content-Type': 'application/json' },
                                                 body: JSON.stringify({ warehouseID: null })
@@ -1021,7 +1059,7 @@ export default function ShipmentDetails() {
     
             // Refresh shipping lines to get updated data with new instances
             try {
-                const linesRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`);
+                const linesRes = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`);
                 if (linesRes.ok) {
                     const lines = await linesRes.json();
                     console.log('Refreshed shipping lines:', lines);
@@ -1096,7 +1134,7 @@ export default function ShipmentDetails() {
             ));
 
             // Update on server
-            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${lineId}`, {
+            const res = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${lineId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ [field]: value })
@@ -1112,7 +1150,7 @@ export default function ShipmentDetails() {
         if (!window.confirm('Are you sure you want to delete this line item?')) return;
         
         try {
-            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${lineId}`, {
+            const res = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/lines/${lineId}`, {
                 method: 'DELETE'
             });
             if (!res.ok) throw new Error('Failed to delete line item');
@@ -1137,36 +1175,108 @@ export default function ShipmentDetails() {
                 parcel,
                 customs,
             };
-            console.log(payload);
+
+            // Mongoose can't cast empty strings to ObjectId — sending
+            // `projectID: ""` (when no project is picked) blows up with
+            // "Cast to ObjectId failed for value '' at path 'projectID'".
+            // Strip every ObjectId-typed field that's still empty so the
+            // backend treats it as "not set" instead of an invalid id.
+            const objectIdFields = ['projectID', 'bPartnerID', 'contactID'];
+            for (const f of objectIdFields) {
+                if (payload[f] === '' || payload[f] === null) {
+                    delete payload[f];
+                }
+            }
+            // shipFrom.addressId is also an ObjectId on the backend.
+            if (payload.shipFrom && (payload.shipFrom.addressId === '' || payload.shipFrom.addressId === null)) {
+                payload.shipFrom = { ...payload.shipFrom };
+                delete payload.shipFrom.addressId;
+            }
+
             let res;
             if (id && id !== 'add') {
                 // Update existing
-                res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}`, {
+                res = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
             } else {
                 // Create new
-                res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping`, {
+                res = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
             }
 
-            if (!res.ok) throw new Error('Failed to save');
+            if (!res.ok) {
+                // Surface the server's actual error message instead of
+                // the previous opaque "Failed to save" toast — this used
+                // to make 401s (missing auth cookie) and Mongoose
+                // validation errors (missing shipmentOrigin, duplicate
+                // shippingCode, etc.) effectively impossible to debug
+                // from the UI.
+                const errBody = await res.json().catch(() => ({}));
+                const msg = errBody?.error || errBody?.message || `HTTP ${res.status}`;
+                throw new Error(msg);
+            }
             const savedData = await res.json();
             
             toast.success("Details Saved!");
 
-            // If creating new, navigate to the new ID
+            // First-save transition (id was 'add', now we have a real
+            // _id). We hydrate every relevant slice of state directly
+            // from the server response so the page reflects the saved
+            // record immediately — most importantly, log.shippingCode
+            // (the auto-generated GRK-SHP-* number that just got
+            // assigned) shows up in the page header, and the Sample
+            // Information toolbar's `+ Add` / `Scan` buttons (gated on
+            // id !== 'add') become visible the moment the URL updates.
+            // The justSavedIdRef tells the page-load effect to skip
+            // its full re-fetch on the upcoming id change so the user
+            // doesn't see the spinner / dropdown reload flicker.
             if (id === 'add' && savedData._id) {
-                navigate(`/ShippingLog/${savedData._id}`);
+                justSavedIdRef.current = savedData._id;
+                setLog({
+                    shippingCode: savedData.shippingCode || '',
+                    projectID: savedData.projectID || '',
+                    projectDesc: savedData.projectDesc || '',
+                    projectCode: savedData.projectCode || '',
+                    shipmentOrigin: savedData.shipmentOrigin || '',
+                    shipmentDestination: savedData.shipmentDestination || '',
+                    note: savedData.note || '',
+                    image: savedData.image || '',
+                    bPartnerID: savedData.bPartnerID || '',
+                    bPartnerCode: savedData.bPartnerCode || '',
+                });
+                if (savedData.customerSnapshot) {
+                    setShipTo(prev => ({ ...prev, ...savedData.customerSnapshot }));
+                }
+                if (savedData.shipFrom) {
+                    setShipFrom(prev => ({ ...prev, ...savedData.shipFrom }));
+                }
+                if (savedData.parcel) {
+                    setParcel(prev => ({ ...prev, ...savedData.parcel }));
+                }
+                if (savedData.customs) {
+                    setCustoms(prev => ({
+                        ...prev,
+                        ...savedData.customs,
+                        items: Array.isArray(savedData.customs.items) ? savedData.customs.items : [],
+                    }));
+                }
+                // Brand-new record can't have any shipping lines yet,
+                // so skip the GET /lines round-trip the load effect
+                // would have made.
+                setItems([]);
+                // replace: true so Back doesn't take the user back
+                // to /add and re-create another draft record.
+                navigate(`/ShippingLog/${savedData._id}`, { replace: true });
             }
         } catch (e) {
             console.error(e);
-            toast.error('Failed to save shipping details');
+            toast.error(`Failed to save shipping details: ${e.message || 'Unknown error'}`);
         }
     };
 
@@ -1174,7 +1284,7 @@ export default function ShipmentDetails() {
         if (!window.confirm('Are you sure you want to delete this shipping record?')) return;
         
         try {
-            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}`, { method: 'DELETE' });
+            const res = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Failed to delete');
             
             toast.warning('Log deleted successfully!');
@@ -1243,7 +1353,7 @@ export default function ShipmentDetails() {
         setRatesLoading(true);
         setSelectedRateId('');
         try {
-            const res = await fetch(
+            const res = await fetchAuth(
                 `${import.meta.env.VITE_BACKEND_URL}/api/shippo/shipping/${id}/shipment`,
                 {
                     method: 'POST',
@@ -1288,7 +1398,7 @@ export default function ShipmentDetails() {
 
         setLabelLoading(true);
         try {
-            const res = await fetch(
+            const res = await fetchAuth(
                 `${import.meta.env.VITE_BACKEND_URL}/api/shippo/shipping/${id}/label`,
                 {
                     method: 'POST',
@@ -1363,7 +1473,7 @@ export default function ShipmentDetails() {
 
         setRefundLoading(true);
         try {
-            const res = await fetch(
+            const res = await fetchAuth(
                 `${import.meta.env.VITE_BACKEND_URL}/api/shippo/shipping/${id}/refund`,
                 { method: 'POST' }
             );
@@ -1448,7 +1558,7 @@ export default function ShipmentDetails() {
         }
         setCustomsAutoFilling(true);
         try {
-            const res = await fetch(
+            const res = await fetchAuth(
                 `${import.meta.env.VITE_BACKEND_URL}/api/shippo/shipping/${id}/customs/auto-build`,
                 { method: 'POST' }
             );
@@ -1562,7 +1672,7 @@ export default function ShipmentDetails() {
 
         if (id && id !== 'add') {
             try {
-                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}`, {
+                const res = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ image: dataURL })
@@ -1587,7 +1697,7 @@ export default function ShipmentDetails() {
 
         if (id && id !== 'add') {
             try {
-                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}`, {
+                const res = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ image: '' })
@@ -1611,22 +1721,35 @@ export default function ShipmentDetails() {
                 <h3>Shipping : {log.shippingCode || (id && id !== 'add' ? id : '(unsaved)')}</h3>
                 <div className={styles.main}>
                     <div className={styles.detailContainer}>
-                        {/* Customer picker — primary driver of the form. */}
+                        {/* Customer picker — primary driver of the form.
+                            Replaced the native <select> with a
+                            type-to-filter SearchableSelect so users
+                            can find the right business partner among
+                            hundreds without scrolling. Includes ALL
+                            partners (clients, vendors, etc.) so a
+                            shipment can be created to any of them. */}
                         <div className={styles.details}>
                             <div className={styles.info} style={{ width: '40%' }}>
                                 <div className={styles.infoDetail}>Customer</div>
-                                <select value={selectedCustomerId} onChange={onCustomerChange}>
-                                    <option value=''>Select customer...</option>
-                                    {customersLoading ? (
-                                        <option value='' disabled>Loading...</option>
-                                    ) : (
-                                        customers.map(c => (
-                                            <option key={c._id} value={c._id}>
-                                                {c.name}{c.partnerNumber ? ` (${c.partnerNumber})` : ''}
-                                            </option>
-                                        ))
-                                    )}
-                                </select>
+                                <SearchableSelect
+                                    value={selectedCustomerId}
+                                    onChange={(newId) => onCustomerChange({ target: { value: newId } })}
+                                    placeholder={customersLoading ? 'Loading...' : 'Select business partner...'}
+                                    loading={customersLoading}
+                                    emptyText="No business partners match your search."
+                                    options={customers.map(c => ({
+                                        value: c._id,
+                                        label: c.name || '(unnamed)',
+                                        sublabel: [
+                                            c.partnerNumber,
+                                            c.category,
+                                        ].filter(Boolean).join(' · '),
+                                    }))}
+                                    filter={(opt, q) => {
+                                        const hay = `${opt.label} ${opt.sublabel || ''}`.toLowerCase();
+                                        return hay.includes(q.toLowerCase());
+                                    }}
+                                />
                             </div>
                             <div className={styles.info} style={{ width: '25%' }}>
                                 <div className={styles.infoDetail}>Project</div>
@@ -1659,6 +1782,30 @@ export default function ShipmentDetails() {
                             <div className={styles.customerCard}>
                                 <div className={styles.customerCardHeader}>
                                     <FaMapMarkerAlt /> Customer details (auto-filled)
+                                    {/* Print the BP's sample / TRF documents. The
+                                        modal lists everything attached to the
+                                        partner on the BP detail page and lets
+                                        the user open/print any of them. */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPrintBPDocs(true)}
+                                        style={{
+                                            marginLeft: 'auto',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 6,
+                                            background: 'rgb(69, 112, 182)',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '6px 12px',
+                                            borderRadius: 6,
+                                            cursor: 'pointer',
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                        }}
+                                    >
+                                        <FaPrint /> Print BP Documents
+                                    </button>
                                 </div>
                                 <div className={styles.customerCardGrid}>
                                     <div><strong>Name:</strong> {shipTo.name || '—'}</div>
@@ -2421,7 +2568,7 @@ export default function ShipmentDetails() {
                         onSelectSample={async (sample) => {
                             // Add shipping line for selected sample
                             try {
-                                const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`, {
+                                const res = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/lines`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
@@ -2573,6 +2720,19 @@ export default function ShipmentDetails() {
                         </div>
                     </div>
                 </Modal>
+            )}
+
+            {/* Print BP Sample Documents — opens the modal that
+                lists the linked Business Partner's sampleDocuments
+                (TRF / TIDS / PCF templates) so the user can print
+                or open any of them from the Shipping Log. */}
+            {showPrintBPDocs && selectedCustomerId && (
+                <PrintBPDocsModal
+                    bPartnerID={selectedCustomerId}
+                    bPartnerName={shipTo.name || (customers.find(c => c._id === selectedCustomerId)?.name) || ''}
+                    shippingId={id && id !== 'add' ? id : null}
+                    onClose={() => setShowPrintBPDocs(false)}
+                />
             )}
         </div>
     )

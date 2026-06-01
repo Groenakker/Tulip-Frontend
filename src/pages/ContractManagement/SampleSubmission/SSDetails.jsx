@@ -98,6 +98,16 @@ export default function SSDetail() {
     const [projects, setProjects] = useState([]);
     const [filteredProjects, setFilteredProjects] = useState([]);
 
+    // Suggested fields scraped from the linked Business Partner's
+    // sample documents. When a sponsor uploads a TRF / TIDS / PCF
+    // template on the BP, the backend's document scanner records
+    // labels it didn't recognise as schema fields. Those land in
+    // `bpCustomCandidates` so the user can promote them to
+    // sample.customFields with one click.
+    const [bpCandidates, setBpCandidates] = useState([]);
+    const [bpCandidatesLoading, setBpCandidatesLoading] = useState(false);
+    const [showBpCandidates, setShowBpCandidates] = useState(true);
+
     //Sample info data
     const [sample, setSample] = useState({
         company_id: user?.companyId || '',
@@ -161,7 +171,69 @@ export default function SSDetail() {
         endDate: '',
         actDate: '',
         estDate: '',
-        commitDate: ''
+        commitDate: '',
+
+        // Extended TRF / TIDS / PCF fields — mined from the
+        // reference sponsor templates (Geneva Labs, Bureau Veritas,
+        // Accuprec, Eurofins/PSL). All optional; kept here so the
+        // form always renders even when the schema is empty.
+        studyCompliance: '',
+        batchNumber: '',
+        serialNumber: '',
+        chemicalName: '',
+        casNumber: '',
+        molecularFormula: '',
+        molecularWeight: '',
+        productColor: '',
+        pH: '',
+        purityConcentration: '',
+        density: '',
+        solubility: '',
+        composition: '',
+        productType: '',
+        methodOfManufacturing: '',
+        sterilizationDate: '',
+        sterilizedBy: '',
+        extractionMethod: '',
+        polarVehicle: '',
+        nonPolarVehicle: '',
+        extractionTemperature: '',
+        samplesPooled: '',
+        canBeCut: '',
+        biohazard: '',
+        surfaceAreaDirect: '',
+        surfaceAreaIndirect: '',
+        netWeightTotal: '',
+        netWeightDirect: '',
+        netWeightIndirect: '',
+        predicateDevice: '',
+        absorptionCheck: '',
+        msdsAttached: '',
+        coaAttached: '',
+        cadDrawingsAttached: '',
+        productStable: '',
+        doseFormulationAnalysisRequired: '',
+        mdrClassification: '',
+        mdrRule: '',
+        indianMdrClass: '',
+        fdaClassification: '',
+        bodyContactNature: '',
+        packagingDetails: '',
+        totalQuantitySupplied: '',
+        numberOfSamplesShipped: '',
+        supplierName: '',
+        transportationDetails: '',
+        handlingRequirements: '',
+        testArticleNameForReport: '',
+        vatNumber: '',
+        mailingList: '',
+        controlArticle: '',
+        specialInstructions: '',
+        solventForMoistening: '',
+        sampleStability: '',
+        sponsorRepresentative: '',
+        sponsorSignatureDate: '',
+        customFields: [],
     });
 
 
@@ -203,6 +275,124 @@ export default function SSDetail() {
         const { name, value } = e.target;
         setSample(prev => ({ ...prev, [name]: value }));
     };
+
+    // ============================================================
+    // Custom Fields
+    // ------------------------------------------------------------
+    // sample.customFields holds dynamic key/value pairs that the
+    // user adopted from a BP-uploaded document. They round-trip
+    // through the schema (see samples.models.js -> customFields).
+    //
+    // - `handleAddCustomField` adds a blank row or a row pre-
+    //   populated from a BP suggestion (label + sample value).
+    // - `handleCustomFieldChange` edits a row in place.
+    // - `handleRemoveCustomField` drops it (it stays gone after
+    //   save).
+    // ============================================================
+    const normalizeKey = (s) => (s || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+
+    const handleAddCustomField = (preset = {}) => {
+        const label = preset.label || 'New Field';
+        const key = preset.key || normalizeKey(label) || `field_${Date.now()}`;
+        // Don't add a duplicate of an existing custom field.
+        if ((sample.customFields || []).some((f) => f.key === key)) {
+            toast.warning('Field already added');
+            return;
+        }
+        setSample(prev => ({
+            ...prev,
+            customFields: [
+                ...(prev.customFields || []),
+                {
+                    key,
+                    label,
+                    value: preset.value || '',
+                    sourceBPartnerId: preset.sourceBPartnerId || prev.bPartnerID || undefined,
+                    sourceDocumentId: preset.sourceDocumentId || undefined,
+                },
+            ],
+        }));
+    };
+
+    const handleCustomFieldChange = (key, field, value) => {
+        setSample(prev => ({
+            ...prev,
+            customFields: (prev.customFields || []).map((f) =>
+                f.key === key ? { ...f, [field]: value } : f
+            ),
+        }));
+    };
+
+    const handleRemoveCustomField = (key) => {
+        setSample(prev => ({
+            ...prev,
+            customFields: (prev.customFields || []).filter((f) => f.key !== key),
+        }));
+    };
+
+    // Load BP-suggested candidate fields whenever the linked
+    // partner changes. Only pulls candidates from the partner's
+    // CURRENT working version of their sample document (the one
+    // flagged isCurrent on the BP). Older uploaded versions stay
+    // as history but no longer contribute custom-field
+    // suggestions, so editing the BP's current version is the
+    // single lever that controls what shows up here.
+    useEffect(() => {
+        const bpId = sample.bPartnerID;
+        if (!bpId) {
+            setBpCandidates([]);
+            return;
+        }
+        setBpCandidatesLoading(true);
+        (async () => {
+            try {
+                const res = await fetch(
+                    `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${bpId}/documents`,
+                    { credentials: 'include' }
+                );
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                const docs = data.documents || [];
+                // Find the current working version; legacy BPs without
+                // an isCurrent flag fall back to the newest upload so
+                // the suggestion list never silently disappears.
+                let currentDoc = docs.find((d) => d.isCurrent);
+                if (!currentDoc && docs.length > 0) {
+                    currentDoc = [...docs].sort((a, b) => {
+                        const at = a.uploadedAt ? new Date(a.uploadedAt).getTime() : 0;
+                        const bt = b.uploadedAt ? new Date(b.uploadedAt).getTime() : 0;
+                        return bt - at;
+                    })[0];
+                }
+                const seen = new Map();
+                if (currentDoc) {
+                    for (const field of currentDoc.detectedFields || []) {
+                        if (field.matchStatus !== 'custom') continue;
+                        const k = field.normalizedKey || normalizeKey(field.label);
+                        if (!k) continue;
+                        if (seen.has(k)) continue;
+                        seen.set(k, {
+                            key: k,
+                            label: field.label,
+                            sampleValue: field.sampleValue || '',
+                            sourceDocumentId: currentDoc._id,
+                            sourceFilename: currentDoc.filename,
+                            sourceBPartnerId: bpId,
+                        });
+                    }
+                }
+                setBpCandidates(Array.from(seen.values()));
+            } catch (err) {
+                console.error('Failed to load BP candidate fields:', err);
+                setBpCandidates([]);
+            } finally {
+                setBpCandidatesLoading(false);
+            }
+        })();
+    }, [sample.bPartnerID]);
 
     // Handle partner code change
     const handlePartnerChange = async (e) => {
@@ -1362,6 +1552,601 @@ export default function SSDetail() {
                                     />
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </WhiteIsland>
+
+                {/* ============================================================
+                    Extended Sample Details
+                    ------------------------------------------------------------
+                    Fields mined from the sponsor TRF / TIDS / PCF templates
+                    in G:\Projects\Tulip-main\Files. All optional; they only
+                    apply when the customer's template asks for them. Saved
+                    on the Sample schema as first-class columns.
+                ============================================================ */}
+                <WhiteIsland className={styles.bigIsland}>
+                    <h3>Extended Sample Details</h3>
+                    <div className={styles.main}>
+                        <div className={styles.detailContainer}>
+                            {/* Compliance & study */}
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>Study Compliance</div>
+                                    <select className={styles.dropdown} name="studyCompliance" value={sample.studyCompliance || ''} onChange={handleChange}>
+                                        <option value="">—</option>
+                                        <option value="GLP">GLP</option>
+                                        <option value="Non-GLP">Non-GLP</option>
+                                        <option value="NABL (ISO 17025)">NABL (ISO 17025)</option>
+                                        <option value="ASCA (A2LA)">ASCA (A2LA)</option>
+                                        <option value="Non-NABL">Non-NABL</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>Product Type</div>
+                                    <select className={styles.dropdown} name="productType" value={sample.productType || ''} onChange={handleChange}>
+                                        <option value="">—</option>
+                                        <option value="Medical Device">Medical Device</option>
+                                        <option value="Herbal Formulation">Herbal Formulation</option>
+                                        <option value="Active Pharmaceutical Ingredient">API</option>
+                                        <option value="Pharmaceutical Formulation">Pharmaceutical Formulation</option>
+                                        <option value="Agrochemical">Agrochemical</option>
+                                        <option value="Industrial Chemical">Industrial Chemical</option>
+                                        <option value="Food Additives">Food Additives</option>
+                                        <option value="Packaging Material">Packaging Material</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>Method of Manufacturing</div>
+                                    <select className={styles.dropdown} name="methodOfManufacturing" value={sample.methodOfManufacturing || ''} onChange={handleChange}>
+                                        <option value="">—</option>
+                                        <option value="Injection Molded">Injection Molded</option>
+                                        <option value="Formulated">Formulated</option>
+                                        <option value="3D Printed">3D Printed</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>Body Contact Nature</div>
+                                    <select className={styles.dropdown} name="bodyContactNature" value={sample.bodyContactNature || ''} onChange={handleChange}>
+                                        <option value="">—</option>
+                                        <option value="Intact skin">Intact skin</option>
+                                        <option value="Intact mucosal membrane">Intact mucosal membrane</option>
+                                        <option value="Breached / compromised surfaces">Breached / compromised surfaces</option>
+                                        <option value="Circulating blood">Circulating blood</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Identifiers */}
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>Batch Number</div>
+                                    <input name="batchNumber" value={sample.batchNumber || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>Serial Number</div>
+                                    <input name="serialNumber" value={sample.serialNumber || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>Total Quantity Supplied</div>
+                                    <input name="totalQuantitySupplied" value={sample.totalQuantitySupplied || ''} onChange={handleChange} placeholder="e.g. 5 units" />
+                                </div>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>No. of Samples Shipped</div>
+                                    <input name="numberOfSamplesShipped" value={sample.numberOfSamplesShipped || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+
+                            {/* Chemistry */}
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>CAS Number</div>
+                                    <input name="casNumber" value={sample.casNumber || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>Chemical Name (IUPAC)</div>
+                                    <input name="chemicalName" value={sample.chemicalName || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>Molecular Formula</div>
+                                    <input name="molecularFormula" value={sample.molecularFormula || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>Molecular Weight</div>
+                                    <input name="molecularWeight" value={sample.molecularWeight || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>Colour</div>
+                                    <input name="productColor" value={sample.productColor || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>pH</div>
+                                    <input name="pH" value={sample.pH || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>Purity / Concentration</div>
+                                    <input name="purityConcentration" value={sample.purityConcentration || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>Density</div>
+                                    <input name="density" value={sample.density || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+
+                            <div className={styles.details2}>
+                                <div className={styles.info2} style={{ width: '100%' }}>
+                                    <div className={styles.infoDetail}>Solubility</div>
+                                    <input name="solubility" value={sample.solubility || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+
+                            <div className={styles.details2}>
+                                <div className={styles.info2} style={{ width: '100%' }}>
+                                    <div className={styles.infoDetail}>Composition (materials, additives, colorants)</div>
+                                    <textarea
+                                        name="composition"
+                                        value={sample.composition || ''}
+                                        onChange={handleChange}
+                                        className={styles.autoGrowInput}
+                                        rows={1}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Sterilization */}
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Sterilization Date</div>
+                                    <input name="sterilizationDate" value={sample.sterilizationDate || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Sterilized By</div>
+                                    <input name="sterilizedBy" value={sample.sterilizedBy || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Sample Stability</div>
+                                    <input name="sampleStability" value={sample.sampleStability || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+
+                            {/* Extraction details */}
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Extraction Method</div>
+                                    <select className={styles.dropdown} name="extractionMethod" value={sample.extractionMethod || ''} onChange={handleChange}>
+                                        <option value="">—</option>
+                                        <option value="All Parts Included">All Parts Included</option>
+                                        <option value="Internal Filled then Submerged">Internal Filled then Submerged</option>
+                                        <option value="Internal Only - Filled">Internal Only - Filled</option>
+                                        <option value="External Only - Submerged">External Only - Submerged</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Extraction Temperature</div>
+                                    <select className={styles.dropdown} name="extractionTemperature" value={sample.extractionTemperature || ''} onChange={handleChange}>
+                                        <option value="">—</option>
+                                        <option value="37°C">37 °C</option>
+                                        <option value="50°C">50 °C</option>
+                                        <option value="70°C">70 °C</option>
+                                        <option value="121°C">121 °C</option>
+                                    </select>
+                                </div>
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Samples Pooled?</div>
+                                    <select className={styles.dropdown} name="samplesPooled" value={sample.samplesPooled || ''} onChange={handleChange}>
+                                        <option value="">—</option>
+                                        <option value="Yes">Yes</option>
+                                        <option value="No">No</option>
+                                        <option value="N/A">N/A</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '50%' }}>
+                                    <div className={styles.infoDetail}>Polar Extraction Vehicle</div>
+                                    <select className={styles.dropdown} name="polarVehicle" value={sample.polarVehicle || ''} onChange={handleChange}>
+                                        <option value="">—</option>
+                                        <option value="Physiological Saline">Physiological Saline</option>
+                                        <option value="Distilled Water">Distilled Water</option>
+                                        <option value="USP 88 Vehicle">USP 88 Vehicle</option>
+                                        <option value="Other">Other</option>
+                                        <option value="N/A">N/A</option>
+                                    </select>
+                                </div>
+                                <div className={styles.info} style={{ width: '50%' }}>
+                                    <div className={styles.infoDetail}>Non-Polar Extraction Vehicle</div>
+                                    <select className={styles.dropdown} name="nonPolarVehicle" value={sample.nonPolarVehicle || ''} onChange={handleChange}>
+                                        <option value="">—</option>
+                                        <option value="Cottonseed Oil">Cottonseed Oil</option>
+                                        <option value="Sesame Oil">Sesame Oil</option>
+                                        <option value="USP 88 Vehicle">USP 88 Vehicle</option>
+                                        <option value="Other">Other</option>
+                                        <option value="N/A">N/A</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Can be cut before extraction?</div>
+                                    <select className={styles.dropdown} name="canBeCut" value={sample.canBeCut || ''} onChange={handleChange}>
+                                        <option value="">—</option>
+                                        <option value="Yes">Yes</option>
+                                        <option value="No">No</option>
+                                        <option value="N/A">N/A</option>
+                                    </select>
+                                </div>
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Biohazard?</div>
+                                    <select className={styles.dropdown} name="biohazard" value={sample.biohazard || ''} onChange={handleChange}>
+                                        <option value="">—</option>
+                                        <option value="Yes">Yes</option>
+                                        <option value="No">No</option>
+                                    </select>
+                                </div>
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Product Stable?</div>
+                                    <select className={styles.dropdown} name="productStable" value={sample.productStable || ''} onChange={handleChange}>
+                                        <option value="">—</option>
+                                        <option value="Yes">Yes</option>
+                                        <option value="No">No</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Hemocompatibility detail — direct vs indirect blood contact */}
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Surface Area · Direct Blood Contact</div>
+                                    <input name="surfaceAreaDirect" value={sample.surfaceAreaDirect || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Surface Area · Indirect Blood Contact</div>
+                                    <input name="surfaceAreaIndirect" value={sample.surfaceAreaIndirect || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Net Weight · Total</div>
+                                    <input name="netWeightTotal" value={sample.netWeightTotal || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '50%' }}>
+                                    <div className={styles.infoDetail}>Net Weight · Direct Blood Contact</div>
+                                    <input name="netWeightDirect" value={sample.netWeightDirect || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '50%' }}>
+                                    <div className={styles.infoDetail}>Net Weight · Indirect Blood Contact</div>
+                                    <input name="netWeightIndirect" value={sample.netWeightIndirect || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+
+                            {/* Sponsor declarations */}
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '20%' }}>
+                                    <div className={styles.infoDetail}>MSDS Attached?</div>
+                                    <select className={styles.dropdown} name="msdsAttached" value={sample.msdsAttached || ''} onChange={handleChange}>
+                                        <option value="">—</option><option value="Yes">Yes</option><option value="No">No</option>
+                                    </select>
+                                </div>
+                                <div className={styles.info} style={{ width: '20%' }}>
+                                    <div className={styles.infoDetail}>COA Attached?</div>
+                                    <select className={styles.dropdown} name="coaAttached" value={sample.coaAttached || ''} onChange={handleChange}>
+                                        <option value="">—</option><option value="Yes">Yes</option><option value="No">No</option>
+                                    </select>
+                                </div>
+                                <div className={styles.info} style={{ width: '20%' }}>
+                                    <div className={styles.infoDetail}>CAD Drawings?</div>
+                                    <select className={styles.dropdown} name="cadDrawingsAttached" value={sample.cadDrawingsAttached || ''} onChange={handleChange}>
+                                        <option value="">—</option><option value="Yes">Yes</option><option value="No">No</option>
+                                    </select>
+                                </div>
+                                <div className={styles.info} style={{ width: '20%' }}>
+                                    <div className={styles.infoDetail}>Absorption Check?</div>
+                                    <select className={styles.dropdown} name="absorptionCheck" value={sample.absorptionCheck || ''} onChange={handleChange}>
+                                        <option value="">—</option><option value="Yes">Yes</option><option value="No">No</option>
+                                    </select>
+                                </div>
+                                <div className={styles.info} style={{ width: '20%' }}>
+                                    <div className={styles.infoDetail}>Dose Formulation Analysis?</div>
+                                    <select className={styles.dropdown} name="doseFormulationAnalysisRequired" value={sample.doseFormulationAnalysisRequired || ''} onChange={handleChange}>
+                                        <option value="">—</option><option value="Yes">Yes</option><option value="No">No</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '100%' }}>
+                                    <div className={styles.infoDetail}>Predicate Device</div>
+                                    <select className={styles.dropdown} name="predicateDevice" value={sample.predicateDevice || ''} onChange={handleChange}>
+                                        <option value="">—</option>
+                                        <option value="Supplied by Sponsor">Supplied by Sponsor</option>
+                                        <option value="Procured by Test facility">Procured by Test facility</option>
+                                        <option value="N/A">N/A</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Regulatory classifications */}
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>EU MDR Class</div>
+                                    <select className={styles.dropdown} name="mdrClassification" value={sample.mdrClassification || ''} onChange={handleChange}>
+                                        <option value="">—</option><option value="I">I</option><option value="IIa">IIa</option><option value="IIb">IIb</option><option value="III">III</option>
+                                    </select>
+                                </div>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>EU MDR Rule</div>
+                                    <input name="mdrRule" value={sample.mdrRule || ''} onChange={handleChange} placeholder="1-22" />
+                                </div>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>Indian MDR Class</div>
+                                    <select className={styles.dropdown} name="indianMdrClass" value={sample.indianMdrClass || ''} onChange={handleChange}>
+                                        <option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+                                    </select>
+                                </div>
+                                <div className={styles.info} style={{ width: '25%' }}>
+                                    <div className={styles.infoDetail}>US FDA Class</div>
+                                    <select className={styles.dropdown} name="fdaClassification" value={sample.fdaClassification || ''} onChange={handleChange}>
+                                        <option value="">—</option><option value="I">I</option><option value="II">II</option><option value="III">III</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Logistics */}
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Test Item Supplied By</div>
+                                    <input name="supplierName" value={sample.supplierName || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>Packaging Details</div>
+                                    <input name="packagingDetails" value={sample.packagingDetails || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '33%' }}>
+                                    <div className={styles.infoDetail}>VAT Number</div>
+                                    <input name="vatNumber" value={sample.vatNumber || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+
+                            <div className={styles.details2}>
+                                <div className={styles.info2} style={{ width: '100%' }}>
+                                    <div className={styles.infoDetail}>Test Item Transportation Details</div>
+                                    <input name="transportationDetails" value={sample.transportationDetails || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+                            <div className={styles.details2}>
+                                <div className={styles.info2} style={{ width: '100%' }}>
+                                    <div className={styles.infoDetail}>Test Item Handling Requirement</div>
+                                    <input name="handlingRequirements" value={sample.handlingRequirements || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+                            <div className={styles.details2}>
+                                <div className={styles.info2} style={{ width: '100%' }}>
+                                    <div className={styles.infoDetail}>Test Article Name for Report(s)</div>
+                                    <input name="testArticleNameForReport" value={sample.testArticleNameForReport || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+                            <div className={styles.details2}>
+                                <div className={styles.info2} style={{ width: '100%' }}>
+                                    <div className={styles.infoDetail}>Mailing List (comma-separated emails)</div>
+                                    <input name="mailingList" value={sample.mailingList || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+                            <div className={styles.details2}>
+                                <div className={styles.info2} style={{ width: '100%' }}>
+                                    <div className={styles.infoDetail}>Control Article Notes</div>
+                                    <textarea name="controlArticle" value={sample.controlArticle || ''} onChange={handleChange} className={styles.autoGrowInput} rows={1} />
+                                </div>
+                            </div>
+                            <div className={styles.details2}>
+                                <div className={styles.info2} style={{ width: '100%' }}>
+                                    <div className={styles.infoDetail}>Special Instructions</div>
+                                    <textarea name="specialInstructions" value={sample.specialInstructions || ''} onChange={handleChange} className={styles.autoGrowInput} rows={1} />
+                                </div>
+                            </div>
+                            <div className={styles.details2}>
+                                <div className={styles.info2} style={{ width: '100%' }}>
+                                    <div className={styles.infoDetail}>Moistening Solvent Permitted</div>
+                                    <input name="solventForMoistening" value={sample.solventForMoistening || ''} onChange={handleChange} placeholder="Yes / No + notes" />
+                                </div>
+                            </div>
+                            <div className={styles.details}>
+                                <div className={styles.info} style={{ width: '50%' }}>
+                                    <div className={styles.infoDetail}>Sponsor Representative</div>
+                                    <input name="sponsorRepresentative" value={sample.sponsorRepresentative || ''} onChange={handleChange} />
+                                </div>
+                                <div className={styles.info} style={{ width: '50%' }}>
+                                    <div className={styles.infoDetail}>Sponsor Signature & Date</div>
+                                    <input name="sponsorSignatureDate" value={sample.sponsorSignatureDate || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </WhiteIsland>
+
+                {/* ============================================================
+                    Custom Fields (with BP-document suggestions)
+                    ------------------------------------------------------------
+                    Dynamic key/value fields the user adopted from the linked
+                    Business Partner's uploaded sample documents (or added
+                    manually). The list of suggestions is the union of labels
+                    detected across the BP's documents that did NOT match a
+                    built-in Sample Submission schema field.
+                ============================================================ */}
+                <WhiteIsland className={styles.bigIsland}>
+                    <h3>Custom Fields</h3>
+                    <div className={styles.main}>
+                        <div className={styles.detailContainer}>
+                            {sample.bPartnerID && (
+                                <div style={{
+                                    background: '#fffbeb',
+                                    border: '1px solid #fde68a',
+                                    borderRadius: 10,
+                                    padding: 12,
+                                    marginBottom: 14,
+                                    fontSize: 13,
+                                }}>
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        marginBottom: showBpCandidates ? 10 : 0,
+                                    }}>
+                                        <div>
+                                            <strong>Detected from BP documents:</strong>{' '}
+                                            {bpCandidatesLoading ? 'scanning…' : `${bpCandidates.length} candidate field${bpCandidates.length === 1 ? '' : 's'}`}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowBpCandidates((v) => !v)}
+                                            style={{
+                                                background: 'white',
+                                                border: '1px solid #d1d5db',
+                                                borderRadius: 6,
+                                                padding: '4px 10px',
+                                                fontSize: 12,
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            {showBpCandidates ? 'Hide' : 'Show'}
+                                        </button>
+                                    </div>
+                                    {showBpCandidates && bpCandidates.length > 0 && (
+                                        <div style={{
+                                            display: 'flex',
+                                            flexWrap: 'wrap',
+                                            gap: 6,
+                                        }}>
+                                            {bpCandidates.map((c) => {
+                                                const alreadyAdded = (sample.customFields || []).some((f) => f.key === c.key);
+                                                return (
+                                                    <button
+                                                        key={c.key}
+                                                        type="button"
+                                                        onClick={() => handleAddCustomField({
+                                                            key: c.key,
+                                                            label: c.label,
+                                                            value: c.sampleValue,
+                                                            sourceDocumentId: c.sourceDocumentId,
+                                                            sourceBPartnerId: c.sourceBPartnerId,
+                                                        })}
+                                                        disabled={alreadyAdded}
+                                                        title={c.sourceFilename ? `From: ${c.sourceFilename}` : ''}
+                                                        style={{
+                                                            background: alreadyAdded ? '#e5e7eb' : 'white',
+                                                            color: alreadyAdded ? '#6b7280' : '#1e40af',
+                                                            border: '1px solid #cbd5e1',
+                                                            borderRadius: 14,
+                                                            padding: '4px 10px',
+                                                            fontSize: 12,
+                                                            cursor: alreadyAdded ? 'not-allowed' : 'pointer',
+                                                            fontWeight: 600,
+                                                        }}
+                                                    >
+                                                        {alreadyAdded ? '✓ ' : '+ '}{c.label.length > 60 ? c.label.slice(0, 60) + '…' : c.label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    {showBpCandidates && !bpCandidatesLoading && bpCandidates.length === 0 && (
+                                        <div style={{ color: '#6b7280', fontSize: 12 }}>
+                                            No additional candidate fields detected.
+                                            Upload more TRF / TIDS / PCF documents on the Business Partner to populate this list.
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                <div style={{ fontSize: 13, color: '#6b7280' }}>
+                                    {(sample.customFields || []).length} custom field{(sample.customFields || []).length === 1 ? '' : 's'} on this submission.
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => handleAddCustomField()}
+                                    style={{
+                                        background: 'rgb(69, 112, 182)',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: 6,
+                                        padding: '6px 12px',
+                                        fontSize: 12,
+                                        cursor: 'pointer',
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    + Add Custom Field
+                                </button>
+                            </div>
+
+                            {(sample.customFields || []).length === 0 ? (
+                                <div style={{
+                                    padding: 20,
+                                    textAlign: 'center',
+                                    color: '#9ca3af',
+                                    background: '#f9fafb',
+                                    border: '1px dashed #d1d5db',
+                                    borderRadius: 8,
+                                    fontSize: 13,
+                                }}>
+                                    No custom fields yet. Click an entry above or &quot;+ Add Custom Field&quot; to start.
+                                </div>
+                            ) : (
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                    <thead>
+                                        <tr style={{ background: '#f9fafb' }}>
+                                            <th style={{ textAlign: 'left', padding: 8, borderBottom: '2px solid #e5e7eb' }}>Label</th>
+                                            <th style={{ textAlign: 'left', padding: 8, borderBottom: '2px solid #e5e7eb' }}>Value</th>
+                                            <th style={{ width: 60, borderBottom: '2px solid #e5e7eb' }} />
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {(sample.customFields || []).map((f) => (
+                                            <tr key={f.key}>
+                                                <td style={{ padding: 6, borderBottom: '1px solid #f1f5f9' }}>
+                                                    <input
+                                                        value={f.label || ''}
+                                                        onChange={(e) => handleCustomFieldChange(f.key, 'label', e.target.value)}
+                                                        style={{ width: '100%', padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 4 }}
+                                                    />
+                                                </td>
+                                                <td style={{ padding: 6, borderBottom: '1px solid #f1f5f9' }}>
+                                                    <input
+                                                        value={f.value || ''}
+                                                        onChange={(e) => handleCustomFieldChange(f.key, 'value', e.target.value)}
+                                                        style={{ width: '100%', padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 4 }}
+                                                    />
+                                                </td>
+                                                <td style={{ padding: 6, borderBottom: '1px solid #f1f5f9', textAlign: 'right' }}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveCustomField(f.key)}
+                                                        style={{
+                                                            background: 'white',
+                                                            border: '1px solid #fecaca',
+                                                            color: '#b91c1c',
+                                                            borderRadius: 4,
+                                                            padding: '4px 8px',
+                                                            cursor: 'pointer',
+                                                            fontSize: 11,
+                                                        }}
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
                         </div>
                     </div>
                 </WhiteIsland>

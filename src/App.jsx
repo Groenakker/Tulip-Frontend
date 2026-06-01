@@ -43,6 +43,24 @@ import DocumentCreate from "./pages/DocumentManagement/DocumentCreate";
 import StakeholderApproval from "./pages/StakeholderApproval/StakeholderApproval";
 import OTPVerification from "./pages/StakeholderApproval/OTPVerification";
 import ComingSoon from "./pages/ComingSoon/ComingSoon";
+// Project Management - My Workspace pages.
+import MyTasks from "./pages/MyWorkspace/MyTasks";
+import MyCalendar from "./pages/MyWorkspace/MyCalendar";
+import MyWorkload from "./pages/MyWorkspace/MyWorkload";
+// Toxicology workspace (ported from toxintelligence-mern).
+import ToxDashboard from "./pages/Toxicology/Dashboard/ToxDashboard";
+import CompoundSearch from "./pages/Toxicology/Search/CompoundSearch";
+import LibraryList from "./pages/Toxicology/Library/LibraryList";
+import LibraryDetail from "./pages/Toxicology/Library/LibraryDetail";
+import FamilyList from "./pages/Toxicology/Families/FamilyList";
+import FamilyDetail from "./pages/Toxicology/Families/FamilyDetail";
+import TRAList from "./pages/Toxicology/TRA/TRAList";
+import TRADetail from "./pages/Toxicology/TRA/TRADetail";
+import TRAReview from "./pages/Toxicology/TRA/TRAReview";
+import ImportWizard from "./pages/Toxicology/Import/ImportWizard";
+import Literature from "./pages/Toxicology/Literature/Literature";
+import ToxReports from "./pages/Toxicology/Reports/Reports";
+import ToxGovernance from "./pages/Toxicology/Governance/Governance";
 // import Projects from './pages/Projects';
 // import ShippingLog from './pages/ShippingLog';
 // import RecieveLog from './pages/RecieveLog';
@@ -337,6 +355,15 @@ function AppContent() {
               </ProtectedRoute>
             } 
           />
+          {/* Project Management - My Workspace.
+              These pages aren't behind the per-module
+              permission gate because they only ever show the
+              CURRENT user's own assignments. Any authenticated
+              user can view them. */}
+          <Route path="/MyWorkspace/Tasks"    element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
+          <Route path="/MyWorkspace/Calendar" element={<ProtectedRoute><MyCalendar /></ProtectedRoute>} />
+          <Route path="/MyWorkspace/Workload" element={<ProtectedRoute><MyWorkload /></ProtectedRoute>} />
+
           {/* Coming Soon pages */}
           <Route path="/Dashboard" element={<ProtectedRoute module="Dashboard"><ComingSoon /></ProtectedRoute>} />
           <Route path="/MaterialResearch" element={<ProtectedRoute module="Material Research"><ComingSoon /></ProtectedRoute>} />
@@ -362,6 +389,24 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          {/* Toxicology workspace. ProtectedRoute is intentionally used WITHOUT
+              a `module` prop so the section is authenticated-only (no per-
+              module permission gate). To gate later, swap `<ProtectedRoute>`
+              for `<ProtectedRoute module="Toxicology">`. */}
+          <Route path="/Toxicology"               element={<ProtectedRoute><ToxDashboard /></ProtectedRoute>} />
+          <Route path="/Toxicology/Search"        element={<ProtectedRoute><CompoundSearch /></ProtectedRoute>} />
+          <Route path="/Toxicology/Library"       element={<ProtectedRoute><LibraryList /></ProtectedRoute>} />
+          <Route path="/Toxicology/Library/:id"   element={<ProtectedRoute><LibraryDetail /></ProtectedRoute>} />
+          <Route path="/Toxicology/Families"      element={<ProtectedRoute><FamilyList /></ProtectedRoute>} />
+          <Route path="/Toxicology/Families/:id"  element={<ProtectedRoute><FamilyDetail /></ProtectedRoute>} />
+          <Route path="/Toxicology/TRA"           element={<ProtectedRoute><TRAList /></ProtectedRoute>} />
+          <Route path="/Toxicology/TRA/:id"       element={<ProtectedRoute><TRADetail /></ProtectedRoute>} />
+          <Route path="/Toxicology/TRA/:id/review" element={<ProtectedRoute><TRAReview /></ProtectedRoute>} />
+          <Route path="/Toxicology/Import"        element={<ProtectedRoute><ImportWizard /></ProtectedRoute>} />
+          <Route path="/Toxicology/Literature"    element={<ProtectedRoute><Literature /></ProtectedRoute>} />
+          <Route path="/Toxicology/Reports"       element={<ProtectedRoute><ToxReports /></ProtectedRoute>} />
+          <Route path="/Toxicology/Governance"    element={<ProtectedRoute><ToxGovernance /></ProtectedRoute>} />
+
           <Route 
             path="/not-authorized" 
             element={

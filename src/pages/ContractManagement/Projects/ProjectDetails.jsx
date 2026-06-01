@@ -6,6 +6,8 @@ import { FaSave, FaTrash, FaImage } from "react-icons/fa";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import toast from "../../../components/Toaster/toast";
 import Header from "../../../components/Header";
+import ProjectWorkspace from "../../../components/PM/ProjectWorkspace";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function ProjectDetails() {
   const { id } = useParams();
@@ -85,44 +87,64 @@ export default function ProjectDetails() {
 
   const contactOptions = selectedPartner?.contacts || [];
 
-  const pdata = {
-    Shipments: [
-      {
-        id: "SHP-101",
-        desc: "Shipment to MedLabs Inc.",
-        start: "2/2/2025",
-        due: "2/10/2025",
-      },
-      {
-        id: "SHP-102",
-        desc: "Test Kit delivery to BioCore",
-        start: "3/5/2025",
-        due: "3/12/2025",
-      },
-    ],
-    Reports: [
-      {
-        id: "REP-301",
-        desc: "Final Biocompatibility Report",
-        start: "1/1/2025",
-        due: "1/15/2025",
-      },
-    ],
-    Sample: [
-      {
-        id: "SMP-301",
-        desc: "Sample Collection for Testing",
-        start: "3/1/2025",
-        due: "3/5/2025",
-      },
-      {
-        id: "SMP-302",
-        desc: "Sample Analysis Report",
-        start: "3/15/2025",
-        due: "3/20/2025",
-      },
-    ],
+  // Tab data for the related-records area at the bottom of the
+  // page. The "Project Management" tab embeds the full PM
+  // workspace (Kanban / Gantt / Calendar / Team / Tags /
+  // Insights). The other tabs remain placeholders that wire
+  // back to existing modules (kept as table-shape stubs so they
+  // still render under TabbedTable).
+  const { hasPermission: hasPmPermission } = useAuth();
+  const canEditPM = hasPmPermission("Projects", "update");
+  const reloadProject = () => {
+    if (!isEdit) return;
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects/${id}`, { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => setProject(data))
+      .catch(() => { /* non-fatal */ });
   };
+  const pdata = useMemo(() => {
+    const out = {};
+    if (isEdit && project?._id) {
+      out["Project Management"] = {
+        content: (
+          <ProjectWorkspace
+            project={project}
+            canEdit={canEditPM}
+            onProjectChanged={reloadProject}
+          />
+        ),
+      };
+    }
+    out.Shipments = {
+      columns: [
+        { label: "ID", key: "id" },
+        { label: "Description", key: "desc" },
+        { label: "Start", key: "start" },
+        { label: "Due", key: "due" },
+      ],
+      rows: [],
+    };
+    out.Reports = {
+      columns: [
+        { label: "ID", key: "id" },
+        { label: "Description", key: "desc" },
+        { label: "Start", key: "start" },
+        { label: "Due", key: "due" },
+      ],
+      rows: [],
+    };
+    out.Sample = {
+      columns: [
+        { label: "ID", key: "id" },
+        { label: "Description", key: "desc" },
+        { label: "Start", key: "start" },
+        { label: "Due", key: "due" },
+      ],
+      rows: [],
+    };
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, project, canEditPM]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

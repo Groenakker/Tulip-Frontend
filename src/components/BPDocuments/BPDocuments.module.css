@@ -1,0 +1,396 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 14px;
+}
+
+.notice {
+  padding: 16px;
+  background: #fff7ed;
+  color: #92400e;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.uploadBar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.uploadControls {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.uploadHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.uploadTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.uploadSubtitle {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.controlLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  min-width: 160px;
+}
+
+.select,
+.input {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  font-size: 13px;
+  min-height: 34px;
+}
+
+.uploadButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgb(69, 112, 182);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+  min-height: 34px;
+}
+
+.uploadButton:hover {
+  background: rgb(1, 49, 126);
+}
+
+.hint {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.empty {
+  padding: 28px;
+  text-align: center;
+  color: #6b7280;
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  text-align: left;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-bottom: 2px solid #e5e7eb;
+  background: #f9fafb;
+  font-size: 12px;
+  color: #374151;
+}
+
+.table td {
+  padding: 10px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.currentRow {
+  background: #f0fdf4;
+}
+
+.fileName {
+  font-weight: 600;
+  color: #111827;
+}
+
+.fileDesc {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.smallText {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.currentRadioCell {
+  text-align: center;
+}
+
+.currentRadio {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #16a34a;
+}
+
+.currentRadio:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.currentBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #dcfce7;
+  color: #15803d;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.fieldBadge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.fieldBadgeSub {
+  font-size: 9px;
+  font-weight: 500;
+  color: #1e3a8a;
+  margin-top: 2px;
+}
+
+.actionsCell {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.actionBtn {
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 9px;
+  cursor: pointer;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #374151;
+}
+
+.actionBtn:hover {
+  background: #f3f4f6;
+}
+
+.actionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.deleteBtn {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.deleteBtn:hover {
+  background: #fef2f2;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 30px;
+}
+
+.modalWindow {
+  background: white;
+  border-radius: 12px;
+  max-width: 1100px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 22px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modalTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.modalSubtitle {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 3px;
+}
+
+.modalPrintBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgb(69, 112, 182);
+  color: white;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.modalCloseBtn {
+  background: white;
+  border: 1px solid #d1d5db;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.modalBody {
+  padding: 18px 22px;
+  overflow: auto;
+  flex: 1;
+}
+
+.modalH4 {
+  margin-top: 20px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.scanSummary {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.scanCard {
+  flex: 1;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.scanNum {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1e40af;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.candidateNote {
+  font-size: 12px;
+  color: #6b7280;
+  background: #fffbeb;
+  border-left: 3px solid #fbbf24;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.smallTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.smallTable th,
+.smallTable td {
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.smallTable th {
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+.smallTable code {
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+}
+
+.preview {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 11px;
+  max-height: 300px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'Courier New', monospace;
+  color: #374151;
+}

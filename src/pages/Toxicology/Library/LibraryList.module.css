@@ -1,0 +1,159 @@
+.page {
+  display: flex;
+  flex-direction: column;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 40%;
+  min-width: 220px;
+}
+
+.searchInput {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  width: 100%;
+  font-size: 12px;
+}
+
+.searchButton {
+  display: flex;
+  align-items: center;
+  background: none;
+  color: rgb(69 112 182);
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 5px 12px;
+}
+
+.quickAdd {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.quickAddInput {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 12px;
+  min-width: 220px;
+}
+
+.addButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgb(69 112 182);
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-size: 12px;
+}
+
+.addButton:hover { background: rgb(1, 49, 126); }
+.addButton:disabled { opacity: 0.5; cursor: default; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 24px;
+  font-size: 14px;
+}
+
+.table th {
+  text-align: left;
+  font-weight: 600;
+  background: #f9fafb;
+  padding: 10px;
+}
+
+.table td {
+  padding: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.table tbody tr { cursor: pointer; }
+.table tbody tr:hover { background-color: #e9f0fe; }
+
+.actionsCell {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.iconButton {
+  background: none;
+  border: 1px solid #d1d5db;
+  color: #555;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.iconButton:hover { background: #f5f7fb; color: rgb(69 112 182); border-color: rgb(69 112 182); }
+.iconButton.danger:hover { color: #b91c1c; border-color: #b91c1c; background: #fef2f2; }
+.iconButton:disabled { opacity: 0.4; cursor: default; }
+
+.empty {
+  text-align: center;
+  color: #888;
+  padding: 32px 12px !important;
+}
+
+.riskBadge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.riskBadge.low { background: #d1fae5; color: #047857; }
+.riskBadge.moderate { background: #fef3c7; color: #92400e; }
+.riskBadge.high { background: #fee2e2; color: #b91c1c; }
+
+.pagination {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.pagination button {
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.pagination button.activePage {
+  background: rgb(69 112 182);
+  color: #fff;
+}
+
+.pagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

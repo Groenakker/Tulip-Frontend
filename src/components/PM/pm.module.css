@@ -1,0 +1,896 @@
+/* Shared styles for the Project Management module. Matches the
+   Tulip blue palette (#4570B6 / #01317E / #e9f0fe) and Poppins
+   so the PM views feel native.
+
+   Convention: every interactive form control (input, select,
+   textarea, button) is 34px tall and uses the same 6px radius
+   and #d1d5db border so they line up cleanly in any toolbar
+   or grid. The .controlSize mixin-style class is applied via
+   the shared classes below rather than per-component overrides. */
+
+:root {
+  --pm-control-height: 34px;
+  --pm-radius: 6px;
+  --pm-radius-lg: 10px;
+  --pm-border: #d1d5db;
+  --pm-border-soft: #e5e7eb;
+  --pm-primary: #4570B6;
+  --pm-primary-dark: #01317E;
+  --pm-accent: #e9f0fe;
+  --pm-text: #1f2937;
+  --pm-muted: #6b7280;
+}
+
+/* --- badges --- */
+.statusBadge,
+.priorityBadge,
+.tagBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  line-height: 1.5;
+}
+
+.tagBadge { font-weight: 500; font-size: 10px; }
+
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+/* --- avatars --- */
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--pm-accent);
+  color: #1e3a8a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  border: 2px solid #ffffff;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatar.sm { width: 22px; height: 22px; font-size: 10px; }
+.avatar.lg { width: 40px; height: 40px; font-size: 14px; }
+
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.avatarStack { display: inline-flex; }
+.avatarStack > * + * { margin-left: -8px; }
+
+/* --- task card --- */
+.taskCard {
+  background: white;
+  border: 1px solid var(--pm-border-soft);
+  border-radius: var(--pm-radius-lg);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: grab;
+  user-select: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.taskCard:hover {
+  box-shadow: 0 4px 14px rgba(69, 112, 182, 0.18);
+  border-color: #c7d2fe;
+}
+
+.taskCard.dragging { opacity: 0.4; cursor: grabbing; }
+
+.taskCardTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.taskCardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--pm-muted);
+}
+
+.taskCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.taskCardTags { display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* --- Kanban board --- */
+.board {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px 2px 12px 2px;
+  align-items: flex-start;
+}
+
+.boardColumn {
+  flex: 0 0 280px;
+  display: flex;
+  flex-direction: column;
+  background: #f4f6f9;
+  border: 1px solid var(--pm-border-soft);
+  border-radius: 12px;
+  padding: 10px;
+  min-height: 200px;
+}
+
+.boardColumn.dropTarget {
+  background: var(--pm-accent);
+  border-color: var(--pm-primary);
+}
+
+.boardColumnHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 8px 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.boardColumnCount {
+  background: white;
+  border: 1px solid var(--pm-border);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 11px;
+  color: var(--pm-muted);
+}
+
+.boardColumnBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 60px;
+}
+
+.boardAddBtn {
+  background: transparent;
+  border: 1px dashed #9ca3af;
+  color: var(--pm-muted);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.boardAddBtn:hover {
+  border-color: var(--pm-primary);
+  color: var(--pm-primary);
+  background: #ffffff;
+}
+
+/* ============================================================
+   Toolbar: TWO-ROW layout. The top row holds the view
+   switcher (Board / List / Gantt / ...) so it never has to
+   share width with the search + filter controls. The bottom
+   row puts a generously-sized search bar on the left and the
+   compact filters + "New task" button on the right.
+   ============================================================ */
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.viewSwitcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid var(--pm-border-soft);
+  padding-bottom: 10px;
+}
+
+.toolbarFilters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toolbarFilters .searchField {
+  flex: 1 1 260px;
+  min-width: 200px;
+  max-width: 480px;
+}
+
+.toolbarRightOnly {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+/* Single-row toolbar variant (e.g. Team / Tags pages that
+   don't need view switching). */
+.toolbarSingle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+/* --- unified control sizing for inputs / selects / textareas / buttons ---
+   Everything below renders at exactly 34px tall via
+   box-sizing: border-box. line-height: 1 keeps text baselines
+   aligned across <input>, <select>, <button> and our custom
+   .searchField wrapper. */
+.input,
+.select,
+.textarea,
+.viewBtn,
+.primaryBtn,
+.ghostBtn,
+.dangerBtn {
+  font-family: inherit;
+  font-size: 13px;
+  border-radius: var(--pm-radius);
+  box-sizing: border-box;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.input,
+.select {
+  padding: 0 10px;
+  height: var(--pm-control-height);
+  border: 1px solid var(--pm-border);
+  background: white;
+  color: var(--pm-text);
+  margin: 0;
+}
+
+.select { padding-right: 28px; }
+
+.textarea {
+  padding: 8px 10px;
+  border: 1px solid var(--pm-border);
+  background: white;
+  color: var(--pm-text);
+  resize: vertical;
+  min-height: 88px;
+  line-height: 1.45;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--pm-primary);
+  box-shadow: 0 0 0 2px rgba(69, 112, 182, 0.18);
+}
+
+.viewBtn,
+.primaryBtn,
+.ghostBtn,
+.dangerBtn {
+  height: var(--pm-control-height);
+  padding: 0 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.viewBtn {
+  background: white;
+  border: 1px solid var(--pm-border);
+  color: #374151;
+}
+.viewBtn.active {
+  background: var(--pm-primary);
+  color: white;
+  border-color: var(--pm-primary);
+}
+.viewBtn:hover:not(.active) { background: #f3f4f6; }
+
+.primaryBtn {
+  background: var(--pm-primary);
+  color: white;
+  border: 1px solid var(--pm-primary);
+}
+.primaryBtn:hover { background: var(--pm-primary-dark); border-color: var(--pm-primary-dark); }
+.primaryBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ghostBtn {
+  background: white;
+  color: #374151;
+  border: 1px solid var(--pm-border);
+}
+.ghostBtn:hover { background: #f3f4f6; }
+
+.dangerBtn {
+  background: white;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+.dangerBtn:hover { background: #fef2f2; }
+
+/* Small variant for inline "+ Tag" / "+ Add" chips that sit
+   alongside badges. Keeps the row visually balanced without
+   shrinking the main controls. */
+.chipBtn {
+  font-family: inherit;
+  font-size: 11px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: white;
+  color: #374151;
+  border: 1px dashed var(--pm-border);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+.chipBtn:hover { color: var(--pm-primary); border-color: var(--pm-primary); }
+
+/* --- shared search field (used in toolbars + My Tasks) ---
+   box-sizing: border-box keeps the 1px border *inside* the
+   34px envelope, so the search bar lines up pixel-for-pixel
+   with the selects and buttons next to it. */
+.searchField {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border: 1px solid var(--pm-border);
+  border-radius: var(--pm-radius);
+  padding: 0 12px;
+  height: var(--pm-control-height);
+  box-sizing: border-box;
+  line-height: 1;
+}
+
+.searchField svg { color: #9ca3af; font-size: 12px; flex-shrink: 0; }
+
+.searchField input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--pm-text);
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  line-height: 1;
+}
+
+.searchField:focus-within {
+  border-color: var(--pm-primary);
+  box-shadow: 0 0 0 2px rgba(69, 112, 182, 0.18);
+}
+
+/* ============================================================
+   Modal
+   ============================================================ */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.modalWindow {
+  background: white;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 920px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--pm-border-soft);
+  gap: 10px;
+}
+
+.modalTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.modalTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.modalCloseBtn {
+  background: transparent;
+  border: none;
+  color: var(--pm-muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.modalCloseBtn:hover { background: #f3f4f6; }
+
+/* Body grid: title input spans the full width up top, then the
+   meta sidebar appears beside the description on wide screens
+   and collapses below it on narrow screens. */
+.modalBody {
+  padding: 18px 20px;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 1fr);
+  gap: 22px;
+}
+
+@media (max-width: 760px) {
+  .modalBody { grid-template-columns: 1fr; }
+}
+
+.modalSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.modalField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.modalRow2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.modalLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--pm-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.titleInput {
+  font-size: 18px;
+  font-weight: 700;
+  padding: 8px 0;
+  border: none;
+  border-bottom: 2px solid var(--pm-border-soft);
+  outline: none;
+  color: #111827;
+  width: 100%;
+  background: transparent;
+  font-family: inherit;
+}
+
+.titleInput:focus { border-color: var(--pm-primary); }
+
+/* A horizontal row that holds badge-style chips + a tiny "+ Add"
+   button. Wraps cleanly so badges never overlap. */
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  min-height: 34px;
+  padding: 4px 6px;
+  border: 1px solid var(--pm-border-soft);
+  border-radius: var(--pm-radius);
+  background: #f9fafb;
+  box-sizing: border-box;
+}
+
+.chipRow:empty::before {
+  content: "—";
+  color: #9ca3af;
+  font-size: 12px;
+  padding: 0 6px;
+}
+
+/* Wrapper that anchors a popover. Required so position:absolute
+   children align next to the trigger. */
+.popoverAnchor { position: relative; display: inline-block; }
+
+.commentList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.commentRow { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; }
+
+.commentBubble {
+  background: #f4f6f9;
+  border-radius: 10px;
+  padding: 6px 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.commentMeta {
+  font-size: 10px;
+  color: var(--pm-muted);
+  margin-bottom: 2px;
+}
+
+.commentForm { display: flex; gap: 8px; }
+.commentForm .input { flex: 1; min-width: 0; }
+
+.modalFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid var(--pm-border-soft);
+  background: #f9fafb;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.modalFooterRight { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.warningBanner,
+.errorBanner {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0 20px 12px;
+}
+.warningBanner { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+.errorBanner   { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+.successBanner { background: #ecfdf5; border: 1px solid #bbf7d0; color: #065f46; padding: 8px 10px; border-radius: 8px; font-size: 12px; }
+
+/* --- calendar --- */
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.calendarMonth { font-size: 14px; font-weight: 700; color: #111827; }
+
+.calendarGrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+
+.calendarDow {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--pm-muted);
+  text-transform: uppercase;
+  padding: 4px 6px;
+  letter-spacing: 0.04em;
+}
+
+.calendarCell {
+  background: #f9fafb;
+  border: 1px solid var(--pm-border-soft);
+  border-radius: 8px;
+  min-height: 92px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+.calendarCell.today { border-color: var(--pm-primary); background: var(--pm-accent); }
+.calendarCell.other { opacity: 0.5; }
+
+.calendarDay { font-size: 11px; font-weight: 700; color: #374151; }
+
+.calendarChip {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--pm-accent);
+  color: #1e3a8a;
+  border-left: 3px solid var(--pm-primary);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- workload heatmap --- */
+.heatmapWrap { overflow-x: auto; }
+
+.heatmap { display: grid; gap: 4px; min-width: max-content; }
+
+.heatmapRow { display: flex; gap: 4px; align-items: center; }
+
+.heatmapCell {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: #374151;
+  border: 1px solid var(--pm-border-soft);
+  flex-shrink: 0;
+}
+
+.heatmapName {
+  min-width: 160px;
+  width: 160px;
+  font-size: 12px;
+  color: #374151;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.heatmapLegend {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--pm-muted);
+  flex-wrap: wrap;
+}
+
+/* --- gantt --- */
+.ganttWrapper {
+  border: 1px solid var(--pm-border-soft);
+  border-radius: var(--pm-radius-lg);
+  background: white;
+  overflow: auto;
+}
+
+/* --- data table --- */
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.dataTable th {
+  text-align: left;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--pm-border-soft);
+  background: #f9fafb;
+  font-size: 11px;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dataTable td {
+  padding: 10px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.dataTable tr:hover td { background: #f9fafb; cursor: pointer; }
+
+/* --- insights cards --- */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.kpiCard {
+  background: white;
+  border: 1px solid var(--pm-border-soft);
+  border-radius: var(--pm-radius-lg);
+  padding: 12px 14px;
+}
+
+.kpiLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--pm-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kpiValue { font-size: 24px; font-weight: 800; color: #111827; margin-top: 4px; }
+.kpiHint  { font-size: 11px; color: var(--pm-muted); margin-top: 2px; }
+
+.chartGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .chartGrid { grid-template-columns: 1fr; } }
+
+.chartCard {
+  background: white;
+  border: 1px solid var(--pm-border-soft);
+  border-radius: var(--pm-radius-lg);
+  padding: 14px;
+}
+
+.chartTitle { font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+
+/* --- team panel --- */
+.memberRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+}
+
+.memberCore { display: flex; align-items: center; gap: 12px; flex: 1 1 240px; min-width: 0; }
+.memberInfo { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.memberName { font-weight: 600; color: #111827; font-size: 13px; word-break: break-word; }
+.memberMeta { font-size: 11px; color: var(--pm-muted); word-break: break-word; }
+
+.memberStats { display: flex; gap: 18px; align-items: center; }
+
+.memberStat { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 48px; }
+.memberStatNum { font-size: 16px; font-weight: 800; color: #1f2937; }
+.memberStatLabel { font-size: 10px; color: var(--pm-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.capacityRow { display: flex; align-items: center; gap: 8px; min-width: 0; }
+
+.capacityBar {
+  background: #e5e7eb;
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+  flex: 1;
+  min-width: 80px;
+}
+.capacityFill { height: 100%; background: var(--pm-primary); border-radius: 999px; }
+.capacityFill.overloaded { background: #dc2626; }
+
+.memberActions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+/* --- empty state --- */
+.emptyState {
+  padding: 28px;
+  text-align: center;
+  color: var(--pm-muted);
+  background: #f9fafb;
+  border: 1px dashed var(--pm-border);
+  border-radius: var(--pm-radius-lg);
+  font-size: 13px;
+}
+
+/* --- popover (assign menu / tag picker / dependency picker) --- */
+.popover {
+  position: absolute;
+  z-index: 60;
+  background: white;
+  border: 1px solid var(--pm-border-soft);
+  border-radius: var(--pm-radius-lg);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+  padding: 6px;
+  min-width: 240px;
+  max-width: 320px;
+  max-height: 280px;
+  overflow: auto;
+  top: calc(100% + 6px);
+  left: 0;
+}
+
+.popover.right { left: auto; right: 0; }
+
+.popoverItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--pm-text);
+}
+
+.popoverItem:hover { background: var(--pm-accent); }
+
+.popoverItem.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.popoverEmpty {
+  padding: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--pm-muted);
+}
+
+/* --- section card used to box up Team / Tags / list views --- */
+.sectionCard {
+  background: white;
+  border: 1px solid var(--pm-border-soft);
+  border-radius: var(--pm-radius-lg);
+  overflow: hidden;
+}
+
+/* --- workload column on the project board --- */
+.workloadPanel {
+  margin-top: 16px;
+  background: white;
+  border: 1px solid var(--pm-border-soft);
+  border-radius: var(--pm-radius-lg);
+  padding: 12px;
+}
+
+.workloadPanelTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+/* --- per-day workload table (My Workload) --- */
+.dayChip {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: var(--pm-accent);
+  color: #1e3a8a;
+  border-radius: 6px;
+  border: 1px solid #c7d2fe;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.dayChip span { opacity: 0.6; }

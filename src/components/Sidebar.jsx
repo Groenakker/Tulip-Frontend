@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import './Sidebar.css';
-import { FaWallet, FaRedo, FaHome, FaCog, FaQuestionCircle, FaChevronDown, FaShippingFast, FaWarehouse, FaFile, FaHistory } from 'react-icons/fa';
+import { FaWallet, FaRedo, FaHome, FaCog, FaQuestionCircle, FaChevronDown, FaShippingFast, FaWarehouse, FaFile, FaHistory, FaSearch, FaBookOpen, FaUpload, FaTasks, FaCalendarAlt, FaChartBar, FaBriefcase } from 'react-icons/fa';
 import { GoSidebarExpand } from "react-icons/go";
-import { GiRolledCloth, GiTestTubes } from "react-icons/gi";
+import { GiRolledCloth, GiTestTubes, GiMolecule } from "react-icons/gi";
 import { RiHexagonFill } from "react-icons/ri";
 import { IoLibrary, IoBusiness } from "react-icons/io5";
 import { FaDiagramProject, FaFileWaveform } from "react-icons/fa6";
@@ -19,10 +19,22 @@ import toast from '../components/Toaster/toast';
 
 const menuItems = [
   { label: 'Dashboard', icon: <FaHome />, path: '/Dashboard', permission: { module: 'Dashboard', actions: 'read' } },
-  { label: 'Material Research', icon: <GiRolledCloth />, path: '/MaterialResearch', permission: { module: 'Material Research', actions: 'read' } },
-  { label: 'Constituent Research', icon: <RiHexagonFill />, path: '/ConstituentResearch', permission: { module: 'Constituent Research', actions: 'read' } },
   { label: 'Business Partner', icon: <IoBusiness />, path: '/BuisnessPartner', permission: { module: 'Business Partners', actions: 'read' } },
   { label: 'Projects', icon: <FaDiagramProject />, path: '/Projects', permission: { module: 'Projects', actions: 'read' } },
+  // Project Management - personal workspace. Always visible to
+  // authenticated users; the pages themselves only show data
+  // for the signed-in user so no per-module permission gate is
+  // needed. Sits right under Projects since it's the natural
+  // companion to the project-level Kanban / Gantt views.
+  {
+    label: 'My Workspace',
+    icon: <FaBriefcase />,
+    submenu: [
+      { name: 'My Tasks',    menuIcon: <FaTasks />,        path: '/MyWorkspace/Tasks' },
+      { name: 'My Calendar', menuIcon: <FaCalendarAlt />,  path: '/MyWorkspace/Calendar' },
+      { name: 'My Workload', menuIcon: <FaChartBar />,     path: '/MyWorkspace/Workload' },
+    ],
+  },
   { label: 'Document Management', icon: <FaFile />, path: '/DocumentManagement', permission: { module: 'Document Management', actions: 'read' } },
   {
     label: 'Testing Management',
@@ -37,6 +49,28 @@ const menuItems = [
       { name: 'Reports', menuIcon: <BiSolidReport />, path: '/Reports', permission: { module: 'Reports', actions: 'read' } },
       { name: 'Test Codes', menuIcon: <TbReportAnalytics />, path: '/TestCodes', permission: { module: 'Test Codes', actions: 'read' } },
       { name: 'Instance', menuIcon: <GiTestTubes />, path: '/Instance', permission: { module: 'Instances', actions: 'read' } },
+    ],
+  },
+  // Toxicology workspace: an entire dropdown that mirrors the internal
+  // navigation of the ported toxintelligence-mern app. We don't add a
+  // `permission` key for now so the section is visible to every
+  // authenticated user — matches the open-by-default backend wiring in
+  // Tulip-Backend/src/tox/. To gate access later, add e.g.
+  // `permission: { module: 'Toxicology', actions: 'read' }` and seed
+  // the matching Permission document.
+  {
+    label: 'ToxIntelligence',
+    icon: <GiMolecule />,
+    submenu: [
+      { name: 'Dashboard',         menuIcon: <FaHome />,           path: '/Toxicology' },
+      { name: 'Compound Search',   menuIcon: <FaSearch />,         path: '/Toxicology/Search' },
+      { name: 'Compound Library',  menuIcon: <IoLibrary />,        path: '/Toxicology/Library' },
+      { name: 'Compound Families', menuIcon: <RiHexagonFill />,    path: '/Toxicology/Families' },
+      { name: 'TRA Projects',      menuIcon: <FaDiagramProject />, path: '/Toxicology/TRA' },
+      { name: 'Chemistry Import',  menuIcon: <FaUpload />,         path: '/Toxicology/Import' },
+      { name: 'Literature',        menuIcon: <FaBookOpen />,       path: '/Toxicology/Literature' },
+      { name: 'Reports',           menuIcon: <BiSolidReport />,    path: '/Toxicology/Reports' },
+      { name: 'Family Governance', menuIcon: <FaCog />,            path: '/Toxicology/Governance' },
     ],
   },
 ];
