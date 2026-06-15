@@ -3,6 +3,7 @@ import styles from './InstanceListModal.module.css';
 import { FaSave } from 'react-icons/fa';
 import { LuPrinter } from "react-icons/lu";
 import JsBarcode from 'jsbarcode';
+import OpenRecordLink from '../RecordLink/OpenRecordLink';
 
 const InstanceList = ({ onClose, sample, receivingLine }) => {
     const [instances, setInstances] = useState([]);
@@ -597,7 +598,14 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
                                 
                                 return (
                                     <tr key={instance._id}>
-                                        <td>{instance.instanceCode}</td>
+                                        <td>
+                                            <OpenRecordLink
+                                                to={instance._id ? `/Instance/${instance._id}` : ''}
+                                                title="Open instance detail"
+                                            >
+                                                {instance.instanceCode}
+                                            </OpenRecordLink>
+                                        </td>
                                         <td>{instance.lotNo}</td>
                                         <td>
                                             <span className={`${styles.statusBadge} ${styles[instance.status.toLowerCase().replace(' ', '')]}`}>

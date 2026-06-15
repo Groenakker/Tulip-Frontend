@@ -167,6 +167,7 @@ export default function ShippingLog() {
                   </th>
                 )}
                 <SortableTh sortProps={getSortProps("shippingCode")}>Shipping Code</SortableTh>
+                <SortableTh sortProps={getSortProps("recordStatus")}>Record</SortableTh>
                 <SortableTh sortProps={getSortProps("shipmentDestination")}>Destination</SortableTh>
                 <SortableTh sortProps={getSortProps("projectDesc")}>Project</SortableTh>
                 <SortableTh sortProps={getSortProps("carrier")}>Carrier</SortableTh>
@@ -176,9 +177,9 @@ export default function ShippingLog() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={canDelete ? "7" : "6"} style={{textAlign:'center',padding:'20px'}}>Loading...</td></tr>
+                <tr><td colSpan={canDelete ? "8" : "7"} style={{textAlign:'center',padding:'20px'}}>Loading...</td></tr>
               ) : pagedData.length === 0 ? (
-                <tr><td colSpan={canDelete ? "7" : "6"} style={{textAlign:'center',padding:'20px'}}>No shipping records</td></tr>
+                <tr><td colSpan={canDelete ? "8" : "7"} style={{textAlign:'center',padding:'20px'}}>No shipping records</td></tr>
               ) : (
                 pagedData.map((shipping) => {
                   const isSelected = selection.isSelected(shipping._id);
@@ -207,6 +208,22 @@ export default function ShippingLog() {
                         </td>
                       )}
                       <td>{shipping.shippingCode || '-'}</td>
+                      <td>
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            padding: '2px 10px',
+                            borderRadius: 999,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            background: shipping.recordStatus === 'Closed' ? '#fef3f2' : '#ecfdf3',
+                            color: shipping.recordStatus === 'Closed' ? '#b42318' : '#027a48',
+                          }}
+                        >
+                          {shipping.recordStatus === 'Closed' ? 'Closed' : 'Open'}
+                        </span>
+                      </td>
                       <td>{shipping.shipmentDestination || '-'}</td>
                       <td>{shipping.projectDesc || shipping.projectID || '-'}</td>
                       <td>{shipping.carrier ? shipping.carrier.toUpperCase() : '-'}</td>

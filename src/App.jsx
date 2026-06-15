@@ -61,6 +61,28 @@ import ImportWizard from "./pages/Toxicology/Import/ImportWizard";
 import Literature from "./pages/Toxicology/Literature/Literature";
 import ToxReports from "./pages/Toxicology/Reports/Reports";
 import ToxGovernance from "./pages/Toxicology/Governance/Governance";
+// Customer Portal
+import { CustomerAuthProvider } from "./context/CustomerAuthContext";
+import CustomerLayout from "./pages/CustomerPortal/Layout";
+import CustomerLogin from "./pages/CustomerPortal/Login";
+import CustomerDashboard from "./pages/CustomerPortal/Dashboard";
+import CustomerProjects from "./pages/CustomerPortal/Projects";
+import CustomerProjectDetail from "./pages/CustomerPortal/ProjectDetail";
+import CustomerSamples from "./pages/CustomerPortal/Samples";
+import CustomerSampleDetail from "./pages/CustomerPortal/SampleDetail";
+import CustomerSampleNew from "./pages/CustomerPortal/SampleNew";
+import CustomerDocuments from "./pages/CustomerPortal/Documents";
+import PortalInviteSignup from "./pages/CustomerPortal/InviteSignup";
+// Vendor Portal
+import { VendorAuthProvider } from "./context/VendorAuthContext";
+import VendorLayout from "./pages/VendorPortal/Layout";
+import VendorLogin from "./pages/VendorPortal/Login";
+import VendorDashboard from "./pages/VendorPortal/Dashboard";
+import VendorOrders from "./pages/VendorPortal/Orders";
+import VendorOrderDetail from "./pages/VendorPortal/OrderDetail";
+// Internal Test Order pages
+import TestOrderList from "./pages/Testing/OrderList";
+import TestOrderDetail from "./pages/Testing/OrderDetail";
 // import Projects from './pages/Projects';
 // import ShippingLog from './pages/ShippingLog';
 // import RecieveLog from './pages/RecieveLog';
@@ -84,6 +106,10 @@ function AppContent() {
   const { isAuthenticated, hasPermission, permissionsLoading } = useAuth();
   const location = useLocation();
   const isApprovalPage = location.pathname.startsWith('/approval/') || location.pathname.startsWith('/verify-otp/');
+  // Customer / Vendor portals own their full chrome (own sidebar, own
+  // auth context) so we hide the internal sidebar + main wrapper
+  // whenever the URL is inside one of those portals.
+  const isPortalPage = location.pathname.startsWith('/portal') || location.pathname.startsWith('/vendor');
   const defaultAuthedPath = React.useMemo(() => {
     if (permissionsLoading) {
       return "/BuisnessPartner";
@@ -109,9 +135,52 @@ function AppContent() {
 
   return (
     <>
-      {!isApprovalPage && isAuthenticated && <Sidebar />}
-      <main className={!isApprovalPage && isAuthenticated ? "mainContentArea" : ""}>
+      {!isApprovalPage && !isPortalPage && isAuthenticated && <Sidebar />}
+      <main className={!isApprovalPage && !isPortalPage && isAuthenticated ? "mainContentArea" : ""}>
         <Routes>
+          {/* ---------------- Customer Portal ---------------- */}
+          <Route path="/portal/login" element={
+            <CustomerAuthProvider><CustomerLogin /></CustomerAuthProvider>
+          } />
+          <Route path="/portal/invite-signup" element={<PortalInviteSignup kind="customer" />} />
+          <Route path="/portal" element={
+            <CustomerAuthProvider><CustomerLayout /></CustomerAuthProvider>
+          }>
+            <Route index element={<Navigate to="/portal/dashboard" replace />} />
+            <Route path="dashboard" element={<CustomerDashboard />} />
+            <Route path="projects" element={<CustomerProjects />} />
+            <Route path="projects/:id" element={<CustomerProjectDetail />} />
+            <Route path="samples" element={<CustomerSamples />} />
+            <Route path="samples/new" element={<CustomerSampleNew />} />
+            <Route path="samples/:id" element={<CustomerSampleDetail />} />
+            <Route path="documents" element={<CustomerDocuments />} />
+          </Route>
+
+          {/* ---------------- Vendor Portal ---------------- */}
+          <Route path="/vendor/login" element={
+            <VendorAuthProvider><VendorLogin /></VendorAuthProvider>
+          } />
+          <Route path="/vendor/invite-signup" element={<PortalInviteSignup kind="vendor" />} />
+          <Route path="/vendor" element={
+            <VendorAuthProvider><VendorLayout /></VendorAuthProvider>
+          }>
+            <Route index element={<Navigate to="/vendor/dashboard" replace />} />
+            <Route path="dashboard" element={<VendorDashboard />} />
+            <Route path="orders" element={<VendorOrders />} />
+            <Route path="orders/:id" element={<VendorOrderDetail />} />
+          </Route>
+
+          {/* ---------------- Internal Test Orders ---------------- */}
+          <Route path="/Testing/Orders" element={
+            <ProtectedRoute module="Testing"><TestOrderList /></ProtectedRoute>
+          } />
+          <Route path="/Testing/Orders/:id" element={
+            <ProtectedRoute module="Testing"><TestOrderDetail /></ProtectedRoute>
+          } />
+          <Route path="/Testing/Orders/add" element={
+            <ProtectedRoute module="Testing"><TestOrderDetail /></ProtectedRoute>
+          } />
+
           {/* OTP Verification - Public route (no authentication required) */}
           <Route
             path="/verify-otp/:token"

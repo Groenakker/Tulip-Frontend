@@ -12,13 +12,16 @@ import {
   FaImage,
   FaTrash,
   FaMapMarkerAlt,
+  FaUserTie,
+  FaTruckLoading,
 } from "react-icons/fa";
 import WhiteIsland from "../../components/Whiteisland";
 import styles from "./Settings.module.css";
 import UserEditModal from "../../components/modals/UserEditModal";
 import { useAuth } from "../../context/AuthContext";
 import Modal from "../../components/Modal";
-import Header from "../../components/Header"; 
+import Header from "../../components/Header";
+import PortalLoginsTab from "./PortalLoginsTab"; 
 const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 const DEFAULT_COMPANY_IMAGE =
   "https://via.placeholder.com/120x120.png?text=Company";
@@ -26,6 +29,8 @@ const DEFAULT_COMPANY_IMAGE =
 const menuOptions = [
   { id: "users", label: "Users", icon: <FaUsers /> },
   { id: "roles", label: "Roles & Permissions", icon: <FaShieldAlt /> },
+  { id: "customer-logins", label: "Customer Logins", icon: <FaUserTie /> },
+  { id: "vendor-logins", label: "Vendor Logins", icon: <FaTruckLoading /> },
   { id: "company", label: "Company", icon: <FaBuilding /> },
   { id: "notifications", label: "Notifications", icon: <FaBell /> },
   { id: "system", label: "System Configuration", icon: <FaCog /> },
@@ -1251,7 +1256,9 @@ export default function Settings() {
     setPermissionForm({ ...permissionForm, availableActions: actions });
   };
 
-  const availableActionsList = ["read", "write", "update", "delete"];
+  // "reopen" only applies to modules that expose it (Shipping/Receiving) —
+  // for other modules the checkbox column simply shows as unavailable.
+  const availableActionsList = ["read", "write", "update", "delete", "reopen"];
 
   const handleShippoFieldChange = (field) => (event) => {
     const { value } = event.target;
@@ -1540,6 +1547,7 @@ export default function Settings() {
                           <th style={{textAlign: 'center'}} >Write</th>
                           <th style={{textAlign: 'center'}} >Update</th>
                           <th style={{textAlign: 'center'}} >Delete</th>
+                          <th style={{textAlign: 'center'}} >Reopen</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2017,6 +2025,10 @@ export default function Settings() {
             )}
           </>
         );
+      case "customer-logins":
+        return <PortalLoginsTab userType="customer" />;
+      case "vendor-logins":
+        return <PortalLoginsTab userType="vendor" />;
       default:
         return null;
     }

@@ -4,6 +4,7 @@ import styles from "./InstanceDetail.module.css";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaSave, FaTrash } from "react-icons/fa";
 import Header from "../../../components/Header";
+import OpenRecordLink from "../../../components/RecordLink/OpenRecordLink";
 export default function InstanceDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -123,7 +124,16 @@ export default function InstanceDetail() {
                     />
                   </div>
                   <div className={styles.info} style={{ width: "50%" }}>
-                    <div className={styles.infoDetail}>Sample Code</div>
+                    <div className={styles.infoDetail}>
+                      Sample Code
+                      {(instance.idSample?._id || instance.idSample) && (
+                        <OpenRecordLink
+                          to={`/SampleSubmission/SSDetail/${instance.idSample?._id || instance.idSample}`}
+                          title="Open sample submission"
+                          style={{ marginLeft: 6 }}
+                        />
+                      )}
+                    </div>
                     <input
                       name="sampleCode"
                       value={instance.sampleCode || ""}
@@ -224,7 +234,16 @@ export default function InstanceDetail() {
                           </span>
                         </td>
                         <td>
-                          {movement.warehouseId?.warehouseID || movement.warehouseID || movement.location || "-"}
+                          {movement.warehouseId?._id ? (
+                            <OpenRecordLink
+                              to={`/Warehouse/${movement.warehouseId._id}`}
+                              title="Open warehouse"
+                            >
+                              {movement.warehouseId.warehouseID || movement.warehouseID || movement.location || "-"}
+                            </OpenRecordLink>
+                          ) : (
+                            movement.warehouseId?.warehouseID || movement.warehouseID || movement.location || "-"
+                          )}
                           {movement.warehouseId?.address && (
                             <div style={{ fontSize: "11px", color: "#666" }}>
                               {movement.warehouseId.address}
@@ -234,7 +253,15 @@ export default function InstanceDetail() {
                         <td>
                           {movement.receivingId && (
                             <div>
-                              <div>Receiving: {movement.receivingId.receivingCode}</div>
+                              <div>
+                                Receiving:{" "}
+                                <OpenRecordLink
+                                  to={movement.receivingId._id ? `/RecieveLog/RecieveDetails/${movement.receivingId._id}` : ""}
+                                  title="Open receiving log"
+                                >
+                                  {movement.receivingId.receivingCode}
+                                </OpenRecordLink>
+                              </div>
                               <div style={{ fontSize: "11px", color: "#666" }}>
                                 {movement.receivingId.origin} → {movement.receivingId.destination}
                               </div>
@@ -242,7 +269,15 @@ export default function InstanceDetail() {
                           )}
                           {movement.shippingId && (
                             <div>
-                              <div>Shipping: {movement.shippingId.shippingCode}</div>
+                              <div>
+                                Shipping:{" "}
+                                <OpenRecordLink
+                                  to={movement.shippingId._id ? `/ShippingLog/${movement.shippingId._id}` : ""}
+                                  title="Open shipping log"
+                                >
+                                  {movement.shippingId.shippingCode}
+                                </OpenRecordLink>
+                              </div>
                               <div style={{ fontSize: "11px", color: "#666" }}>
                                 {movement.shippingId.shipmentOrigin} → {movement.shippingId.shipmentDestination}
                               </div>

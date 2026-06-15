@@ -4,7 +4,16 @@ import {
   FaLink, FaUserPlus, FaTag,
 } from "react-icons/fa";
 import styles from "./pm.module.css";
-import { pm, STATUSES, PRIORITIES, fmtDateLong } from "./pmApi";
+import {
+  pm,
+  STATUSES,
+  PRIORITIES,
+  WORK_ITEM_TYPES,
+  WORK_ITEM_TYPE_LABEL,
+  WORK_ITEM_TYPE_COLOR,
+  ALLOWED_PARENT_TYPE,
+  fmtDateLong,
+} from "./pmApi";
 import { StatusBadge, PriorityBadge, TagBadge } from "./Badges";
 import Avatar, { AvatarStack } from "./Avatar";
 import toast from "../Toaster/toast";
@@ -122,20 +131,34 @@ export default function TaskModal({ task, project, allTasks = [], onClose, onSav
   const removeDep = (id) =>
     set({ dependencies: draft.dependencies.filter((d) => String(d) !== String(id)) });
 
-  const buildPayload = () => ({
-    title: draft.title.trim(),
-    description: draft.description,
-    project: project._id,
-    status: draft.status,
-    priority: draft.priority,
-    tags: draft.tags,
-    assignees: draft.assignees.map((a) => ({ user: a.user })),
-    startDate: draft.startDate || null,
-    dueDate: draft.dueDate || null,
-    estimatedHours: Number(draft.estimatedHours) || 0,
-    actualHours: Number(draft.actualHours) || 0,
-    dependencies: draft.dependencies,
-  });
+  const buildPayload = () => {
+    const type = draft.workItemType || "task";
+    const isTask = type === "task";
+    return {
+      title: draft.title.trim(),
+      description: draft.description,
+      project: project._id,
+      // Epics & stories derive their status from children — the
+      // backend ignores any incoming `status` for containers but
+      // we omit it on the wire as well to keep payloads honest.
+      ...(isTask ? { status: draft.status } : {}),
+      priority: draft.priority,
+      tags: draft.tags,
+      assignees: draft.assignees.map((a) => ({ user: a.user })),
+      startDate: draft.startDate || null,
+      dueDate: draft.dueDate || null,
+      // Hours / dependencies only carry meaning for actual tasks;
+      // strip them on epics & stories so old values can't leak in
+      // after a type change.
+      estimatedHours: isTask ? Number(draft.estimatedHours) || 0 : 0,
+      actualHours: isTask ? Number(draft.actualHours) || 0 : 0,
+      dependencies: isTask ? draft.dependencies : [],
+      workItemType: type,
+      // Empty string means "no parent" — the backend handles the
+      // unset for us.
+      parent: draft.parent || null,
+    };
+  };
 
   const save = async ({ force = false } = {}) => {
     if (!draft.title.trim()) { setError("Title is required"); return; }
@@ -192,7 +215,15 @@ export default function TaskModal({ task, project, allTasks = [], onClose, onSav
       <div className={styles.modalWindow} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <div className={styles.modalTitleRow}>
-            <span className={styles.modalTitle}>{isNew ? "New Task" : "Edit Task"}</span>
+            <span
+              className={styles.modalTitle}
+              style={{
+                color: WORK_ITEM_TYPE_COLOR[draft.workItemType] || undefined,
+              }}
+            >
+              {isNew ? "New " : "Edit "}
+              {WORK_ITEM_TYPE_LABEL[draft.workItemType] || "Task"}
+            </span>
             <StatusBadge status={draft.status} />
             <PriorityBadge priority={draft.priority} />
           </div>
@@ -273,7 +304,11 @@ export default function TaskModal({ task, project, allTasks = [], onClose, onSav
               </div>
             </div>
 
-            {/* Dependencies */}
+            {/* Dependencies — only meaningful for tasks. Epics
+                and stories are containers, so we hide the
+                predecessor picker to keep the modal focused on
+                what actually applies to them. */}
+            {draft.workItemType === "task" && (
             <div className={styles.modalField}>
               <label className={styles.modalLabel}>Depends on</label>
               <div className={styles.chipRow}>
@@ -335,6 +370,7 @@ export default function TaskModal({ task, project, allTasks = [], onClose, onSav
                 </span>
               </div>
             </div>
+            )}
 
             {/* Comments (only on existing tasks) */}
             {!isNew && (
@@ -377,14 +413,89 @@ export default function TaskModal({ task, project, allTasks = [], onClose, onSav
           <div className={styles.modalSection}>
             <div className={styles.modalRow2}>
               <div className={styles.modalField}>
-                <label className={styles.modalLabel}>Status</label>
+                <label className={styles.modalLabel}>Type</label>
                 <select
                   className={styles.select}
-                  value={draft.status}
-                  onChange={(e) => set({ status: e.target.value })}
+                  value={draft.workItemType}
+                  onChange={(e) => {
+                    const nextType = e.target.value;
+                    // Clear an incompatible parent when the type
+                    // changes so the user notices they need to
+                    // pick one of the new allowed parents.
+                    const allowedParent = ALLOWED_PARENT_TYPE[nextType];
+                    const parentTask = draft.parent ? taskById.get(String(draft.parent)) : null;
+                    const parentOk =
+                      !draft.parent ||
+                      (allowedParent && parentTask?.workItemType === allowedParent);
+                    set({
+                      workItemType: nextType,
+                      parent: parentOk ? draft.parent : "",
+                    });
+                  }}
+                  style={{ color: WORK_ITEM_TYPE_COLOR[draft.workItemType] }}
                 >
-                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  {WORK_ITEM_TYPES.map((t) => (
+                    <option key={t} value={t}>{WORK_ITEM_TYPE_LABEL[t]}</option>
+                  ))}
                 </select>
+              </div>
+              <div className={styles.modalField}>
+                <label className={styles.modalLabel}>Parent</label>
+                {(() => {
+                  const allowedParentType = ALLOWED_PARENT_TYPE[draft.workItemType];
+                  const candidates = (allTasks || []).filter(
+                    (t) =>
+                      t.workItemType === allowedParentType &&
+                      String(t._id) !== String(task?._id || "")
+                  );
+                  return (
+                    <select
+                      className={styles.select}
+                      value={draft.parent || ""}
+                      onChange={(e) => set({ parent: e.target.value })}
+                      disabled={!allowedParentType}
+                      title={
+                        allowedParentType
+                          ? `Pick a ${allowedParentType} as parent`
+                          : "Epics cannot have a parent"
+                      }
+                    >
+                      <option value="">
+                        {allowedParentType
+                          ? `No parent (${WORK_ITEM_TYPE_LABEL[draft.workItemType]} at root)`
+                          : "—"}
+                      </option>
+                      {candidates.map((c) => (
+                        <option key={c._id} value={c._id}>{c.title}</option>
+                      ))}
+                    </select>
+                  );
+                })()}
+              </div>
+            </div>
+
+            <div className={styles.modalRow2}>
+              <div className={styles.modalField}>
+                <label className={styles.modalLabel}>Status</label>
+                {draft.workItemType === "task" ? (
+                  <select
+                    className={styles.select}
+                    value={draft.status}
+                    onChange={(e) => set({ status: e.target.value })}
+                  >
+                    {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                ) : (
+                  <div
+                    className={styles.derivedStatusBox}
+                    title={`A ${draft.workItemType}'s status is rolled up from its ${draft.workItemType === "epic" ? "stories" : "tasks"}.`}
+                  >
+                    <StatusBadge status={draft.status} />
+                    <span className={styles.memberMeta}>
+                      Auto from {draft.workItemType === "epic" ? "stories" : "tasks"}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className={styles.modalField}>
                 <label className={styles.modalLabel}>Priority</label>
@@ -419,30 +530,35 @@ export default function TaskModal({ task, project, allTasks = [], onClose, onSav
               </div>
             </div>
 
-            <div className={styles.modalRow2}>
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>Estimate (h)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  className={styles.input}
-                  value={draft.estimatedHours}
-                  onChange={(e) => set({ estimatedHours: e.target.value })}
-                />
+            {/* Hours tracking only applies to tasks — epics and
+                stories roll up their child task hours instead of
+                holding their own estimate / logged values. */}
+            {draft.workItemType === "task" && (
+              <div className={styles.modalRow2}>
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>Estimate (h)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    className={styles.input}
+                    value={draft.estimatedHours}
+                    onChange={(e) => set({ estimatedHours: e.target.value })}
+                  />
+                </div>
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>Logged (h)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    className={styles.input}
+                    value={draft.actualHours}
+                    onChange={(e) => set({ actualHours: e.target.value })}
+                  />
+                </div>
               </div>
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>Logged (h)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  className={styles.input}
-                  value={draft.actualHours}
-                  onChange={(e) => set({ actualHours: e.target.value })}
-                />
-              </div>
-            </div>
+            )}
 
             <div className={styles.modalField}>
               <label className={styles.modalLabel}>Assignees</label>
@@ -574,5 +690,7 @@ function normaliseDraft(task) {
     estimatedHours: task?.estimatedHours ?? 4,
     actualHours: task?.actualHours ?? 0,
     dependencies: (task?.dependencies || []).map((d) => d?._id || d),
+    workItemType: task?.workItemType || "task",
+    parent: task?.parent ? (task.parent._id || task.parent) : "",
   };
 }

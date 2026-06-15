@@ -65,14 +65,16 @@ export default function Pdetail() {
     setLoadingRelated(true);
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}/related`
+        `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}/related`,
+        { credentials: "include" }
       );
       const data = await res.json();
       setRelated(data);
 
       // Also reload partner to get updated contacts
       const partnerRes = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}`
+        `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}`,
+        { credentials: "include" }
       );
       if (partnerRes.ok) {
         const partnerData = await partnerRes.json();
@@ -87,7 +89,9 @@ export default function Pdetail() {
 
   useEffect(() => {
     if (isEdit) {
-      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}`)
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${id}`, {
+        credentials: "include",
+      })
         .then((res) => res.json())
         .then((data) => setPartner(data))
         .catch((err) => console.error("Failed to fetch partner:", err));
@@ -290,11 +294,13 @@ export default function Pdetail() {
           { label: "Due Date", key: "due" },
         ],
         rows: projects.map((p) => ({
+          _recordId: p._id || "",
           id: p.projectID || "",
           desc: p.description || p.name || "",
           start: formatDate(p.startDate),
           due: formatDate(p.endDate),
         })),
+        onRowClick: (row) => navigate(`/Projects/ProjectDetails/${row._recordId}`),
       },
 
       Shipments: {
@@ -305,11 +311,30 @@ export default function Pdetail() {
           { label: "Delivery Date", key: "due" },
         ],
         rows: shipments.map((s) => ({
-          id: s._id || "",
+          _recordId: s._id || "",
+          id: s.shippingCode || s._id || "",
           desc: s.note || `${s.shipmentOrigin || ""} -> ${s.shipmentDestination || ""}`.trim(),
           start: formatDate(s.shipmentDate),
           due: formatDate(s.estimatedArrivalDate || s.estDate),
         })),
+        onRowClick: (row) => navigate(`/ShippingLog/${row._recordId}`),
+      },
+
+      Samples: {
+        columns: [
+          { label: "Sample Code", key: "id" },
+          { label: "Description", key: "desc" },
+          { label: "Status", key: "status" },
+          { label: "Created On", key: "start" },
+        ],
+        rows: samples.map((s) => ({
+          _recordId: s._id || "",
+          id: s.sampleCode || "",
+          desc: s.description || s.name || "",
+          status: s.status || "",
+          start: formatDate(s.createdAt || s.startDate),
+        })),
+        onRowClick: (row) => navigate(`/SampleSubmission/SSDetail/${row._recordId}`),
       },
 
       Reports: {
@@ -319,12 +344,6 @@ export default function Pdetail() {
           { label: "Created On", key: "start" },
           { label: "Approved On", key: "due" },
         ],
-        //rows: samples.map((s) => ({
-        //id: s._id || "",
-        //desc: s.description || s.name || "",
-        //start: formatDate(s.startDate),
-        //due: formatDate(s.endDate),
-        //})),
       },
 
       Contacts: {
@@ -415,6 +434,7 @@ export default function Pdetail() {
           const testCode = t.testCodeId || t;
           const relationshipId = t._id; // The relationship ID for deletion
           return {
+            _recordId: testCode?._id || "",
             id: testCode.code || t.code || "",
             desc: testCode.descriptionShort || t.descriptionShort || "",
             cate: testCode.category || t.category || "",
@@ -427,18 +447,22 @@ export default function Pdetail() {
                   display: "inline-flex",
                   float: "inline-end",
                 }}
-                onClick={() => handleDeleteTestCode(relationshipId || t._id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteTestCode(relationshipId || t._id);
+                }}
               >
                 <FaTrash />
               </button>
             ),
           };
         }),
+        onRowClick: (row) => navigate(`/TestCodes/TestCodesDetails/${row._recordId}`),
       };
     }
 
     return nextData;
-  }, [related, partner, canEditContacts, id]);
+  }, [related, partner, canEditContacts, id, navigate]);
 
   const [activeModal, setActiveModal] = useState(null);
   // When editing an existing contact this holds the contact object so the

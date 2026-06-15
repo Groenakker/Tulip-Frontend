@@ -48,6 +48,7 @@ const menuItems = [
       { name: 'Lab Studies', menuIcon: <GiTestTubes />, path: '/LabStudies', permission: { module: 'Lab Studies', actions: 'read' } },
       { name: 'Reports', menuIcon: <BiSolidReport />, path: '/Reports', permission: { module: 'Reports', actions: 'read' } },
       { name: 'Test Codes', menuIcon: <TbReportAnalytics />, path: '/TestCodes', permission: { module: 'Test Codes', actions: 'read' } },
+      { name: 'Test Orders', menuIcon: <BiSolidReport />, path: '/Testing/Orders', permission: { module: 'Testing', actions: 'read' } },
       { name: 'Instance', menuIcon: <GiTestTubes />, path: '/Instance', permission: { module: 'Instances', actions: 'read' } },
     ],
   },

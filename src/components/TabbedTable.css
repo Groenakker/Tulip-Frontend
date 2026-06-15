@@ -64,6 +64,15 @@
   background: #f4f4f4;
 }
 
+.rowClickable {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.rowClickable:hover {
+  background: #eef3fb;
+}
+
 .cell {
   padding: 4px 8px;
   font-size: 14px;

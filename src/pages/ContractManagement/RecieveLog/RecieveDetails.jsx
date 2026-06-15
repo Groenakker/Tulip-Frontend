@@ -11,10 +11,42 @@ import InstanceList from '../../../components/modals/InstanceListModal';
 import toast from '../../../components/Toaster/toast';
 import SignatureCanvas from 'react-signature-canvas';
 import Header from '../../../components/Header';
+import { useAuth } from '../../../context/AuthContext';
+import RecordStatusBar from '../../../components/RecordLifecycle/RecordStatusBar';
+import RecordHistoryModal from '../../../components/RecordLifecycle/RecordHistoryModal';
+import OpenRecordLink, { isObjectId } from '../../../components/RecordLink/OpenRecordLink';
 export default function RecieveDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
     const isEdit = Boolean(id);
+    const { hasPermission } = useAuth();
+    const canReopen = hasPermission('Receiving', 'reopen');
+
+    // Record lifecycle (close / reopen workflow). A closed record is
+    // read-only until reopened by a user with the "reopen" permission.
+    const [recordMeta, setRecordMeta] = useState({
+        recordStatus: 'Open',
+        closedAt: null,
+        closedBy: null,
+        reopenedAt: null,
+        reopenedBy: null,
+        reopenCount: 0,
+    });
+    const isClosed = recordMeta.recordStatus === 'Closed';
+    const [closingRecord, setClosingRecord] = useState(false);
+    const [reopeningRecord, setReopeningRecord] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
+
+    const applyRecordMeta = (data) => {
+        setRecordMeta({
+            recordStatus: data.recordStatus || 'Open',
+            closedAt: data.closedAt || null,
+            closedBy: data.closedBy || null,
+            reopenedAt: data.reopenedAt || null,
+            reopenedBy: data.reopenedBy || null,
+            reopenCount: data.reopenCount || 0,
+        });
+    };
 
     //Current LOg's data state
     const [log, setLog] = useState({
@@ -84,6 +116,7 @@ export default function RecieveDetails() {
                             signatureImage: data.signatureImage || '',
                             duration: duration
                         });
+                        applyRecordMeta(data);
                         
                         const linesRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}/lines`);
                         if (linesRes.ok) {
@@ -426,17 +459,119 @@ export default function RecieveDetails() {
         }
     }
 
+    // ============================================================
+    // Record lifecycle handlers (close / reopen)
+    // ============================================================
+    const handleCloseRecord = async () => {
+        if (!log.signatureImage) {
+            toast.error('Please sign and save the signature before closing the record.');
+            return;
+        }
+        if (!window.confirm('Close this record? It will become read-only and can only be reopened by a user with the reopen permission.')) return;
+
+        setClosingRecord(true);
+        try {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}/close`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.message || 'Failed to close record');
+            applyRecordMeta(data);
+            toast.success('Record closed. It is now read-only.');
+        } catch (e) {
+            console.error('Error closing record:', e);
+            toast.error(e.message || 'Failed to close record');
+        } finally {
+            setClosingRecord(false);
+        }
+    };
+
+    const handleReopenRecord = async () => {
+        if (!window.confirm('Reopen this record? The current state will be saved as a version in the record history, and a new signature will be required before it can be closed again.')) return;
+
+        setReopeningRecord(true);
+        try {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}/reopen`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.message || 'Failed to reopen record');
+            applyRecordMeta(data);
+            // Signature is cleared server-side on reopen — it must be
+            // signed again before closing. Sync the local state/canvas.
+            setLog(prev => ({ ...prev, signatureImage: '' }));
+            setSignatureData({ signature: null });
+            toast.success('Record reopened. The previous state was saved to history. Sign again before closing.');
+        } catch (e) {
+            console.error('Error reopening record:', e);
+            toast.error(e.message || 'Failed to reopen record');
+        } finally {
+            setReopeningRecord(false);
+        }
+    };
+
+    // Fields shown / diffed in the Record History modal.
+    const historyFields = [
+        { key: 'receivingCode', label: 'Receiving Code' },
+        { key: 'projectDesc', label: 'Project Description' },
+        { key: 'origin', label: 'Origin' },
+        { key: 'destination', label: 'Destination' },
+        { key: 'tracking', label: 'Tracking' },
+        { key: 'shippedDate', label: 'Shipped', format: (v) => new Date(v).toLocaleDateString() },
+        { key: 'arrivedDate', label: 'Arrived', format: (v) => new Date(v).toLocaleDateString() },
+        { key: 'estArrival', label: 'Est. Arrival', format: (v) => new Date(v).toLocaleDateString() },
+        { key: 'notes', label: 'Notes' },
+    ];
+
     return (
         <div className={styles.pageContainer}>
             {/* <h2 className={styles.bHeading}>Recieving Details</h2> */}
             <Header title="Recieving Details" />
+
+            {/* Record lifecycle banner: Open/Closed status + Close /
+                Reopen / History actions. */}
+            <RecordStatusBar
+                isSaved={isEdit}
+                recordStatus={recordMeta.recordStatus}
+                closedAt={recordMeta.closedAt}
+                closedBy={recordMeta.closedBy}
+                reopenedAt={recordMeta.reopenedAt}
+                reopenedBy={recordMeta.reopenedBy}
+                reopenCount={recordMeta.reopenCount}
+                hasSignature={Boolean(log.signatureImage)}
+                canReopen={canReopen}
+                closing={closingRecord}
+                reopening={reopeningRecord}
+                onCloseRecord={handleCloseRecord}
+                onReopenRecord={handleReopenRecord}
+                onShowHistory={() => setShowHistory(true)}
+            />
+
+            {/* While the record is closed, every form control inside this
+                fieldset is natively disabled — the page is read-only. The
+                backend enforces the same rule on every mutating endpoint. */}
+            <fieldset
+                disabled={isClosed}
+                style={{ border: 'none', margin: 0, padding: 0, minWidth: 0 }}
+            >
             <WhiteIsland className={styles.bigIsland}>
                     <h3>Receiving : {log.receivingCode || '(unsaved)'}</h3>
                 <div className={styles.main}>
                     <div className={styles.detailContainer}>
                         <div className={styles.details}>
                             <div className={styles.info} style={{ width: '25%' }}>
-                                <div className={styles.infoDetail}>Project</div>
+                                <div className={styles.infoDetail}>
+                                    Project
+                                    {isObjectId(log.projectId) && (
+                                        <OpenRecordLink
+                                            to={`/Projects/ProjectDetails/${log.projectId}`}
+                                            title="Open project"
+                                            style={{ marginLeft: 6 }}
+                                        />
+                                    )}
+                                </div>
                                 <select name='projectId' value={log.projectId} onChange={onProjectChange}>
                                     <option value=''>Select project...</option>
                                     {projectsLoading ? (
@@ -502,7 +637,18 @@ export default function RecieveDetails() {
                                         <tr><td colSpan="5" style={{textAlign:'center',padding:'10px'}}>Loading...</td></tr>
                                     ) : items.map((item) => (
                                         <tr key={item._id || item.id}>
-                                            <td>{item.sampleCode || item.id}</td>
+                                            <td>
+                                                {isObjectId(item.sampleId || item.id) ? (
+                                                    <OpenRecordLink
+                                                        to={`/SampleSubmission/SSDetail/${item.sampleId || item.id}`}
+                                                        title="Open sample submission"
+                                                    >
+                                                        {item.sampleCode || item.id}
+                                                    </OpenRecordLink>
+                                                ) : (
+                                                    item.sampleCode || item.id
+                                                )}
+                                            </td>
                                             <td>{item.description}</td>
                                             <td>
                                                 <input 
@@ -580,7 +726,10 @@ export default function RecieveDetails() {
                                 </div>
                                 <div className={styles.signatureField}>
                                     <div className={styles.infoDetail}>Signature</div>
-                                    <div className={styles.signatureBox}>
+                                    {/* Canvas isn't a form control, so the
+                                        disabled fieldset doesn't cover it —
+                                        block drawing on closed records here. */}
+                                    <div className={styles.signatureBox} style={isClosed ? { pointerEvents: 'none', opacity: 0.7 } : undefined}>
                                         <SignatureCanvas
                                             ref={sigCanvas}
                                             canvasProps={{
@@ -601,7 +750,20 @@ export default function RecieveDetails() {
                     </div>
                 </div>
             </WhiteIsland>
+            </fieldset>
 
+            {/* Record History modal — versions snapshotted on each reopen. */}
+            {showHistory && (
+                <RecordHistoryModal
+                    title={`Record History — ${log.receivingCode || ''}`}
+                    versionsUrl={`${import.meta.env.VITE_BACKEND_URL}/api/receivings/${id}/versions`}
+                    currentRecord={log}
+                    currentLines={items}
+                    fields={historyFields}
+                    signatureKey="signatureImage"
+                    onClose={() => setShowHistory(false)}
+                />
+            )}
 
             {/* Sample List Modal */}
             {sampleModalState.showList && (

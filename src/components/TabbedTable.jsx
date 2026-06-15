@@ -8,6 +8,9 @@ import "./TabbedTable.css";
 // either of two shapes:
 //   1. A standard table tab:
 //        { columns: [{label, key}], rows: [{...}] }
+//      A table tab may also provide `onRowClick(row)` — rows that carry
+//      a `_recordId` field then become clickable (used to open the
+//      related record's detail page).
 //   2. A custom-content tab (e.g. embedded component):
 //        { content: <ReactNode /> }
 //
@@ -38,6 +41,7 @@ export default function TabbedTable({
   const isCustomContent = activeEntry.content !== undefined;
   const columns = activeEntry.columns || [];
   const rows = activeEntry.rows || [];
+  const onRowClick = typeof activeEntry.onRowClick === "function" ? activeEntry.onRowClick : null;
 
   const showAddButton = !isCustomContent && showAddButtonForTabs.includes(activeTab);
 
@@ -81,19 +85,24 @@ export default function TabbedTable({
             </div>
 
             {rows.length > 0 ? (
-              rows.map((entry, index) => (
-                <div
-                  className="row"
-                  key={index}
-                  style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}
-                >
-                  {columns.map((col) => (
-                    <div className="cell" key={col.key}>
-                      {entry[col.key]}
-                    </div>
-                  ))}
-                </div>
-              ))
+              rows.map((entry, index) => {
+                const clickable = Boolean(onRowClick && entry._recordId);
+                return (
+                  <div
+                    className={`row ${clickable ? "rowClickable" : ""}`}
+                    key={index}
+                    style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}
+                    onClick={clickable ? () => onRowClick(entry) : undefined}
+                    title={clickable ? "Open record" : undefined}
+                  >
+                    {columns.map((col) => (
+                      <div className="cell" key={col.key}>
+                        {entry[col.key]}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })
             ) : (
               <div className="noData">No data available</div>
             )}

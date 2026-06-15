@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FaColumns, FaList, FaChartLine, FaStream, FaRegCalendarAlt,
-  FaUsers, FaTags, FaChartPie, FaPlus, FaSearch,
+  FaUsers, FaTags, FaChartPie, FaPlus, FaSearch, FaSitemap,
 } from "react-icons/fa";
 import styles from "./pm.module.css";
 import { pm } from "./pmApi";
@@ -14,6 +14,7 @@ import TeamPanel from "./TeamPanel";
 import TagsManager from "./TagsManager";
 import Insights from "./Insights";
 import TaskModal from "./TaskModal";
+import HierarchyTree from "./HierarchyTree";
 import WorkloadHeatmap from "./WorkloadHeatmap";
 import toast from "../Toaster/toast";
 
@@ -28,17 +29,18 @@ import toast from "../Toaster/toast";
 //      selects + the "New task" CTA — on the row below.
 // That way the search bar is never cramped by the 8 view tabs.
 const VIEWS = [
-  { id: "board",    label: "Board",    icon: <FaColumns /> },
-  { id: "list",     label: "List",     icon: <FaList /> },
-  { id: "gantt",    label: "Gantt",    icon: <FaChartLine /> },
-  { id: "timeline", label: "Timeline", icon: <FaStream /> },
-  { id: "calendar", label: "Calendar", icon: <FaRegCalendarAlt /> },
-  { id: "team",     label: "Team",     icon: <FaUsers /> },
-  { id: "tags",     label: "Tags",     icon: <FaTags /> },
-  { id: "insights", label: "Insights", icon: <FaChartPie /> },
+  { id: "board",     label: "Board",     icon: <FaColumns /> },
+  { id: "list",      label: "List",      icon: <FaList /> },
+  { id: "hierarchy", label: "Hierarchy", icon: <FaSitemap /> },
+  { id: "gantt",     label: "Gantt",     icon: <FaChartLine /> },
+  { id: "timeline",  label: "Timeline",  icon: <FaStream /> },
+  { id: "calendar",  label: "Calendar",  icon: <FaRegCalendarAlt /> },
+  { id: "team",      label: "Team",      icon: <FaUsers /> },
+  { id: "tags",      label: "Tags",      icon: <FaTags /> },
+  { id: "insights",  label: "Insights",  icon: <FaChartPie /> },
 ];
 
-const VIEWS_WITH_FILTERS = new Set(["board", "list", "gantt", "timeline", "calendar"]);
+const VIEWS_WITH_FILTERS = new Set(["board", "list", "hierarchy", "gantt", "timeline", "calendar"]);
 
 export default function ProjectWorkspace({ project, canEdit, onProjectChanged }) {
   const [view, setView] = useState("board");
@@ -86,6 +88,17 @@ export default function ProjectWorkspace({ project, canEdit, onProjectChanged })
     });
   }, [tasks, search, filterAssignee, filterTag]);
 
+  // The Board / Gantt / Calendar / Timeline views are about
+  // scheduling and execution — only leaf tasks belong there.
+  // Epics and stories live exclusively in the Hierarchy view
+  // (and remain editable through the modal). Legacy records
+  // without a workItemType default to "task" so they keep
+  // showing up where they did before.
+  const taskOnly = useMemo(
+    () => filtered.filter((t) => (t.workItemType || "task") === "task"),
+    [filtered]
+  );
+
   // Workload heatmap data.
   const [heatmapRows, setHeatmapRows] = useState([]);
   useEffect(() => {
@@ -105,8 +118,20 @@ export default function ProjectWorkspace({ project, canEdit, onProjectChanged })
   }, [team, tasks]);
 
   const openTask = (task) => { setModalTask(task); setModalOpen(true); };
-  const openNewTask = (presetStatus) => {
-    setModalTask({ status: presetStatus || "To Do" });
+  const openNewTask = (preset) => {
+    // Accept either a string (legacy Kanban "+ Add" passes the
+    // column status) or an object preset { workItemType, parent,
+    // status }. The Hierarchy view uses the object form so a
+    // freshly created child item is parented automatically.
+    if (typeof preset === "string" || preset === undefined) {
+      setModalTask({ status: preset || "To Do" });
+    } else {
+      setModalTask({
+        status: preset.status || "To Do",
+        workItemType: preset.workItemType || "task",
+        parent: preset.parent || null,
+      });
+    }
     setModalOpen(true);
   };
 
@@ -222,7 +247,7 @@ export default function ProjectWorkspace({ project, canEdit, onProjectChanged })
       {!loading && view === "board" && (
         <>
           <KanbanBoard
-            tasks={filtered}
+            tasks={taskOnly}
             onOpenTask={openTask}
             onAddTask={canEdit ? openNewTask : undefined}
             onMoveTask={moveTask}
@@ -238,16 +263,30 @@ export default function ProjectWorkspace({ project, canEdit, onProjectChanged })
         </>
       )}
       {!loading && view === "list"     && <TaskList tasks={filtered} onOpenTask={openTask} />}
-      {!loading && view === "gantt"    && <GanttChart tasks={filtered} onOpenTask={openTask} />}
-      {!loading && view === "timeline" && <Timeline tasks={filtered} onOpenTask={openTask} />}
-      {!loading && view === "calendar" && <CalendarMonth tasks={filtered} onOpenTask={openTask} />}
+      {!loading && view === "hierarchy" && (
+        <HierarchyTree
+          tasks={filtered}
+          onOpenTask={openTask}
+          onAddTask={canEdit ? openNewTask : undefined}
+          canEdit={canEdit}
+        />
+      )}
+      {!loading && view === "gantt"    && <GanttChart tasks={taskOnly} onOpenTask={openTask} />}
+      {!loading && view === "timeline" && <Timeline tasks={taskOnly} onOpenTask={openTask} />}
+      {!loading && view === "calendar" && <CalendarMonth tasks={taskOnly} onOpenTask={openTask} />}
       {!loading && view === "team"     && <TeamPanel projectId={project._id} canEdit={canEdit} onChanged={() => { loadTeam(); loadTasks(); }} />}
       {!loading && view === "tags"     && <TagsManager project={project} canEdit={canEdit} onChanged={onProjectChanged} />}
       {!loading && view === "insights" && <Insights projectId={project._id} />}
 
       {modalOpen && (
         <TaskModal
-          task={modalTask?._id ? modalTask : null}
+          // Pass modalTask through unchanged — for a brand-new
+          // item it carries the preset workItemType / parent /
+          // status set by the Hierarchy view's "+ Epic" /
+          // "+ Story" / "+ Task" buttons, so the modal opens
+          // with the right type already selected. The modal
+          // uses `!task?._id` to detect "new" mode.
+          task={modalTask}
           project={{ ...project, members: team.members }}
           allTasks={tasks}
           onClose={() => { setModalOpen(false); setModalTask(null); }}

@@ -88,6 +88,28 @@ export const PRIORITY_COLORS = {
   Urgent: "#dc2626",
 };
 
+// Work-item taxonomy used by the Hierarchy view and the
+// task editor's "Type" selector. The colour palette doubles
+// as the badge / tree icon colour so all three views agree.
+export const WORK_ITEM_TYPES = ["epic", "story", "task"];
+export const WORK_ITEM_TYPE_LABEL = {
+  epic: "Epic",
+  story: "Story",
+  task: "Task",
+};
+export const WORK_ITEM_TYPE_COLOR = {
+  epic: "#7c3aed",   // purple
+  story: "#16a34a",  // green
+  task: "#2563eb",   // blue
+};
+// Only certain parent->child shapes are valid. Mirrors the
+// rule enforced by the backend in `validateWorkItemHierarchy`.
+export const ALLOWED_PARENT_TYPE = {
+  epic: null,      // epics cannot be parented
+  story: "epic",
+  task: "story",
+};
+
 // Date helpers (kept here so every PM view formats the same way).
 export const fmtDate = (d) =>
   d ? new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—";

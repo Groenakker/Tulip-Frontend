@@ -8,6 +8,7 @@ import toast from "../../../components/Toaster/toast";
 import Header from "../../../components/Header";
 import ProjectWorkspace from "../../../components/PM/ProjectWorkspace";
 import { useAuth } from "../../../context/AuthContext";
+import OpenRecordLink from "../../../components/RecordLink/OpenRecordLink";
 
 export default function ProjectDetails() {
   const { id } = useParams();
@@ -87,6 +88,24 @@ export default function ProjectDetails() {
 
   const contactOptions = selectedPartner?.contacts || [];
 
+  // Related records (shipments / samples) that reference this project.
+  // Fetched once and filtered client-side so the tabs below can link
+  // straight to the corresponding detail pages.
+  const [relatedShipments, setRelatedShipments] = useState([]);
+  const [relatedSamples, setRelatedSamples] = useState([]);
+
+  useEffect(() => {
+    if (!isEdit || !id) return;
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/shipping`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setRelatedShipments(Array.isArray(data) ? data : data?.data || []))
+      .catch(() => setRelatedShipments([]));
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setRelatedSamples(Array.isArray(data) ? data : data?.data || []))
+      .catch(() => setRelatedSamples([]));
+  }, [id, isEdit]);
+
   // Tab data for the related-records area at the bottom of the
   // page. The "Project Management" tab embeds the full PM
   // workspace (Kanban / Gantt / Calendar / Team / Tags /
@@ -103,6 +122,20 @@ export default function ProjectDetails() {
       .catch(() => { /* non-fatal */ });
   };
   const pdata = useMemo(() => {
+    const formatDate = (value) => {
+      if (!value) return "";
+      const d = new Date(value);
+      return isNaN(d.getTime()) ? "" : d.toLocaleDateString();
+    };
+    const matchesProject = (record) => {
+      const refId = record?.projectID?._id || record?.projectID || record?.projectId;
+      if (refId && String(refId) === String(id)) return true;
+      return Boolean(project.projectID && record?.projectCode === project.projectID);
+    };
+
+    const projectShipments = relatedShipments.filter(matchesProject);
+    const projectSamples = relatedSamples.filter(matchesProject);
+
     const out = {};
     if (isEdit && project?._id) {
       out["Project Management"] = {
@@ -119,10 +152,17 @@ export default function ProjectDetails() {
       columns: [
         { label: "ID", key: "id" },
         { label: "Description", key: "desc" },
-        { label: "Start", key: "start" },
-        { label: "Due", key: "due" },
+        { label: "Ship Date", key: "start" },
+        { label: "Delivery Date", key: "due" },
       ],
-      rows: [],
+      rows: projectShipments.map((s) => ({
+        _recordId: s._id || "",
+        id: s.shippingCode || s._id || "",
+        desc: s.note || `${s.shipmentOrigin || ""} -> ${s.shipmentDestination || ""}`.trim(),
+        start: formatDate(s.shipmentDate),
+        due: formatDate(s.estimatedArrivalDate || s.estDate),
+      })),
+      onRowClick: (row) => navigate(`/ShippingLog/${row._recordId}`),
     };
     out.Reports = {
       columns: [
@@ -135,16 +175,23 @@ export default function ProjectDetails() {
     };
     out.Sample = {
       columns: [
-        { label: "ID", key: "id" },
+        { label: "Sample Code", key: "id" },
         { label: "Description", key: "desc" },
-        { label: "Start", key: "start" },
-        { label: "Due", key: "due" },
+        { label: "Status", key: "status" },
+        { label: "Created On", key: "start" },
       ],
-      rows: [],
+      rows: projectSamples.map((s) => ({
+        _recordId: s._id || "",
+        id: s.sampleCode || "",
+        desc: s.description || s.name || "",
+        status: s.status || "",
+        start: formatDate(s.createdAt || s.startDate),
+      })),
+      onRowClick: (row) => navigate(`/SampleSubmission/SSDetail/${row._recordId}`),
     };
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEdit, project, canEditPM]);
+  }, [isEdit, project, canEditPM, relatedShipments, relatedSamples, id, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -300,7 +347,16 @@ export default function ProjectDetails() {
                     ></input>
                   </div>
                   <div className={styles.info} style={{ width: "15%" }}>
-                    <div className={styles.infoDetail}>SAP Partner Code <span style={{ color: "red" }}>*</span></div>{" "}
+                    <div className={styles.infoDetail}>
+                      SAP Partner Code <span style={{ color: "red" }}>*</span>
+                      {(project.bPartnerID || selectedPartner?._id) && (
+                        <OpenRecordLink
+                          to={`/BuisnessPartner/PartnerDetails/${project.bPartnerID || selectedPartner._id}`}
+                          title="Open business partner"
+                          style={{ marginLeft: 6 }}
+                        />
+                      )}
+                    </div>{" "}
                     <select
                       name="bPartnerCode"
                       value={project.bPartnerCode}

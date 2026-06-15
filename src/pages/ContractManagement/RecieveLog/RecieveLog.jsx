@@ -147,6 +147,7 @@ export default function RecieveLog() {
                   </th>
                 )}
                 <SortableTh sortProps={getSortProps("receivingCode")}>Receiving Code</SortableTh>
+                <SortableTh sortProps={getSortProps("recordStatus")}>Record</SortableTh>
                 <SortableTh sortProps={getSortProps("origin")}>Origin</SortableTh>
                 <SortableTh sortProps={getSortProps("projectDesc")}>Project</SortableTh>
                 <SortableTh sortProps={getSortProps("arrivedDate")}>Arrival</SortableTh>
@@ -154,9 +155,9 @@ export default function RecieveLog() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={canDelete ? "5" : "4"} style={{textAlign:'center',padding:'20px'}}>Loading...</td></tr>
+                <tr><td colSpan={canDelete ? "6" : "5"} style={{textAlign:'center',padding:'20px'}}>Loading...</td></tr>
               ) : pagedData.length === 0 ? (
-                <tr><td colSpan={canDelete ? "5" : "4"} style={{textAlign:'center',padding:'20px'}}>No receivings</td></tr>
+                <tr><td colSpan={canDelete ? "6" : "5"} style={{textAlign:'center',padding:'20px'}}>No receivings</td></tr>
               ) : (
                 pagedData.map((recieve) => {
                   const isSelected = selection.isSelected(recieve._id);
@@ -185,6 +186,22 @@ export default function RecieveLog() {
                         </td>
                       )}
                       <td>{recieve.receivingCode}</td>
+                      <td>
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            padding: '2px 10px',
+                            borderRadius: 999,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            background: recieve.recordStatus === 'Closed' ? '#fef3f2' : '#ecfdf3',
+                            color: recieve.recordStatus === 'Closed' ? '#b42318' : '#027a48',
+                          }}
+                        >
+                          {recieve.recordStatus === 'Closed' ? 'Closed' : 'Open'}
+                        </span>
+                      </td>
                       <td>{recieve.origin}</td>
                       <td>{recieve.projectDesc}</td>
                       <td>{recieve.arrivedDate ? new Date(recieve.arrivedDate).toLocaleDateString() : '-'}</td>

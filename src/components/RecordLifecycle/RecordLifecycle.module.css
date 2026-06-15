@@ -1,0 +1,256 @@
+/* ============================================================
+   Record lifecycle UI (close / reopen / history) shared by the
+   Shipping and Receiving detail pages.
+   ============================================================ */
+
+.statusBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: #ffffff;
+    border: 1px solid #e4e7ec;
+    border-radius: 12px;
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+
+.statusBarClosed {
+    border-color: #fda29b;
+    background: #fffbfa;
+}
+
+.statusLeft {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.statusRight {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.statusPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.statusPillOpen {
+    background: #ecfdf3;
+    color: #027a48;
+    border: 1px solid #abefc6;
+}
+
+.statusPillClosed {
+    background: #fef3f2;
+    color: #b42318;
+    border: 1px solid #fecdca;
+}
+
+.statusMeta {
+    font-size: 12.5px;
+    color: #475467;
+}
+
+.statusMeta strong {
+    color: #344054;
+}
+
+.lifecycleBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.lifecycleBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.closeBtn {
+    background: #b42318;
+    color: #ffffff;
+}
+
+.reopenBtn {
+    background: rgb(69, 112, 182);
+    color: #ffffff;
+}
+
+.historyBtn {
+    background: #f2f4f7;
+    color: #344054;
+    border: 1px solid #d0d5dd;
+}
+
+/* ------------------ History modal ------------------ */
+
+.historyModal {
+    width: min(720px, 80vw);
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 4px 8px 8px 8px;
+}
+
+.historyTitle {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    color: #101828;
+}
+
+.historySubtitle {
+    margin: 0 0 16px 0;
+    font-size: 13px;
+    color: #667085;
+}
+
+.historyLoading,
+.historyEmpty {
+    text-align: center;
+    color: #667085;
+    padding: 24px 0;
+    font-size: 14px;
+}
+
+.versionCard {
+    border: 1px solid #e4e7ec;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    background: #fcfcfd;
+}
+
+.versionCardCurrent {
+    border-color: rgb(69, 112, 182);
+    background: #f5f8ff;
+}
+
+.versionHeader {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.versionName {
+    font-weight: 700;
+    font-size: 14px;
+    color: #101828;
+}
+
+.versionMeta {
+    font-size: 12px;
+    color: #667085;
+}
+
+.changeList {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.changeItem {
+    font-size: 13px;
+    color: #344054;
+    background: #fff;
+    border: 1px solid #eaecf0;
+    border-radius: 6px;
+    padding: 5px 10px;
+}
+
+.changeOld {
+    color: #b42318;
+    text-decoration: line-through;
+    margin-right: 6px;
+    word-break: break-word;
+}
+
+.changeNew {
+    color: #027a48;
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.noChanges {
+    font-size: 13px;
+    color: #667085;
+    font-style: italic;
+}
+
+.fullRecordDetails {
+    margin-top: 8px;
+}
+
+.fullRecordDetails summary {
+    cursor: pointer;
+    font-size: 12.5px;
+    color: rgb(69, 112, 182);
+    font-weight: 600;
+}
+
+.fieldTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.fieldTable td {
+    border: 1px solid #eaecf0;
+    padding: 5px 10px;
+    vertical-align: top;
+    word-break: break-word;
+}
+
+.fieldTable td:first-child {
+    width: 35%;
+    color: #475467;
+    font-weight: 600;
+    background: #f9fafb;
+}
+
+.signatureThumbWrap {
+    margin-top: 10px;
+}
+
+.signatureThumbLabel {
+    font-size: 12px;
+    color: #475467;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.signatureThumb {
+    max-width: 320px;
+    max-height: 60px;
+    border: 1px solid #e4e7ec;
+    border-radius: 6px;
+    background: #fff;
+}

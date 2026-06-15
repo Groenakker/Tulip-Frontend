@@ -14,8 +14,11 @@ import toast from '../../../components/Toaster/toast';
 import SignatureCanvas from 'react-signature-canvas';
 import { useAuth } from '../../../context/AuthContext';  
 import Header from '../../../components/Header';
+import RecordStatusBar from '../../../components/RecordLifecycle/RecordStatusBar';
+import RecordHistoryModal from '../../../components/RecordLifecycle/RecordHistoryModal';
 import { FaPlus, FaGlobe } from 'react-icons/fa';
 import SearchableSelect from '../../../components/SearchableSelect/SearchableSelect';
+import OpenRecordLink, { isObjectId } from '../../../components/RecordLink/OpenRecordLink';
 
 // All shipping endpoints (and the bpartners/projects/companies/shippo
 // helpers used on this page) sit behind verifyToken, which reads the
@@ -32,7 +35,34 @@ export default function ShipmentDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const { user } = useAuth();
+    const { user, hasPermission } = useAuth();
+    const canReopen = hasPermission('Shipping', 'reopen');
+
+    // Record lifecycle (close / reopen workflow). A closed record is
+    // read-only until reopened by a user with the "reopen" permission.
+    const [recordMeta, setRecordMeta] = useState({
+        recordStatus: 'Open',
+        closedAt: null,
+        closedBy: null,
+        reopenedAt: null,
+        reopenedBy: null,
+        reopenCount: 0,
+    });
+    const isClosed = recordMeta.recordStatus === 'Closed';
+    const [closingRecord, setClosingRecord] = useState(false);
+    const [reopeningRecord, setReopeningRecord] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
+
+    const applyRecordMeta = (data) => {
+        setRecordMeta({
+            recordStatus: data.recordStatus || 'Open',
+            closedAt: data.closedAt || null,
+            closedBy: data.closedBy || null,
+            reopenedAt: data.reopenedAt || null,
+            reopenedBy: data.reopenedBy || null,
+            reopenCount: data.reopenCount || 0,
+        });
+    };
     //Current Log's data state
     // NOTE: `logisticsProvider`, `shipmentDate`, `estimatedArrivalDate`,
     // and `status` are intentionally NOT kept on the form. They are all
@@ -348,6 +378,7 @@ export default function ShipmentDetails() {
                             bPartnerID: data.bPartnerID || '',
                             bPartnerCode: data.bPartnerCode || '',
                         });
+                        applyRecordMeta(data);
 
                         // Customer id is either stored directly on the shipping
                         // doc or can be inferred from the related project.
@@ -1711,12 +1742,96 @@ export default function ShipmentDetails() {
         }
     }
 
-    
+    // ============================================================
+    // Record lifecycle handlers (close / reopen)
+    // ============================================================
+    const handleCloseRecord = async () => {
+        if (!log.image) {
+            toast.error('Please sign and save the signature before closing the record.');
+            return;
+        }
+        if (!window.confirm('Close this record? It will become read-only and can only be reopened by a user with the reopen permission.')) return;
+
+        setClosingRecord(true);
+        try {
+            const res = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/close`, { method: 'POST' });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.message || 'Failed to close record');
+            applyRecordMeta(data);
+            toast.success('Record closed. It is now read-only.');
+        } catch (e) {
+            console.error('Error closing record:', e);
+            toast.error(e.message || 'Failed to close record');
+        } finally {
+            setClosingRecord(false);
+        }
+    };
+
+    const handleReopenRecord = async () => {
+        if (!window.confirm('Reopen this record? The current state will be saved as a version in the record history, and a new signature will be required before it can be closed again.')) return;
+
+        setReopeningRecord(true);
+        try {
+            const res = await fetchAuth(`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/reopen`, { method: 'POST' });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.message || 'Failed to reopen record');
+            applyRecordMeta(data);
+            // Signature is cleared server-side on reopen — it must be
+            // signed again before closing. Sync the local state/canvas.
+            setLog(prev => ({ ...prev, image: '' }));
+            setSignatureData({ signature: null });
+            toast.success('Record reopened. The previous state was saved to history. Sign again before closing.');
+        } catch (e) {
+            console.error('Error reopening record:', e);
+            toast.error(e.message || 'Failed to reopen record');
+        } finally {
+            setReopeningRecord(false);
+        }
+    };
+
+    // Fields shown / diffed in the Record History modal.
+    const historyFields = [
+        { key: 'shippingCode', label: 'Shipping Code' },
+        { key: 'projectCode', label: 'Project' },
+        { key: 'projectDesc', label: 'Project Description' },
+        { key: 'shipmentOrigin', label: 'Origin' },
+        { key: 'shipmentDestination', label: 'Destination' },
+        { key: 'carrier', label: 'Carrier', format: (v) => String(v).toUpperCase() },
+        { key: 'trackingNumber', label: 'Tracking Number' },
+        { key: 'note', label: 'Notes' },
+    ];
 
     return (
         <div className={styles.pageContainer}>
             {/* <h2 className={styles.bHeading}>Shipping Details</h2> */}
             <Header title="Shipping Details" />
+
+            {/* Record lifecycle banner: Open/Closed status + Close /
+                Reopen / History actions. */}
+            <RecordStatusBar
+                isSaved={Boolean(id && id !== 'add')}
+                recordStatus={recordMeta.recordStatus}
+                closedAt={recordMeta.closedAt}
+                closedBy={recordMeta.closedBy}
+                reopenedAt={recordMeta.reopenedAt}
+                reopenedBy={recordMeta.reopenedBy}
+                reopenCount={recordMeta.reopenCount}
+                hasSignature={Boolean(log.image)}
+                canReopen={canReopen}
+                closing={closingRecord}
+                reopening={reopeningRecord}
+                onCloseRecord={handleCloseRecord}
+                onReopenRecord={handleReopenRecord}
+                onShowHistory={() => setShowHistory(true)}
+            />
+
+            {/* While the record is closed, every form control inside this
+                fieldset is natively disabled — the page is read-only. The
+                backend enforces the same rule on every mutating endpoint. */}
+            <fieldset
+                disabled={isClosed}
+                style={{ border: 'none', margin: 0, padding: 0, minWidth: 0 }}
+            >
             <WhiteIsland className={styles.bigIsland}>
                 <h3>Shipping : {log.shippingCode || (id && id !== 'add' ? id : '(unsaved)')}</h3>
                 <div className={styles.main}>
@@ -1730,7 +1845,16 @@ export default function ShipmentDetails() {
                             shipment can be created to any of them. */}
                         <div className={styles.details}>
                             <div className={styles.info} style={{ width: '40%' }}>
-                                <div className={styles.infoDetail}>Customer</div>
+                                <div className={styles.infoDetail}>
+                                    Customer
+                                    {selectedCustomerId && (
+                                        <OpenRecordLink
+                                            to={`/BuisnessPartner/PartnerDetails/${selectedCustomerId}`}
+                                            title="Open business partner"
+                                            style={{ marginLeft: 6 }}
+                                        />
+                                    )}
+                                </div>
                                 <SearchableSelect
                                     value={selectedCustomerId}
                                     onChange={(newId) => onCustomerChange({ target: { value: newId } })}
@@ -1752,7 +1876,21 @@ export default function ShipmentDetails() {
                                 />
                             </div>
                             <div className={styles.info} style={{ width: '25%' }}>
-                                <div className={styles.infoDetail}>Project</div>
+                                <div className={styles.infoDetail}>
+                                    Project
+                                    {(() => {
+                                        const linkedProjectId = isObjectId(log.projectID)
+                                            ? log.projectID
+                                            : projects.find(p => p.projectID === log.projectID || p.projectCode === log.projectCode)?._id;
+                                        return linkedProjectId ? (
+                                            <OpenRecordLink
+                                                to={`/Projects/ProjectDetails/${linkedProjectId}`}
+                                                title="Open project"
+                                                style={{ marginLeft: 6 }}
+                                            />
+                                        ) : null;
+                                    })()}
+                                </div>
                                 <select
                                     name='projectCode'
                                     value={log.projectCode || ''}
@@ -1890,7 +2028,18 @@ export default function ShipmentDetails() {
                                         <tr><td colSpan="5" style={{textAlign:'center',padding:'10px'}}>No items. Click "Add" to add samples.</td></tr>
                                     ) : items.map((item) => (
                                         <tr key={item._id || item.id}>
-                                            <td>{item.sampleCode || item.id}</td>
+                                            <td>
+                                                {isObjectId(item.sampleId || item.id) ? (
+                                                    <OpenRecordLink
+                                                        to={`/SampleSubmission/SSDetail/${item.sampleId || item.id}`}
+                                                        title="Open sample submission"
+                                                    >
+                                                        {item.sampleCode || item.id}
+                                                    </OpenRecordLink>
+                                                ) : (
+                                                    item.sampleCode || item.id
+                                                )}
+                                            </td>
                                             <td>{item.description}</td>
                                             <td>
                                                 <input 
@@ -2536,7 +2685,10 @@ export default function ShipmentDetails() {
                                 </div>
                                 <div className={styles.signatureField}>
                                     <div className={styles.infoDetail}>Signature</div>
-                                    <div className={styles.signatureBox}>
+                                    {/* Canvas isn't a form control, so the
+                                        disabled fieldset doesn't cover it —
+                                        block drawing on closed records here. */}
+                                    <div className={styles.signatureBox} style={isClosed ? { pointerEvents: 'none', opacity: 0.7 } : undefined}>
                                         <SignatureCanvas
                                             ref={sigCanvas}
                                             canvasProps={{
@@ -2557,6 +2709,24 @@ export default function ShipmentDetails() {
                     </div>
                 </div>
             </WhiteIsland>
+            </fieldset>
+
+            {/* Record History modal — versions snapshotted on each reopen. */}
+            {showHistory && (
+                <RecordHistoryModal
+                    title={`Record History — ${log.shippingCode || ''}`}
+                    versionsUrl={`${import.meta.env.VITE_BACKEND_URL}/api/shipping/${id}/versions`}
+                    currentRecord={{
+                        ...log,
+                        carrier: labelInfo.carrier,
+                        trackingNumber: labelInfo.trackingNumber,
+                    }}
+                    currentLines={items}
+                    fields={historyFields}
+                    signatureKey="image"
+                    onClose={() => setShowHistory(false)}
+                />
+            )}
 
             {/* Sample List Modal */}
             {sampleModalState.showList && id && id !== 'add' && (

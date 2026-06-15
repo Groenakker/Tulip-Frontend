@@ -1,0 +1,507 @@
+/* ---------------------------------------------------------------
+   Customer / Vendor portal — themed to match the internal app.
+   Same palette as components/Sidebar.css + pages/LoginPage so a
+   user moving between portals never feels they've left "the
+   product." Key tokens reused:
+     - Page background:   #EFF3F4
+     - Surface:           #ffffff with 16px radius & soft shadow
+     - Active nav:        #e9f0fe (Tulip blue tint)
+     - Primary accent:    #4570B6 (Tulip blue)
+     - Sign-in button:    #0f0730 / hover #12335c
+     - Body font:         Poppins
+   ----------------------------------------------------------------*/
+
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background-color: #EFF3F4;
+  font-family: 'Poppins', system-ui, sans-serif;
+  color: #1f2937;
+}
+
+/* -------------------- Sidebar (matches internal) -------------------- */
+.sidebar {
+  width: 250px;
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 14px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  box-shadow: 2px 0 6px rgba(15, 23, 42, 0.04);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 6px 26px;
+}
+
+.brand h1 {
+  font-size: 17px;
+  margin: 0;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.2;
+}
+
+.brandSub {
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-top: 4px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  color: #374151;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+  position: relative;
+}
+
+.navItem svg { color: #4570B6; font-size: 16px; }
+
+.navItem:hover {
+  background-color: #e9f0fe;
+  color: #1f2937;
+}
+
+.navItemActive {
+  background-color: #e9f0fe;
+  color: #0f0730;
+  font-weight: 600;
+}
+
+.navBadge {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.18);
+}
+
+.bottom {
+  margin-top: auto;
+  font-size: 12px;
+  color: #6b7280;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 14px;
+}
+
+.userBlock {
+  display: flex;
+  flex-direction: column;
+  padding: 0 8px;
+  margin-bottom: 10px;
+}
+
+.userBlock strong {
+  color: #1f2937;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.userBlock span {
+  color: #6b7280;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.logoutBtn {
+  width: 100%;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.logoutBtn:hover { background: #e9f0fe; color: #0f0730; }
+
+/* -------------------- Main content area -------------------- */
+.main {
+  flex: 1;
+  padding: 32px 36px 60px;
+  min-width: 0;
+}
+
+.pageTitle {
+  margin: 0 0 6px;
+  font-size: 26px;
+  font-weight: 600;
+  color: #1f2937;
+  letter-spacing: -0.2px;
+}
+
+.pageSub {
+  margin: 0 0 22px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* -------------------- Cards -------------------- */
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px 22px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f3f5;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+a > .card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.07);
+}
+
+.cardLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.cardLabel svg { color: #4570B6; }
+
+.cardValue {
+  font-size: 30px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.cardSub {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.cardActionable {
+  border-color: #fecaca;
+  background: linear-gradient(180deg, #fff5f5 0%, #ffffff 60%);
+}
+.cardActionable .cardValue { color: #b91c1c; }
+.cardActionable .cardLabel svg { color: #b91c1c; }
+
+/* -------------------- Panels -------------------- */
+.panel {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px 24px 22px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f3f5;
+  margin-bottom: 22px;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.panelHead h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.panelHead a {
+  color: #4570B6;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+}
+.panelHead a:hover { text-decoration: underline; }
+
+/* -------------------- Tables -------------------- */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 12px 14px;
+  font-size: 14px;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.table th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #4b5563;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.table tr:last-child td { border-bottom: none; }
+
+.table tr:hover td { background: #fafbfd; }
+
+.table a {
+  color: #4570B6;
+  text-decoration: none;
+  font-weight: 500;
+}
+.table a:hover { text-decoration: underline; }
+
+.rowClickable { cursor: pointer; }
+
+/* -------------------- Pills / badges -------------------- */
+.pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.pillBlue   { background: #e9f0fe; color: #1e40af; }
+.pillGreen  { background: #ecfdf3; color: #027a48; }
+.pillAmber  { background: #fef3c7; color: #92400e; }
+.pillRed    { background: #fee2e2; color: #b42318; }
+.pillGray   { background: #f3f4f6; color: #374151; }
+
+.actionable {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #b42318;
+  font-size: 11px;
+  font-weight: 700;
+  background: #fef3f2;
+  padding: 3px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* -------------------- Buttons (mirror internal "signin-button") -------------------- */
+.btnPrimary {
+  background-color: #0f0730;
+  color: #ffffff;
+  border: none;
+  padding: 11px 22px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btnPrimary:hover:enabled { background-color: #12335c; }
+.btnPrimary:disabled { background-color: #6b7280; cursor: default; opacity: 0.6; }
+
+.btnGhost {
+  background: #ffffff;
+  color: #4570B6;
+  border: 1px solid #d1d5db;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.btnGhost:hover { background: #e9f0fe; border-color: #4570B6; }
+
+/* -------------------- Login / Invite-signup page -------------------- */
+/* Two-column wrapper, same shape as src/pages/LoginPage/LoginForm.css */
+.loginShell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  font-family: 'Poppins', system-ui, sans-serif;
+  padding: 20px;
+}
+
+.loginWrapper {
+  display: flex;
+  flex-wrap: wrap;
+  background-color: #fdfdfd;
+  border-radius: 10px;
+  padding: 30px;
+  max-width: 1200px;
+  width: 100%;
+  gap: 40px;
+  align-items: center;
+  justify-content: center;
+}
+
+.loginCard {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 460px;
+  min-width: 320px;
+  padding: 16px 24px;
+}
+
+.loginTitle {
+  color: #333;
+  font-size: 28px;
+  margin: 0 0 12px;
+  text-align: center;
+}
+
+.loginSub {
+  color: #666;
+  text-align: center;
+  margin-bottom: 28px;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+.loginImageWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fcfcfc;
+  border-radius: 10px;
+  padding: 30px;
+  max-width: 600px;
+  min-height: 360px;
+}
+
+.loginImageWrap img {
+  max-width: 100%;
+  height: auto;
+  width: 480px;
+}
+
+/* -------------------- Form fields (matches LoginForm) -------------------- */
+.formField {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.formField label {
+  display: block;
+  margin-bottom: 8px;
+  color: #555;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.formField input,
+.formField select,
+.formField textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: inherit;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.formField input:focus,
+.formField select:focus,
+.formField textarea:focus {
+  outline: none;
+  border-color: #4570B6;
+  box-shadow: 0 0 0 3px rgba(69, 112, 182, 0.12);
+}
+
+.formField input[readonly] {
+  background: #f9fafb;
+  color: #4b5563;
+}
+
+.formError {
+  background: #fef3f2;
+  color: #b42318;
+  border: 1px solid #fecaca;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+/* Form grids inside panels */
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.formRow .formField { margin-bottom: 0; }
+
+/* -------------------- Signature pad -------------------- */
+.sigBox {
+  border: 2px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 8px;
+  margin-bottom: 12px;
+}
+
+.sigImg {
+  max-width: 100%;
+  max-height: 140px;
+  border-radius: 8px;
+  background: #fff;
+  padding: 6px;
+}
+
+/* -------------------- Empty state -------------------- */
+.empty {
+  text-align: center;
+  padding: 36px 20px;
+  color: #9ca3af;
+  font-size: 14px;
+}

@@ -152,6 +152,7 @@ export default function SSList() {
                   </th>
                 )}
                 <SortableTh sortProps={getSortProps("sampleCode")}>Sample ID</SortableTh>
+                <SortableTh sortProps={getSortProps("recordStatus")}>Record</SortableTh>
                 <SortableTh sortProps={getSortProps("bPartnerCode")}>Client</SortableTh>
                 <SortableTh sortProps={getSortProps("description")}>Description</SortableTh>
                 <SortableTh sortProps={getSortProps("status")}>Status</SortableTh>
@@ -159,9 +160,9 @@ export default function SSList() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={canDelete ? "5" : "4"} style={{textAlign:'center',padding:'10px'}}>Loading...</td></tr>
+                <tr><td colSpan={canDelete ? "6" : "5"} style={{textAlign:'center',padding:'10px'}}>Loading...</td></tr>
               ) : pagedData.length === 0 ? (
-                <tr><td colSpan={canDelete ? "5" : "4"} style={{textAlign:'center',padding:'10px'}}>No submissions</td></tr>
+                <tr><td colSpan={canDelete ? "6" : "5"} style={{textAlign:'center',padding:'10px'}}>No submissions</td></tr>
               ) : (
                 pagedData.map((row) => {
                   const isSelected = selection.isSelected(row._id);
@@ -189,7 +190,43 @@ export default function SSList() {
                           />
                         </td>
                       )}
-                      <td>{row.sampleCode || row._id}</td>
+                      <td>
+                        {row.sampleCode || row._id}
+                        {row.submittedByCustomer && (
+                          <span
+                            title="Submitted by client via the Customer Portal"
+                            style={{
+                              display: 'inline-block',
+                              marginLeft: 8,
+                              padding: '2px 8px',
+                              borderRadius: 999,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
+                              background: '#dbeafe',
+                              color: '#1e40af',
+                            }}
+                          >
+                            by client
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            padding: '2px 10px',
+                            borderRadius: 999,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            background: row.recordStatus === 'Closed' ? '#fef3f2' : '#ecfdf3',
+                            color: row.recordStatus === 'Closed' ? '#b42318' : '#027a48',
+                          }}
+                        >
+                          {row.recordStatus === 'Closed' ? 'Closed' : 'Open'}
+                        </span>
+                      </td>
                       <td>{row.formData?.client || row.bPartnerCode || '-'}</td>
                       <td>{row.formData?.sampleDescription || row.description || '-'}</td>
                       <td>{row.status}</td>

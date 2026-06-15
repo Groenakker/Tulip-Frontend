@@ -10,11 +10,41 @@ import TariffCodePicker from '../../../components/TariffCodePicker/TariffCodePic
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import Header from '../../../components/Header';
+import RecordStatusBar from '../../../components/RecordLifecycle/RecordStatusBar';
+import RecordHistoryModal from '../../../components/RecordLifecycle/RecordHistoryModal';
+import OpenRecordLink, { isObjectId } from '../../../components/RecordLink/OpenRecordLink';
 export default function SSDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, hasPermission } = useAuth();
     const isEdit = Boolean(id && id !== 'add');
+    const canReopen = hasPermission('Samples', 'reopen');
+
+    // Record lifecycle (close / reopen workflow). A closed record is
+    // read-only until reopened by a user with the "reopen" permission.
+    const [recordMeta, setRecordMeta] = useState({
+        recordStatus: 'Open',
+        closedAt: null,
+        closedBy: null,
+        reopenedAt: null,
+        reopenedBy: null,
+        reopenCount: 0,
+    });
+    const isClosed = recordMeta.recordStatus === 'Closed';
+    const [closingRecord, setClosingRecord] = useState(false);
+    const [reopeningRecord, setReopeningRecord] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
+
+    const applyRecordMeta = (data) => {
+        setRecordMeta({
+            recordStatus: data.recordStatus || 'Open',
+            closedAt: data.closedAt || null,
+            closedBy: data.closedBy || null,
+            reopenedAt: data.reopenedAt || null,
+            reopenedBy: data.reopenedBy || null,
+            reopenCount: data.reopenCount || 0,
+        });
+    };
 
     //image modal
     const [viewingImage, setViewingImage] = useState(null);
@@ -64,6 +94,7 @@ export default function SSDetail() {
     }, [showContactTypeDropdown]);
 
     const sigCanvas = useRef({});
+    const customerSigCanvas = useRef({});
     const [signatureData, setSignatureData] = useState({
         signature: null
     });
@@ -167,6 +198,11 @@ export default function SSDetail() {
         quoteNumber: '',
         salesOrderNumber: '',
         signatureImage: '',
+        acceptanceName: '',
+        acceptanceDate: '',
+        customerSignatureImage: '',
+        customerApprovalName: '',
+        customerApprovalDate: '',
         startDate: '',
         endDate: '',
         actDate: '',
@@ -650,6 +686,7 @@ export default function SSDetail() {
                         const data = await res.json();
                         // Map backend data to frontend state
                         const formData = data.formData || {};
+                        applyRecordMeta(data);
                         
                         // Merge formData with top-level data, prioritizing formData
                         const mergedData = {
@@ -673,6 +710,11 @@ export default function SSDetail() {
                             quoteNumber: formData.quoteNumber || data.quoteNumber || '',
                             salesOrderNumber: formData.salesOrderNumber || data.salesOrderNumber || '',
                             signatureImage: formData.signatureImage || data.signatureImage || '',
+                            acceptanceName: formData.acceptanceName || data.acceptanceName || '',
+                            acceptanceDate: formData.acceptanceDate || data.acceptanceDate || '',
+                            customerSignatureImage: formData.customerSignatureImage || data.customerSignatureImage || '',
+                            customerApprovalName: formData.customerApprovalName || data.customerApprovalName || '',
+                            customerApprovalDate: formData.customerApprovalDate || data.customerApprovalDate || '',
                             startDate: formData.startDate || data.startDate || '',
                             endDate: formData.endDate || data.endDate || '',
                             actDate: formData.actDate || data.actDate || '',
@@ -843,6 +885,7 @@ export default function SSDetail() {
                         serviceLevel: 'Standard',
                         notes: ''
                     });
+                    applyRecordMeta({});
                 }
             } catch (e) { 
                 console.error('Error loading sample:', e);
@@ -986,12 +1029,134 @@ export default function SSDetail() {
         const dataURL = sigCanvas.current.toDataURL('image/png');
         setSignatureData({ signature: dataURL });
         setSample(prev => ({ ...prev, signatureImage: dataURL }));
-        toast.success("Signature saved!");
+        toast.success("Signature saved! Save the sample to persist it.");
     }
     const handleSignatureInfoChange = (e) => {
         const { name, value } = e.target;
         setSignatureData(prev => ({ ...prev, [name]: value }));
     }
+
+    // Customer approval signature (second canvas).
+    const clearCustomerSignature = () => {
+        if (customerSigCanvas.current?.clear) customerSigCanvas.current.clear();
+        setSample(prev => ({ ...prev, customerSignatureImage: '' }));
+    }
+
+    const saveCustomerSignature = () => {
+        if (!customerSigCanvas.current?.isEmpty || customerSigCanvas.current.isEmpty()) {
+            toast.error("Please provide the customer signature first.");
+            return;
+        }
+        const dataURL = customerSigCanvas.current.toDataURL('image/png');
+        setSample(prev => ({ ...prev, customerSignatureImage: dataURL }));
+        toast.success("Customer signature saved! Save the sample to persist it.");
+    }
+
+    // Re-hydrate the signature canvases from saved data after the record
+    // loads (previously the saved signature never re-rendered on refresh).
+    useEffect(() => {
+        const canvas = sigCanvas.current;
+        if (!canvas || typeof canvas.fromDataURL !== 'function') return;
+        try {
+            if (sample.signatureImage) {
+                canvas.fromDataURL(sample.signatureImage);
+            } else if (typeof canvas.clear === 'function') {
+                canvas.clear();
+            }
+        } catch (e) {
+            console.error('Failed to load saved signature:', e);
+        }
+    }, [sample.signatureImage]);
+
+    useEffect(() => {
+        const canvas = customerSigCanvas.current;
+        if (!canvas || typeof canvas.fromDataURL !== 'function') return;
+        try {
+            if (sample.customerSignatureImage) {
+                canvas.fromDataURL(sample.customerSignatureImage);
+            } else if (typeof canvas.clear === 'function') {
+                canvas.clear();
+            }
+        } catch (e) {
+            console.error('Failed to load saved customer signature:', e);
+        }
+    }, [sample.customerSignatureImage]);
+
+    // ============================================================
+    // Record lifecycle handlers (close / reopen)
+    // ============================================================
+    const handleCloseRecord = async () => {
+        if (!sample.signatureImage || !sample.customerSignatureImage) {
+            toast.error('Both the Groenakker acceptance signature and the customer approval signature are required before closing the record.');
+            return;
+        }
+        if (!window.confirm('Close this record? It will become read-only and can only be reopened by a user with the reopen permission.')) return;
+
+        setClosingRecord(true);
+        try {
+            // Persist the form first so locally-captured signatures and any
+            // pending edits are on the server before it validates the close.
+            await handleSave();
+
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}/close`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.message || 'Failed to close record');
+            applyRecordMeta(data);
+            toast.success('Record closed. It is now read-only.');
+        } catch (e) {
+            console.error('Error closing record:', e);
+            toast.error(e.message || 'Failed to close record');
+        } finally {
+            setClosingRecord(false);
+        }
+    };
+
+    const handleReopenRecord = async () => {
+        if (!window.confirm('Reopen this record? The current state will be saved as a version in the record history, and both signatures will be required again before it can be closed.')) return;
+
+        setReopeningRecord(true);
+        try {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}/reopen`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.message || 'Failed to reopen record');
+            applyRecordMeta(data);
+            // Both signatures are cleared server-side on reopen — they must
+            // be collected again before closing. Sync local state/canvases.
+            setSample(prev => ({ ...prev, signatureImage: '', customerSignatureImage: '' }));
+            setSignatureData({ signature: null });
+            toast.success('Record reopened. The previous state was saved to history. Both signatures are required again before closing.');
+        } catch (e) {
+            console.error('Error reopening record:', e);
+            toast.error(e.message || 'Failed to reopen record');
+        } finally {
+            setReopeningRecord(false);
+        }
+    };
+
+    // Fields shown / diffed in the Record History modal.
+    const historyFields = [
+        { key: 'sampleCode', label: 'Sample ID' },
+        { key: 'bPartnerCode', label: 'Partner Code' },
+        { key: 'bPartnerName', label: 'Client' },
+        { key: 'status', label: 'Form Status' },
+        { key: 'sampleDescription', label: 'Sample Description' },
+        { key: 'intendedUse', label: 'Intended Use' },
+        { key: 'partNumber', label: 'Part Number' },
+        { key: 'lotNumber', label: 'Lot Number' },
+        { key: 'manufacturer', label: 'Manufacturer' },
+        { key: 'poNumber', label: 'PO Number' },
+        { key: 'quoteNumber', label: 'Quote Number' },
+        { key: 'requestedTests', label: 'Requested Tests', format: (v) => Array.isArray(v) ? `${v.length} test(s)` : String(v) },
+        { key: 'acceptanceName', label: 'Groenakker Acceptance (Name)' },
+        { key: 'customerApprovalName', label: 'Customer Approval (Name)' },
+        { key: 'customerApprovalDate', label: 'Customer Approval (Date)' },
+    ];
 
 
 
@@ -1002,13 +1167,39 @@ export default function SSDetail() {
                 <Header title="Sample Submission Detail" />
                 <div className={styles.savesTop}>
                     {id !== 'add' && (
-                        <button className={styles.deleteButton} onClick={handleDelete}><FaTrash />Delete</button>
+                        <button className={styles.deleteButton} onClick={handleDelete} disabled={isClosed}><FaTrash />Delete</button>
                     )}
-                    <button className={styles.saveButton} onClick={handleSave}><FaSave />Save</button>
+                    <button className={styles.saveButton} onClick={handleSave} disabled={isClosed}><FaSave />Save</button>
                 </div>
             </div>
 
+            {/* Record lifecycle banner: Open/Closed status + Close /
+                Reopen / History actions. */}
+            <RecordStatusBar
+                isSaved={isEdit}
+                recordStatus={recordMeta.recordStatus}
+                closedAt={recordMeta.closedAt}
+                closedBy={recordMeta.closedBy}
+                reopenedAt={recordMeta.reopenedAt}
+                reopenedBy={recordMeta.reopenedBy}
+                reopenCount={recordMeta.reopenCount}
+                hasSignature={Boolean(sample.signatureImage && sample.customerSignatureImage)}
+                canReopen={canReopen}
+                closing={closingRecord}
+                reopening={reopeningRecord}
+                onCloseRecord={handleCloseRecord}
+                onReopenRecord={handleReopenRecord}
+                onShowHistory={() => setShowHistory(true)}
+                closeRequirementHint='Both the Groenakker acceptance and customer approval signatures must be saved before the record can be closed'
+            />
 
+            {/* While the record is closed, every form control inside this
+                fieldset is natively disabled — the page is read-only. The
+                backend enforces the same rule on every mutating endpoint. */}
+            <fieldset
+                disabled={isClosed}
+                style={{ border: 'none', margin: 0, padding: 0, minWidth: 0 }}
+            >
             <div className={styles.detailPage}>
                 {/* WhiteIsland for sample information 1 */}
                 <WhiteIsland className={styles.bigIsland}>
@@ -1018,7 +1209,16 @@ export default function SSDetail() {
                             {/* Details for Client Info  */}
                             <div className={styles.details}>
                                 <div className={styles.info} style={{ width: '33%' }}>
-                                    <div className={styles.infoDetail}>Partner Code <span style={{ color: "red" }}>*</span></div>
+                                    <div className={styles.infoDetail}>
+                                        Partner Code <span style={{ color: "red" }}>*</span>
+                                        {isObjectId(sample.bPartnerID) && (
+                                            <OpenRecordLink
+                                                to={`/BuisnessPartner/PartnerDetails/${sample.bPartnerID}`}
+                                                title="Open business partner"
+                                                style={{ marginLeft: 6 }}
+                                            />
+                                        )}
+                                    </div>
                                     <select 
                                         className={styles.dropdown}
                                         name="bPartnerCode" 
@@ -1034,7 +1234,16 @@ export default function SSDetail() {
                                     </select>
                                 </div>
                                 <div className={styles.info} style={{ width: '33%' }}>
-                                    <div className={styles.infoDetail}>Project <span style={{ color: "red" }}>*</span></div>
+                                    <div className={styles.infoDetail}>
+                                        Project <span style={{ color: "red" }}>*</span>
+                                        {isObjectId(sample.projectID) && (
+                                            <OpenRecordLink
+                                                to={`/Projects/ProjectDetails/${sample.projectID}`}
+                                                title="Open project"
+                                                style={{ marginLeft: 6 }}
+                                            />
+                                        )}
+                                    </div>
                                     <select 
                                         className={styles.dropdown}
                                         name="projectID" 
@@ -2528,19 +2737,24 @@ export default function SSDetail() {
             )}
 
             {/* Submission Approval WhiteIsland */}
-            {/* NOTE : data for this section is not being saved in the object-sample. The input fields just have a default value  */}
             <WhiteIsland className={`${styles.bigIsland} ${styles.approvalIsland}`}>
                 <h3>Submission Approval</h3>
                 <div className={styles.main}>
                     <div className={styles.detailContainer}>
                         <div className={styles.approvalSection}>
+                            {/* Internal (Groenakker) acceptance */}
                             <div className={styles.approvalRow}>
                                 <div className={styles.approvalLabel}>Groenakker Acceptance: </div>
                                 <div className={styles.approvalName}>
-                                    <input className={styles.mainText} defaultValue='' />
+                                    <input
+                                        className={styles.mainText}
+                                        name='acceptanceName'
+                                        value={sample.acceptanceName || ''}
+                                        onChange={handleChange}
+                                    />
                                     <div className={styles.subText}>Name</div>
                                 </div>
-                                <div className={styles.approvalSignature}>
+                                <div className={styles.approvalSignature} style={isClosed ? { pointerEvents: 'none', opacity: 0.7 } : undefined}>
                                     <SignatureCanvas
                                         ref={sigCanvas}
                                         canvasProps={{
@@ -2555,7 +2769,52 @@ export default function SSDetail() {
                                     <div className={styles.subText}>Signature</div>
                                 </div>
                                 <div className={styles.approvalDate}>
-                                    <input className={styles.mainText} defaultValue='9 Jan 2025'></input>
+                                    <input
+                                        className={styles.mainText}
+                                        type='date'
+                                        name='acceptanceDate'
+                                        value={sample.acceptanceDate || ''}
+                                        onChange={handleChange}
+                                    />
+                                    <div className={styles.subText}>Date</div>
+                                </div>
+                            </div>
+
+                            {/* Customer approval — second signature required
+                                before the record can be closed. */}
+                            <div className={styles.approvalRow}>
+                                <div className={styles.approvalLabel}>Customer Approval: </div>
+                                <div className={styles.approvalName}>
+                                    <input
+                                        className={styles.mainText}
+                                        name='customerApprovalName'
+                                        value={sample.customerApprovalName || ''}
+                                        onChange={handleChange}
+                                    />
+                                    <div className={styles.subText}>Name</div>
+                                </div>
+                                <div className={styles.approvalSignature} style={isClosed ? { pointerEvents: 'none', opacity: 0.7 } : undefined}>
+                                    <SignatureCanvas
+                                        ref={customerSigCanvas}
+                                        canvasProps={{
+                                            className: styles.signatureCanvas
+                                        }}
+                                        backgroundColor="#f0f0f0"
+                                    />
+                                    <div className={styles.signatureActions}>
+                                        <button type="button" onClick={clearCustomerSignature} className={styles.smallBtn}>Clear</button>
+                                        <button type="button" onClick={saveCustomerSignature} className={styles.smallBtn}>Save</button>
+                                    </div>
+                                    <div className={styles.subText}>Signature</div>
+                                </div>
+                                <div className={styles.approvalDate}>
+                                    <input
+                                        className={styles.mainText}
+                                        type='date'
+                                        name='customerApprovalDate'
+                                        value={sample.customerApprovalDate || ''}
+                                        onChange={handleChange}
+                                    />
                                     <div className={styles.subText}>Date</div>
                                 </div>
                             </div>
@@ -2569,6 +2828,22 @@ export default function SSDetail() {
                 )}
                 <button className={styles.saveButton} onClick={handleSave}><FaSave />Save</button>
             </div>
+            </fieldset>
+
+            {/* Record History modal — versions snapshotted on each reopen. */}
+            {showHistory && (
+                <RecordHistoryModal
+                    title={`Record History — ${sample.sampleCode || ''}`}
+                    versionsUrl={`${import.meta.env.VITE_BACKEND_URL}/api/samples/${id}/versions`}
+                    currentRecord={{ ...sample, requestedTests: tests }}
+                    fields={historyFields}
+                    signatureKeys={[
+                        { key: 'signatureImage', label: 'Groenakker acceptance signature' },
+                        { key: 'customerSignatureImage', label: 'Customer approval signature' },
+                    ]}
+                    onClose={() => setShowHistory(false)}
+                />
+            )}
 
 
 
