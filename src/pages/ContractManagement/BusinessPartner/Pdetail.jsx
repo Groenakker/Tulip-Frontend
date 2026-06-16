@@ -415,6 +415,7 @@ export default function Pdetail() {
         content: (
           <BPDocuments
             bPartnerID={id}
+            bPartnerName={partner?.name}
             canEdit={canEditContacts}
           />
         ),

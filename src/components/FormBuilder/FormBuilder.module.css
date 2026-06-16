@@ -1,0 +1,796 @@
+/* ----------------------------------------------------------------
+   Fullscreen form builder modal.
+
+   Layout:
+     [ topBar                                                    ]
+     [ palette  |  canvas (scrollable)        |  properties      ]
+     [ footer (preview / save)                                   ]
+   ----------------------------------------------------------------*/
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  z-index: 1000;
+  display: flex;
+}
+
+.modal {
+  background: #f8fafc;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Force border-box on every form-builder element. The parent app
+   doesn't enforce a global box-sizing rule, and `width: 100%` +
+   padding was overflowing the right properties pane. */
+.modal,
+.modal *,
+.modal *::before,
+.modal *::after {
+  box-sizing: border-box;
+}
+
+/* ----------- Top bar ----------- */
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.topLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.topTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+}
+
+.topInputs {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.nameInput {
+  flex: 1;
+  min-width: 180px;
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.nameInput:focus {
+  outline: none;
+  border-color: rgb(69, 112, 182);
+  box-shadow: 0 0 0 3px rgba(69, 112, 182, 0.15);
+}
+
+.categorySelect {
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  min-width: 170px;
+}
+
+.topRight {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: #ffffff;
+  color: #374151;
+  border-color: #d1d5db;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: #f3f4f6;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnPrimary {
+  background: rgb(69, 112, 182);
+  color: #ffffff;
+  border-color: rgb(69, 112, 182);
+}
+
+.btnPrimary:hover {
+  background: rgb(1, 49, 126);
+}
+
+.btnGhost {
+  background: transparent;
+  border-color: transparent;
+  color: #6b7280;
+  padding: 6px 10px;
+}
+
+.btnGhost:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+/* ----------- Body (3 panes) ----------- */
+.body {
+  display: grid;
+  /* minmax(0, 1fr) so the centre column can actually shrink and we
+     never end up with a horizontal scrollbar at the modal level. */
+  grid-template-columns: 240px minmax(0, 1fr) 320px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.bodyPreview {
+  grid-template-columns: 1fr;
+}
+
+/* Palette */
+.palette {
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  padding: 14px 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.paletteSectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 4px;
+}
+
+.paletteGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.paletteItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 6px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.paletteItem:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1e40af;
+}
+
+.paletteIcon {
+  font-size: 16px;
+  color: #4b5563;
+}
+
+.paletteItem:hover .paletteIcon {
+  color: #1e40af;
+}
+
+.paletteHint {
+  font-size: 11px;
+  color: #6b7280;
+  padding: 8px 6px;
+  background: #f9fafb;
+  border-radius: 6px;
+  line-height: 1.4;
+}
+
+/* Canvas */
+.canvas {
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.canvasInner {
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.canvasHeader {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 18px 22px;
+}
+
+.canvasFormName {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+
+.canvasFormMeta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.section {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sectionTitle {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 4px 6px;
+  border-radius: 6px;
+  min-width: 0;
+}
+
+.sectionTitle:hover,
+.sectionTitle:focus {
+  border-color: #e5e7eb;
+  background: #f9fafb;
+  outline: none;
+}
+
+.sectionColumns {
+  font-size: 12px;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 4px 6px;
+  background: #ffffff;
+}
+
+.iconBtn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconBtn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.iconBtnDanger:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.fieldsGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.fieldsGrid1 {
+  grid-template-columns: 1fr;
+}
+
+.fieldsGrid2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.fieldsGrid3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.fieldFullWidth {
+  grid-column: 1 / -1;
+}
+
+.field {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #ffffff;
+  cursor: grab;
+  position: relative;
+  transition: all 0.15s;
+}
+
+.field:active {
+  cursor: grabbing;
+}
+
+.field:hover {
+  border-color: #93c5fd;
+  background: #f8fbff;
+}
+
+.fieldSelected {
+  border-color: rgb(69, 112, 182);
+  box-shadow: 0 0 0 3px rgba(69, 112, 182, 0.15);
+  background: #ffffff;
+}
+
+/* Source styling while a field is being dragged. */
+.fieldDragging {
+  opacity: 0.4;
+}
+
+/* Drop-zone indicator lines. Drawn as a thick coloured stripe on
+   the relevant edge so the user can see exactly where a drop will
+   land. Left/right zones double as the "side-by-side" trigger that
+   auto-bumps the section to >=2 columns. */
+.dropTop::before,
+.dropBottom::before,
+.dropLeft::before,
+.dropRight::before {
+  content: "";
+  position: absolute;
+  background: rgb(69, 112, 182);
+  border-radius: 3px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.dropTop::before {
+  top: -3px;
+  left: 4px;
+  right: 4px;
+  height: 4px;
+}
+
+.dropBottom::before {
+  bottom: -3px;
+  left: 4px;
+  right: 4px;
+  height: 4px;
+}
+
+.dropLeft::before {
+  top: 4px;
+  bottom: 4px;
+  left: -3px;
+  width: 4px;
+}
+
+.dropRight::before {
+  top: 4px;
+  bottom: 4px;
+  right: -3px;
+  width: 4px;
+}
+
+/* Empty section drop target highlight. */
+.emptyDropActive {
+  border-color: rgb(69, 112, 182);
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.fieldHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.required {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.fieldActions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.field:hover .fieldActions,
+.fieldSelected .fieldActions {
+  opacity: 1;
+}
+
+.fieldPreview {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.fieldInput {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #f9fafb;
+  pointer-events: none;
+}
+
+.fieldOption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #4b5563;
+  margin: 2px 0;
+}
+
+.fieldOption input {
+  pointer-events: none;
+}
+
+.headingPreview {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  padding: 4px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dividerPreview {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 8px 0;
+}
+
+.signaturePreview {
+  height: 70px;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.matrixPreview {
+  font-size: 11px;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: #f9fafb;
+}
+
+/* Empty section / canvas */
+.emptySection {
+  padding: 18px;
+  text-align: center;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #6b7280;
+  background: #f9fafb;
+}
+
+.addSectionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: 1px dashed #93c5fd;
+  background: #eff6ff;
+  color: #1e40af;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: center;
+}
+
+.addSectionBtn:hover {
+  background: #dbeafe;
+}
+
+/* Properties panel */
+.props {
+  background: #ffffff;
+  border-left: 1px solid #e5e7eb;
+  padding: 16px 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.propsTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.propsType {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1e40af;
+  background: #eff6ff;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.propGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.propLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.propInput {
+  padding: 7px 9px;
+  font-size: 13px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  width: 100%;
+}
+
+.propInput:focus {
+  outline: none;
+  border-color: rgb(69, 112, 182);
+  box-shadow: 0 0 0 3px rgba(69, 112, 182, 0.15);
+}
+
+.propTextarea {
+  min-height: 70px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.propRow {
+  display: flex;
+  gap: 8px;
+}
+
+.propCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #374151;
+  padding: 6px 8px;
+  background: #f9fafb;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.propCheckbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: rgb(69, 112, 182);
+}
+
+.propsEmpty {
+  padding: 22px 12px;
+  text-align: center;
+  font-size: 12px;
+  color: #6b7280;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.propsHint {
+  font-size: 11px;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* Preview mode.
+
+   Block layout (not flex) so the white sheet's height is driven by
+   its intrinsic content height. Centring is done with `margin: 0 auto`.
+   With the previous flex+stretch layout, the sheet was forced to
+   container height and any content beyond that height escaped its
+   white background. */
+.previewWrapper {
+  background: #f1f5f9;
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.previewSheet {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.previewSection h3 {
+  margin: 0 0 14px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 6px;
+}
+
+/* The plain "field title" label above non-checkbox inputs.
+   :not(.fieldOption) excludes the inline label wrappers used for
+   checkbox / radio rows — those need `display: flex` from
+   .fieldOption so the box and its text sit on one baseline with a
+   gap. Without the :not() guard, this rule would override
+   .fieldOption's display:flex and the box would touch its label. */
+.previewField label:not(.fieldOption) {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+/* Bump specificity inside the preview so .fieldOption wins over
+   any future rules that target generic labels. */
+.previewField .fieldOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin: 2px 0;
+}
+
+/* Apply the "form input" styling only to text-like inputs. The
+   :not() guard keeps checkbox / radio inputs at their native size
+   so they line up with their inline labels — without it they were
+   getting `width:100%` + padding and ballooning out of alignment. */
+.previewField input:not([type="checkbox"]):not([type="radio"]),
+.previewField select,
+.previewField textarea {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.previewField input[type="checkbox"],
+.previewField input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: rgb(69, 112, 182);
+}
+
+.previewField textarea {
+  min-height: 70px;
+  font-family: inherit;
+}
+
+.previewHelpText {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 3px;
+}
+
+/* "Create Form" button used in BPDocuments */
+.createFormBar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.createFormBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid rgb(69, 112, 182);
+  color: rgb(69, 112, 182);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.createFormBtn:hover {
+  background: rgb(69, 112, 182);
+  color: #ffffff;
+}

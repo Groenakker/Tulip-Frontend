@@ -8,9 +8,12 @@ import {
   FaFileAlt,
   FaEye,
   FaCheckCircle,
+  FaWpforms,
 } from "react-icons/fa";
 import styles from "./BPDocuments.module.css";
+import builderStyles from "../FormBuilder/FormBuilder.module.css";
 import toast from "../Toaster/toast";
+import FormBuilder from "../FormBuilder/FormBuilder";
 
 // Sample / TRF documents attached to a Business Partner. Lives
 // inside the "Sample Documents" tab on the BP detail page (the
@@ -36,12 +39,18 @@ import toast from "../Toaster/toast";
 //                        latest documents array (used by Pdetail
 //                        to refresh related counts and by the
 //                        Shipping Log to keep cached data fresh).
-export default function BPDocuments({ bPartnerID, canEdit, onDocumentsChanged }) {
+export default function BPDocuments({
+  bPartnerID,
+  bPartnerName,
+  canEdit,
+  onDocumentsChanged,
+}) {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [settingCurrentId, setSettingCurrentId] = useState(null);
   const [previewDoc, setPreviewDoc] = useState(null);
+  const [builderOpen, setBuilderOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   const fetchDocuments = async () => {
@@ -294,6 +303,24 @@ export default function BPDocuments({ bPartnerID, canEdit, onDocumentsChanged })
         </table>
       )}
 
+      {/* Create-form CTA. Opens the fullscreen builder so an admin
+          can re-create the customer's form (TRF / PCF / etc.) as a
+          structured Tulip template. The output template is what
+          Sample Submission will eventually render for this BP and
+          what the printable PDF is generated from. */}
+      {canEdit && (
+        <div className={builderStyles.createFormBar}>
+          <button
+            type="button"
+            className={builderStyles.createFormBtn}
+            onClick={() => setBuilderOpen(true)}
+            title="Build a Tulip form template that mirrors this partner's document"
+          >
+            <FaWpforms /> Create Form
+          </button>
+        </div>
+      )}
+
       {previewDoc && (
         <DocumentPreviewModal
           partnerId={bPartnerID}
@@ -301,6 +328,22 @@ export default function BPDocuments({ bPartnerID, canEdit, onDocumentsChanged })
           onClose={() => setPreviewDoc(null)}
         />
       )}
+
+      <FormBuilder
+        open={builderOpen}
+        bPartnerName={bPartnerName}
+        onClose={() => setBuilderOpen(false)}
+        onSave={(template) => {
+          // Backend persistence (POST /api/form-templates) will be
+          // wired in once that route lands. For now we close the
+          // builder and surface a success toast so the UI flow is
+          // testable end-to-end.
+          // eslint-disable-next-line no-console
+          console.log("FormBuilder saved template (not yet persisted):", template);
+          toast.success(`Saved draft: ${template.name}`);
+          setBuilderOpen(false);
+        }}
+      />
     </div>
   );
 }
