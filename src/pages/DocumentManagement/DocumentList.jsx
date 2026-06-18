@@ -134,6 +134,14 @@ export default function DocumentList() {
     // Add menu logic here
   };
 
+  // Always land users on the document detail page so they can see
+  // versions/status. The detail page itself surfaces a banner with
+  // a deep-link to the source shipping/receiving record for any
+  // auto-managed document.
+  const openDocument = (document) => {
+    navigate(`/DocumentManagement/DocumentDetails/${document._id}`);
+  };
+
   const getStatusClass = (status) => {
     switch (String(status || "").toUpperCase()) {
       case "PUBLISHED":
@@ -262,7 +270,7 @@ export default function DocumentList() {
                 return (
                   <tr
                     key={document._id}
-                    onClick={() => navigate(`/DocumentManagement/DocumentDetails/${document._id}`)}
+                    onClick={() => openDocument(document)}
                     className={`${styles.rowClickable} ${isSelected ? "bulkSelectedRow" : ""}`}
                   >
                     {canDelete && (
@@ -270,16 +278,21 @@ export default function DocumentList() {
                         className="bulkCheckboxCell"
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (document.isAutoManaged) return;
                           selection.toggleItem(document._id);
                         }}
                       >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => selection.toggleItem(document._id)}
-                          onClick={(e) => e.stopPropagation()}
-                          aria-label={`Select document ${document.documentID || document.title || document._id}`}
-                        />
+                        {document.isAutoManaged ? (
+                          <span className={styles.lockedDot} title="Managed by linked record" />
+                        ) : (
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => selection.toggleItem(document._id)}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Select document ${document.documentID || document.title || document._id}`}
+                          />
+                        )}
                       </td>
                     )}
                     <td>{document.documentID}</td>
@@ -287,6 +300,14 @@ export default function DocumentList() {
                       <div className={styles.titleCell}>
                         <FaFile className={styles.documentIcon} />
                         <span>{document.title ?? document.name}</span>
+                        {document.linkedEntity?.type && (
+                          <span
+                            className={styles.linkedBadge}
+                            title={`Linked to ${document.linkedEntity.type} ${document.linkedEntity.code || ""}`}
+                          >
+                            {document.linkedEntity.type === "shipping" ? "Shipping" : "Receiving"}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td>{document.category}</td>

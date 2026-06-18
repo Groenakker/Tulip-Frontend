@@ -91,6 +91,11 @@ export default function DocumentDetails() {
           fileUrl: data.fileUrl ?? "",
           files: Array.isArray(data.files) ? data.files : [],
           owner: ownerName,
+          // Carry linked-record metadata through so the banner can
+          // render and edit controls can be disabled for documents
+          // that are mirrored from a shipping/receiving entry.
+          linkedEntity: data.linkedEntity || null,
+          isAutoManaged: Boolean(data.isAutoManaged),
         });
         const versionList = Array.isArray(data.versions) ? data.versions : [];
         setVersions(
@@ -427,9 +432,58 @@ export default function DocumentDetails() {
     );
   }
 
+  // When the document is auto-managed (i.e. mirrored from a
+  // Shipping or Receiving record), banner the user back to that
+  // source instead of letting them edit fields here — they'd just
+  // get overwritten on the next sync.
+  const linkedSourceHref = (() => {
+    const l = document.linkedEntity;
+    if (!l || !l.id) return null;
+    if (l.type === "shipping") return `/ShippingLog/${l.id}`;
+    if (l.type === "receiving") return `/RecieveLog/RecieveDetails/${l.id}`;
+    return null;
+  })();
+
   return (
     <>
       <Header title="Document Management" />
+      {document.isAutoManaged && linkedSourceHref && (
+        <div
+          style={{
+            margin: "12px 16px 0",
+            padding: "10px 14px",
+            background: "#eff6ff",
+            border: "1px solid #bfdbfe",
+            borderRadius: 8,
+            color: "#1e3a8a",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            fontSize: 13,
+          }}
+        >
+          <span>
+            This document mirrors a {document.linkedEntity?.type} record
+            {document.linkedEntity?.code ? ` (${document.linkedEntity.code})` : ""}. Edits made on the source record automatically reflect here.
+          </span>
+          <button
+            type="button"
+            onClick={() => navigate(linkedSourceHref)}
+            style={{
+              background: "#1d4ed8",
+              color: "white",
+              border: "none",
+              padding: "6px 12px",
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Open source record
+          </button>
+        </div>
+      )}
       <div className={styles.detailPage}>
         {/* Lifecycle Status Sidebar */}
         <div className={styles.lifecycleSidebar}>
