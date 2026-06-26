@@ -1,7 +1,8 @@
 
 body {
   margin: 0;
-  background-color: #EFF3F4;
+  background-color: var(--surface-page);
+  color: var(--text-primary);
 }
 
 .appContainer {
@@ -9,12 +10,12 @@ body {
 }
 
 .mainContentArea{
-  margin-left: 256px;
+  margin-left: var(--layout-sidebar-width);
   width: auto;
-  background-color: #EFF3F4;
-  height: calc(100vh - 64px);
-  padding: 32px;
+  background-color: var(--surface-page);
+  height: calc(100vh - var(--layout-header-height));
+  padding: var(--space-8);
 }
 .titleArea{
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }

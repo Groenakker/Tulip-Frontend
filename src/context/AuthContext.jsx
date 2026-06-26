@@ -124,10 +124,19 @@ export const AuthProvider = ({ children }) => {
       clearInterval(refreshIntervalRef.current);
       refreshIntervalRef.current = null;
     }
-    // Navigate to login if not already on a public or token-only page
+    // Navigate to login if not already on a public or token-only page.
+    // The Customer Portal (/portal/*) and Vendor Portal (/vendor/*)
+    // own their own auth contexts (CustomerAuthContext /
+    // VendorAuthContext) and must NOT be bounced to the internal
+    // /login when the internal auth cookie is missing — that's the
+    // expected state for an external portal user.
     const pathname = window.location.pathname;
     const publicPaths = ['/login', '/signup', '/invite-signup'];
-    const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/approval/');
+    const portalPrefixes = ['/portal', '/vendor'];
+    const isPublicPath =
+      publicPaths.includes(pathname) ||
+      pathname.startsWith('/approval/') ||
+      portalPrefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
     if (!isPublicPath) {
       window.location.href = '/login';
     }

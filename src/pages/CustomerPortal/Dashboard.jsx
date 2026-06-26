@@ -80,9 +80,17 @@ function DashCard({ icon, label, value, to, actionable }) {
 }
 
 export function StatusPill({ value }) {
-  const v = (value || "").toLowerCase();
+  const v = (value || "").toLowerCase().trim();
   let cls = styles.pillGray;
-  if (v.includes("submitt") || v.includes("review")) cls = styles.pillBlue;
+  // Task workflow values (epic/story status) checked first so they don't
+  // get swallowed by the broader sample-status substrings below.
+  if (v === "done") cls = styles.pillGreen;
+  else if (v === "in progress") cls = styles.pillBlue;
+  else if (v === "in review") cls = styles.pillBlue;
+  else if (v === "blocked") cls = styles.pillRed;
+  else if (v === "to do" || v === "backlog") cls = styles.pillGray;
+  // Sample / document statuses.
+  else if (v.includes("submitt") || v.includes("review")) cls = styles.pillBlue;
   else if (v.includes("accept") || v.includes("complete") || v.includes("approv")) cls = styles.pillGreen;
   else if (v.includes("hold") || v.includes("update") || v.includes("draft")) cls = styles.pillAmber;
   else if (v.includes("reject") || v.includes("cancel")) cls = styles.pillRed;

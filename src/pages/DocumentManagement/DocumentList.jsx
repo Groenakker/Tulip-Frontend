@@ -305,7 +305,13 @@ export default function DocumentList() {
                             className={styles.linkedBadge}
                             title={`Linked to ${document.linkedEntity.type} ${document.linkedEntity.code || ""}`}
                           >
-                            {document.linkedEntity.type === "shipping" ? "Shipping" : "Receiving"}
+                            {document.linkedEntity.type === "shipping"
+                              ? "Shipping"
+                              : document.linkedEntity.type === "receiving"
+                              ? "Receiving"
+                              : document.linkedEntity.type === "sample"
+                              ? "Sample"
+                              : "Linked"}
                           </span>
                         )}
                       </div>

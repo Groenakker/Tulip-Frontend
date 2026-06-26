@@ -13,6 +13,7 @@ import Header from '../../../components/Header';
 import RecordStatusBar from '../../../components/RecordLifecycle/RecordStatusBar';
 import RecordHistoryModal from '../../../components/RecordLifecycle/RecordHistoryModal';
 import OpenRecordLink, { isObjectId } from '../../../components/RecordLink/OpenRecordLink';
+import MultiSelect from '../../../components/MultiSelect/MultiSelect';
 export default function SSDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -103,7 +104,9 @@ export default function SSDetail() {
     };
 
     const handleTestSelected = (selectedTests) => {
-        // Add selected tests to the tests array
+        // Add selected tests to the tests array. Lab Study assignment
+        // fields default to "unassigned" — they get populated once the
+        // user selects instances + vendor and clicks "Assign".
         const newTests = selectedTests.map((test, index) => ({
             id: Date.now() + index, // Generate unique ID
             testCodeId: test._id || test.id,
@@ -114,7 +117,15 @@ export default function SSDetail() {
             extractionTemp: '',
             quality: 'GLP',
             category: test.category || '',
-            extractBased: test.extractBased || ''
+            extractBased: test.extractBased || '',
+            vendorBpId: '',
+            vendorBpName: '',
+            vendorBpCode: '',
+            assignedInstanceIds: [],
+            assignedInstanceCodes: [],
+            labStudyId: null,
+            labStudyCode: null,
+            assignmentStatus: 'Unassigned',
         }));
         setTests(prev => [...prev, ...newTests]);
         setShowTestCodeModal(false);
@@ -178,7 +189,13 @@ export default function SSDetail() {
         sampleSterile: '',
         sterilizationMethod: '',
         appearance: '',
-        deviceType: '', // Radio options: Device, Solid, Liquid, Gel
+        // Sample Type (renamed from Device Type).
+        // Options: Device, Components, Liquid, Gel, Pallet, Powder.
+        deviceType: '',
+        // Bulk submission flag. When true, a single instance can be
+        // assigned to multiple requested tests. When false (default),
+        // each instance is exclusive to a single test.
+        isBulk: false,
         materialsOfConstruction: '',
 
         // Extra info
@@ -290,6 +307,18 @@ export default function SSDetail() {
     const [movements, setMovements] = useState([]);
     const [loadingInventory, setLoadingInventory] = useState(false);
     const [expandedInstance, setExpandedInstance] = useState(null);
+
+    // Vendors (Bpartner category Vendor / Client & Vendor) selectable in
+    // the Requested Tests "Assign" UI as the lab that will perform each
+    // test. Fed by the same backend endpoint the (now-internal) test
+    // orders flow uses.
+    const [vendors, setVendors] = useState([]);
+    // Per-test working assignment state. Indexed by test.id. Tracks the
+    // vendor + instance picks BEFORE the user clicks "Assign". On a
+    // successful assign, the result is written back into the
+    // corresponding `tests` row.
+    const [testAssignments, setTestAssignments] = useState({});
+    const [assigningTestId, setAssigningTestId] = useState(null);
 
 
     // Handle image change for sample images
@@ -544,6 +573,34 @@ export default function SSDetail() {
                 localStorage.setItem('contactTypeOptions', JSON.stringify(customOptions));
             }
 
+            // Sanitize each requested test before sending. Empty strings
+            // for ObjectId-typed fields (vendorBpId, labStudyId, testCodeId)
+            // would crash Mongoose's cast — those fields are optional
+            // until the user assigns the test, so we strip them when
+            // they're blank. Same goes for the assignedInstanceIds
+            // array — empty strings inside it would also fail to cast.
+            const cleanRequestedTests = tests
+                .filter(t => t.grkCode || t.description)
+                .map((t) => {
+                    const cleaned = { ...t };
+                    const OBJECT_ID_FIELDS = ['vendorBpId', 'labStudyId', 'testCodeId'];
+                    for (const f of OBJECT_ID_FIELDS) {
+                        if (cleaned[f] === '' || cleaned[f] === null || cleaned[f] === undefined) {
+                            delete cleaned[f];
+                        }
+                    }
+                    if (Array.isArray(cleaned.assignedInstanceIds)) {
+                        cleaned.assignedInstanceIds = cleaned.assignedInstanceIds.filter(Boolean);
+                    }
+                    // `quality` is an enum (GLP / Non-GLP) — drop it
+                    // entirely when empty instead of sending "" so the
+                    // enum validator doesn't reject it.
+                    if (cleaned.quality === '' || cleaned.quality == null) {
+                        delete cleaned.quality;
+                    }
+                    return cleaned;
+                });
+
             const payload = {
                 ...sample,
                 company_id: sample.company_id || user?.companyId || '',
@@ -551,7 +608,7 @@ export default function SSDetail() {
                 description: sample.sampleDescription,
                 name: sample.name || sample.sampleDescription || '',
                 signatureImage: sample.signatureImage || signatureData.signature || '',
-                requestedTests: tests.filter(t => t.grkCode || t.description), // Only save tests with data
+                requestedTests: cleanRequestedTests,
                 testMetadata: testMetadata
             };
             
@@ -562,8 +619,11 @@ export default function SSDetail() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                
-                if (!res.ok) throw new Error('Failed to save');
+
+                if (!res.ok) {
+                    const body = await res.json().catch(() => ({}));
+                    throw new Error(body?.message || body?.error || 'Failed to save');
+                }
                 toast.success('Sample saved!');
             } else {
                 // Create new sample (POST)
@@ -572,12 +632,15 @@ export default function SSDetail() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                
-                if (!res.ok) throw new Error('Failed to save');
-                
+
+                if (!res.ok) {
+                    const body = await res.json().catch(() => ({}));
+                    throw new Error(body?.message || body?.error || 'Failed to save');
+                }
+
                 const saved = await res.json();
                 toast.success('Sample saved!');
-                
+
                 // Navigate to the saved sample's ID
                 if (saved._id) {
                     navigate(`/SampleSubmission/SSDetail/${saved._id}`, { replace: true });
@@ -585,7 +648,7 @@ export default function SSDetail() {
             }
         } catch (e) {
             console.error('Error saving sample:', e);
-            toast.error('Failed to save sample');
+            toast.error(e.message || 'Failed to save sample');
         }
     };
 
@@ -780,6 +843,7 @@ export default function SSDetail() {
                             sterilizationMethod: '',
                             appearance: '',
                             deviceType: '',
+                            isBulk: false,
                             materialsOfConstruction: '',
                             shippingCondition: '',
                             sampleStorage: '',
@@ -869,6 +933,7 @@ export default function SSDetail() {
                         sterilizationMethod: '',
                         appearance: '',
                         deviceType: '',
+                        isBulk: false,
                         materialsOfConstruction: '',
                         shippingCondition: '',
                         sampleStorage: '',
@@ -1002,6 +1067,253 @@ export default function SSDetail() {
     const handleTestMetadataChange = (e) => {
         const { name, value } = e.target;
         setTestMetadata(prev => ({ ...prev, [name]: value }));
+    };
+
+    // ============================================================
+    // Lab Study assignment (Requested Tests rows)
+    // ------------------------------------------------------------
+    // Each row in the Requested Tests table can be assigned to one or
+    // more instances of this sample plus a vendor (lab) that will
+    // perform the test. Submitting the assignment creates (or updates)
+    // a LabStudy record on the backend.
+    //
+    // Bulk-mode rules:
+    //   sample.isBulk === true  → any instance can be picked for any
+    //                             test (instances can repeat across
+    //                             tests).
+    //   sample.isBulk === false → each instance is exclusive to a
+    //                             single test. The picker hides
+    //                             instances already assigned to other
+    //                             tests so the user can't pick clashing
+    //                             instances by accident, and the
+    //                             backend enforces the same rule.
+    // ============================================================
+
+    // Load the vendor catalog. We expose a manual refresh function
+    // because the user can update the vendor's attached test codes on
+    // the Business Partner page in a separate tab — calling
+    // `refreshVendors()` (or just clicking the refresh button next to
+    // the empty-vendor warning) pulls the latest list without
+    // reloading the whole page.
+    const refreshVendors = React.useCallback(async () => {
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_BACKEND_URL}/api/test-orders/catalog/vendors`,
+                { credentials: 'include' }
+            );
+            if (!res.ok) {
+                // Surface permission / server errors so the user sees why
+                // the vendor list is empty (a silent 403 was the original
+                // cause of "I added the test code but the vendor isn't
+                // showing in the dropdown").
+                let detail = `${res.status} ${res.statusText}`;
+                try {
+                    const body = await res.json();
+                    if (body?.message) detail = body.message;
+                } catch (_) { /* response wasn't JSON */ }
+                console.error('Failed to load vendors:', detail);
+                toast.error(`Could not load vendor list: ${detail}`);
+                return;
+            }
+            const data = await res.json();
+            setVendors(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error('Failed to load vendors:', err);
+            toast.error('Could not load vendor list (network error)');
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!isEdit) return;
+        refreshVendors();
+        // Refetch whenever the tab regains focus so changes made to a
+        // vendor's test codes in another tab (Business Partners) show
+        // up here without a full page reload.
+        const onFocus = () => refreshVendors();
+        window.addEventListener('focus', onFocus);
+        return () => window.removeEventListener('focus', onFocus);
+    }, [isEdit, refreshVendors]);
+
+    // Instances of this sample that are already assigned to OTHER tests.
+    // Used to filter the per-row instance picker when bulk is off.
+    const getInstancesAssignedToOtherTests = (currentTestId) => {
+        const used = new Set();
+        for (const t of tests) {
+            if (t.id === currentTestId) continue;
+            for (const iid of (t.assignedInstanceIds || [])) {
+                used.add(String(iid));
+            }
+        }
+        return used;
+    };
+
+    const getAssignableInstances = (currentTestId) => {
+        if (sample.isBulk) return instances;
+        const used = getInstancesAssignedToOtherTests(currentTestId);
+        return instances.filter((i) => !used.has(String(i._id)));
+    };
+
+    // Filter the vendor dropdown for a given test row so it only
+    // includes vendors who have explicitly listed this test code on
+    // their Business Partner page. The vendor's `testCodes` array
+    // comes back from /api/test-orders/catalog/vendors. If a test
+    // hasn't been picked yet (no testCodeId), we just return all
+    // vendors so the row stays usable while the user is still
+    // configuring it.
+    const getVendorsForTest = (test) => {
+        if (!test?.testCodeId) return vendors;
+        const targetId = String(test.testCodeId);
+        return vendors.filter((v) =>
+            Array.isArray(v.testCodes) &&
+            v.testCodes.some((tc) => String(tc?._id || tc) === targetId)
+        );
+    };
+
+    const getAssignmentDraft = (test) => {
+        const fromState = testAssignments[test.id];
+        if (fromState) return fromState;
+        return {
+            vendorBpId: test.vendorBpId || '',
+            instanceIds: Array.isArray(test.assignedInstanceIds)
+                ? test.assignedInstanceIds.map(String)
+                : [],
+        };
+    };
+
+    const updateAssignmentDraft = (testId, patch) => {
+        setTestAssignments((prev) => ({
+            ...prev,
+            [testId]: { ...getAssignmentDraft({ id: testId }), ...patch },
+        }));
+    };
+
+    const toggleAssignmentInstance = (testId, instanceId) => {
+        const draft = getAssignmentDraft({ id: testId });
+        const idStr = String(instanceId);
+        const exists = draft.instanceIds.includes(idStr);
+        const next = exists
+            ? draft.instanceIds.filter((x) => x !== idStr)
+            : [...draft.instanceIds, idStr];
+        updateAssignmentDraft(testId, { instanceIds: next });
+    };
+
+    const handleAssignTest = async (test, testIndex) => {
+        if (!id || id === 'add') {
+            toast.warning('Save the sample first, then assign instances.');
+            return;
+        }
+        const draft = getAssignmentDraft(test);
+        if (!draft.vendorBpId) {
+            toast.warning('Select a vendor for this test.');
+            return;
+        }
+        if (!draft.instanceIds.length) {
+            toast.warning('Select at least one instance.');
+            return;
+        }
+        setAssigningTestId(test.id);
+        try {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/lab-studies/assign`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sampleId: id,
+                    testIndex,
+                    testCodeId: test.testCodeId,
+                    grkCode: test.grkCode,
+                    description: test.description,
+                    quality: test.quality,
+                    extractionTime: test.extractionTime,
+                    extractionTemp: test.extractionTemp,
+                    samplesSubmitted: test.samplesSubmitted,
+                    category: test.category,
+                    extractBased: test.extractBased,
+                    vendorBpId: draft.vendorBpId,
+                    instanceIds: draft.instanceIds,
+                }),
+            });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(body?.message || 'Failed to assign');
+            const { study, requestedTest } = body;
+            // Patch local tests state so the row reflects the new
+            // assignment (vendor, instances, study link) immediately.
+            setTests((prev) => prev.map((t) => (
+                t.id === test.id
+                    ? {
+                        ...t,
+                        vendorBpId: study.vendorBpId,
+                        vendorBpName: study.vendorBpName,
+                        vendorBpCode: study.vendorBpCode,
+                        assignedInstanceIds: (study.instances || []).map((i) => i.instanceId),
+                        assignedInstanceCodes: (study.instances || []).map((i) => i.instanceCode),
+                        labStudyId: study._id,
+                        labStudyCode: study.studyCode,
+                        assignmentStatus: requestedTest?.assignmentStatus || 'Assigned',
+                    }
+                    : t
+            )));
+            // Clear the draft so the row collapses back to the assigned view.
+            setTestAssignments((prev) => {
+                const { [test.id]: _drop, ...rest } = prev;
+                return rest;
+            });
+            toast.success(`Lab study ${study.studyCode} created`);
+        } catch (err) {
+            console.error('Assign error:', err);
+            toast.error(err.message || 'Failed to assign instances');
+        } finally {
+            setAssigningTestId(null);
+        }
+    };
+
+    const handleUnassignTest = async (test) => {
+        if (!test.labStudyId) {
+            // Local-only clear (the test row was never persisted).
+            setTests((prev) => prev.map((t) => (
+                t.id === test.id
+                    ? {
+                        ...t,
+                        vendorBpId: '',
+                        vendorBpName: '',
+                        vendorBpCode: '',
+                        assignedInstanceIds: [],
+                        assignedInstanceCodes: [],
+                        labStudyId: null,
+                        labStudyCode: null,
+                        assignmentStatus: 'Unassigned',
+                    }
+                    : t
+            )));
+            return;
+        }
+        if (!window.confirm('Remove this test\'s lab study? The vendor will no longer see it.')) return;
+        try {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/lab-studies/${test.labStudyId}`, {
+                method: 'DELETE',
+                credentials: 'include',
+            });
+            if (!res.ok) throw new Error('Failed to remove lab study');
+            setTests((prev) => prev.map((t) => (
+                t.id === test.id
+                    ? {
+                        ...t,
+                        vendorBpId: '',
+                        vendorBpName: '',
+                        vendorBpCode: '',
+                        assignedInstanceIds: [],
+                        assignedInstanceCodes: [],
+                        labStudyId: null,
+                        labStudyCode: null,
+                        assignmentStatus: 'Unassigned',
+                    }
+                    : t
+            )));
+            toast.success('Lab study removed');
+        } catch (err) {
+            console.error('Unassign error:', err);
+            toast.error(err.message || 'Failed to remove lab study');
+        }
     };
 
     // Calculate total samples submitted
@@ -1480,44 +1792,56 @@ export default function SSDetail() {
                             </div>
 
                             <div className={styles.details}>
-                                <div className={styles.info}>
-                                    <div className={styles.infoDetail}>Device Type</div>
+                                {/*
+                                    Sample Type (renamed from Device Type).
+                                    Options: Device, Components, Liquid, Gel,
+                                    Pallet, Powder.
+
+                                    The Bulk Yes/No radio sits next to it.
+                                    When Bulk = Yes, a single instance can
+                                    be assigned to multiple requested tests
+                                    on this sample. When Bulk = No (default),
+                                    each instance is exclusive to a single
+                                    test — the Requested Tests assignment
+                                    UI hides instances already chosen for
+                                    other tests.
+                                */}
+                                <div className={styles.info} style={{ flex: 2 }}>
+                                    <div className={styles.infoDetail}>Sample Type</div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', marginTop: '10px' }}>
+                                        {['Device', 'Components', 'Liquid', 'Gel', 'Pallet', 'Powder'].map((opt) => (
+                                            <label key={opt} style={{ whiteSpace: 'nowrap' }}>
+                                                <input
+                                                    type="radio"
+                                                    name="deviceType"
+                                                    value={opt}
+                                                    checked={sample.deviceType === opt}
+                                                    onChange={handleChange}
+                                                /> {opt}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className={styles.info} style={{ flex: 1 }}>
+                                    <div className={styles.infoDetail}>Bulk</div>
                                     <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
                                         <label>
                                             <input
                                                 type="radio"
-                                                name="deviceType"
-                                                value="Device"
-                                                checked={sample.deviceType === 'Device'}
-                                                onChange={handleChange}
-                                            /> Device
+                                                name="isBulk"
+                                                value="yes"
+                                                checked={sample.isBulk === true}
+                                                onChange={() => setSample((prev) => ({ ...prev, isBulk: true }))}
+                                            /> Yes
                                         </label>
                                         <label>
                                             <input
                                                 type="radio"
-                                                name="deviceType"
-                                                value="Solid"
-                                                checked={sample.deviceType === 'Solid'}
-                                                onChange={handleChange}
-                                            /> Solid
-                                        </label>
-                                        <label>
-                                            <input
-                                                type="radio"
-                                                name="deviceType"
-                                                value="Liquid"
-                                                checked={sample.deviceType === 'Liquid'}
-                                                onChange={handleChange}
-                                            /> Liquid
-                                        </label>
-                                        <label>
-                                            <input
-                                                type="radio"
-                                                name="deviceType"
-                                                value="Gel"
-                                                checked={sample.deviceType === 'Gel'}
-                                                onChange={handleChange}
-                                            /> Gel
+                                                name="isBulk"
+                                                value="no"
+                                                checked={sample.isBulk !== true}
+                                                onChange={() => setSample((prev) => ({ ...prev, isBulk: false }))}
+                                            /> No
                                         </label>
                                     </div>
                                 </div>
@@ -2443,90 +2767,238 @@ export default function SSDetail() {
                                         <th className={styles.centerColumn}>Samples Submitted</th>
                                         <th>Extraction Condition</th>
                                         <th>Quality</th>
+                                        <th>Vendor &amp; Instances</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {tests.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>
+                                            <td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>
                                                 No tests added. Click "+ Add" to add tests.
                                             </td>
                                         </tr>
                                     ) : (
-                                        tests.map((test) => (
-                                            <tr key={test.id}>
-                                                <td>{test.grkCode}</td>
-                                                <td>{test.description}</td>
-                                                <td className={styles.centerAlign} style={{ textAlign: 'left' }}>
-                                                    <input 
-                                                        type="text" 
-                                                        value={test.samplesSubmitted}
-                                                        onChange={(e) => handleTestChange(test.id, 'samplesSubmitted', e.target.value)}
-                                                        className={styles.extractionInput}
-                                                        style={{ width: '60px', textAlign: 'center' }}
-                                                    />
-                                                </td>
-                                                <td>
-                                                    <div className={styles.extractionParams}>
-                                                        <div>
-                                                            Time (h):
-                                                            <input type="text" value={test.extractionTime}
-                                                                onChange={(e) => handleTestChange(test.id, 'extractionTime', e.target.value)}
-                                                                className={styles.extractionInput}
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            Temp (C):
+                                        tests.map((test, testIndex) => {
+                                            const isAssigned = Boolean(test.labStudyId);
+                                            const draft = getAssignmentDraft(test);
+                                            const assignableInstances = getAssignableInstances(test.id);
+                                            return (
+                                                <React.Fragment key={test.id}>
+                                                    <tr>
+                                                        <td>{test.grkCode}</td>
+                                                        <td>{test.description}</td>
+                                                        <td className={styles.centerAlign} style={{ textAlign: 'left' }}>
                                                             <input
                                                                 type="text"
-                                                                value={test.extractionTemp}
-                                                                onChange={(e) => handleTestChange(test.id, 'extractionTemp', e.target.value)}
+                                                                value={test.samplesSubmitted}
+                                                                onChange={(e) => handleTestChange(test.id, 'samplesSubmitted', e.target.value)}
                                                                 className={styles.extractionInput}
+                                                                style={{ width: '60px', textAlign: 'center' }}
                                                             />
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div className={styles.qualityOptions}>
-                                                        <label>
-                                                            <input
-                                                                type="radio"
-                                                                name={`quality_${test.id}`}
-                                                                value="GLP"
-                                                                checked={test.quality === 'GLP'}
-                                                                onChange={() => handleTestChange(test.id, 'quality', 'GLP')}
-                                                            />
-                                                            GLP
-                                                        </label>
-                                                        <label>
-                                                            <input
-                                                                type="radio"
-                                                                name={`quality_${test.id}`}
-                                                                value="Non-GLP"
-                                                                checked={test.quality === 'Non-GLP'}
-                                                                onChange={() => handleTestChange(test.id, 'quality', 'Non-GLP')}
-                                                            />
-                                                            Non-GLP
-                                                        </label>
-                                                    </div>
-                                                    <button 
-                                                        onClick={() => handleRemoveTest(test.id)}
-                                                        style={{ 
-                                                            marginTop: '5px', 
-                                                            padding: '2px 8px', 
-                                                            fontSize: '12px',
-                                                            background: '#dc2626',
-                                                            color: 'white',
-                                                            border: 'none',
-                                                            borderRadius: '3px',
-                                                            cursor: 'pointer'
-                                                        }}
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
+                                                        </td>
+                                                        <td>
+                                                            <div className={styles.extractionParams}>
+                                                                <div>
+                                                                    Time (h):
+                                                                    <input type="text" value={test.extractionTime}
+                                                                        onChange={(e) => handleTestChange(test.id, 'extractionTime', e.target.value)}
+                                                                        className={styles.extractionInput}
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    Temp (C):
+                                                                    <input
+                                                                        type="text"
+                                                                        value={test.extractionTemp}
+                                                                        onChange={(e) => handleTestChange(test.id, 'extractionTemp', e.target.value)}
+                                                                        className={styles.extractionInput}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div className={styles.qualityOptions}>
+                                                                <label>
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={`quality_${test.id}`}
+                                                                        value="GLP"
+                                                                        checked={test.quality === 'GLP'}
+                                                                        onChange={() => handleTestChange(test.id, 'quality', 'GLP')}
+                                                                    />
+                                                                    GLP
+                                                                </label>
+                                                                <label>
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={`quality_${test.id}`}
+                                                                        value="Non-GLP"
+                                                                        checked={test.quality === 'Non-GLP'}
+                                                                        onChange={() => handleTestChange(test.id, 'quality', 'Non-GLP')}
+                                                                    />
+                                                                    Non-GLP
+                                                                </label>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => handleRemoveTest(test.id)}
+                                                                style={{
+                                                                    marginTop: '5px',
+                                                                    padding: '2px 8px',
+                                                                    fontSize: '12px',
+                                                                    background: '#dc2626',
+                                                                    color: 'white',
+                                                                    border: 'none',
+                                                                    borderRadius: '3px',
+                                                                    cursor: 'pointer'
+                                                                }}
+                                                            >
+                                                                Remove
+                                                            </button>
+                                                        </td>
+                                                        {/*
+                                                            Assignment cell: shows the already-created Lab Study
+                                                            (vendor + instances) OR a picker for assigning
+                                                            instances + vendor to this test. Once "Assign" is
+                                                            clicked the backend creates a LabStudy record that
+                                                            shows up in the Lab Studies module.
+                                                        */}
+                                                        <td style={{ minWidth: 280, verticalAlign: 'top' }}>
+                                                            {isAssigned ? (
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
+                                                                    <div>
+                                                                        <strong>Study:</strong>{' '}
+                                                                        <OpenRecordLink
+                                                                            to={`/LabStudies/${test.labStudyId}`}
+                                                                            title="Open lab study"
+                                                                        >
+                                                                            {test.labStudyCode}
+                                                                        </OpenRecordLink>
+                                                                    </div>
+                                                                    <div><strong>Vendor:</strong> {test.vendorBpName || '—'}</div>
+                                                                    <div>
+                                                                        <strong>Instances:</strong>{' '}
+                                                                        {(test.assignedInstanceCodes || []).join(', ') || '—'}
+                                                                    </div>
+                                                                    <div>
+                                                                        <span style={{
+                                                                            background: '#dcfce7', color: '#166534',
+                                                                            padding: '1px 8px', borderRadius: 999,
+                                                                            fontSize: 11, fontWeight: 600,
+                                                                        }}>{test.assignmentStatus || 'Assigned'}</span>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => handleUnassignTest(test)}
+                                                                        style={{
+                                                                            marginTop: 4, padding: '2px 8px', fontSize: 11,
+                                                                            background: '#fff', color: '#b91c1c',
+                                                                            border: '1px solid #b91c1c', borderRadius: 3,
+                                                                            cursor: 'pointer', alignSelf: 'flex-start',
+                                                                        }}
+                                                                    >
+                                                                        Unassign
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
+                                                                    {!isEdit ? (
+                                                                        <div style={{ color: '#6b7280', lineHeight: 1.4 }}>
+                                                                            <strong>Step 1:</strong> Save this sample.<br />
+                                                                            <strong>Step 2:</strong> Receive instances via a Receiving Log.<br />
+                                                                            <strong>Step 3:</strong> Come back here to pick a vendor and assign instances.
+                                                                        </div>
+                                                                    ) : instances.length === 0 ? (
+                                                                        <div style={{ color: '#6b7280', lineHeight: 1.4 }}>
+                                                                            No instances yet. Once a Receiving Log creates instances
+                                                                            for this sample, the vendor &amp; instance pickers will
+                                                                            show up here.
+                                                                        </div>
+                                                                    ) : (() => {
+                                                                        // Vendor dropdown is filtered to vendors who have
+                                                                        // this test code attached on their BP page. If a
+                                                                        // matching vendor isn't appearing, attach the test
+                                                                        // code in Business Partners → vendor → Test Codes
+                                                                        // first.
+                                                                        const eligibleVendors = getVendorsForTest(test);
+                                                                        return (
+                                                                            <>
+                                                                                <label style={{ fontWeight: 600, fontSize: 11 }}>Vendor</label>
+                                                                                <select
+                                                                                    value={draft.vendorBpId}
+                                                                                    onChange={(e) => updateAssignmentDraft(test.id, { vendorBpId: e.target.value })}
+                                                                                    style={{ padding: 4, border: '1px solid #d1d5db', borderRadius: 4 }}
+                                                                                >
+                                                                                    <option value="">Select vendor</option>
+                                                                                    {eligibleVendors.map((v) => (
+                                                                                        <option key={v._id} value={v._id}>
+                                                                                            {v.name}{v.partnerNumber ? ` · ${v.partnerNumber}` : ''}
+                                                                                        </option>
+                                                                                    ))}
+                                                                                </select>
+                                                                                {eligibleVendors.length === 0 && (
+                                                                                    <div style={{ color: '#b91c1c', fontSize: 10, lineHeight: 1.3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                                                        <span>
+                                                                                            No vendor lists this test code. Attach it to a vendor under
+                                                                                            Business Partners → Test Codes first, then refresh.
+                                                                                        </span>
+                                                                                        <span style={{ color: '#6b7280' }}>
+                                                                                            ({vendors.length} vendor{vendors.length === 1 ? '' : 's'} loaded)
+                                                                                        </span>
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={refreshVendors}
+                                                                                            style={{
+                                                                                                alignSelf: 'flex-start', marginTop: 2,
+                                                                                                padding: '2px 8px', fontSize: 10,
+                                                                                                background: '#fff', color: '#456fb6',
+                                                                                                border: '1px solid #456fb6', borderRadius: 4,
+                                                                                                cursor: 'pointer',
+                                                                                            }}
+                                                                                        >
+                                                                                            Refresh vendors
+                                                                                        </button>
+                                                                                    </div>
+                                                                                )}
+                                                                                <label style={{ fontWeight: 600, fontSize: 11, marginTop: 4 }}>
+                                                                                    Instances {sample.isBulk ? '(bulk: any can repeat)' : '(exclusive)'}
+                                                                                </label>
+                                                                                <MultiSelect
+                                                                                    values={draft.instanceIds}
+                                                                                    onChange={(next) => updateAssignmentDraft(test.id, { instanceIds: next })}
+                                                                                    options={assignableInstances.map((inst) => ({
+                                                                                        value: String(inst._id),
+                                                                                        label: inst.instanceCode,
+                                                                                        sublabel: inst.lotNo || '',
+                                                                                    }))}
+                                                                                    placeholder={
+                                                                                        assignableInstances.length === 0
+                                                                                            ? (sample.isBulk ? 'No instances available' : 'No free instances — switch to Bulk to share')
+                                                                                            : 'Select instances…'
+                                                                                    }
+                                                                                    disabled={assignableInstances.length === 0}
+                                                                                    emptyText="No matching instances."
+                                                                                />
+                                                                                <button
+                                                                                    onClick={() => handleAssignTest(test, testIndex)}
+                                                                                    disabled={assigningTestId === test.id}
+                                                                                    style={{
+                                                                                        marginTop: 4, padding: '4px 10px', fontSize: 12,
+                                                                                        background: '#456fb6', color: '#fff',
+                                                                                        border: 'none', borderRadius: 4,
+                                                                                        cursor: 'pointer', alignSelf: 'flex-start',
+                                                                                    }}
+                                                                                >
+                                                                                    {assigningTestId === test.id ? 'Assigning…' : 'Assign'}
+                                                                                </button>
+                                                                            </>
+                                                                        );
+                                                                    })()}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                </React.Fragment>
+                                            );
+                                        })
                                     )}
                                 </tbody>
                             </table>

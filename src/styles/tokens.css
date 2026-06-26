@@ -1,0 +1,183 @@
+/*
+ * =====================================================================
+ * Tulip — Global Design Tokens
+ * ---------------------------------------------------------------------
+ * Single source of truth for every color, radius, shadow, spacing,
+ * and typography decision across the internal app, the Customer
+ * Portal, and the Vendor Portal.
+ *
+ * Pages and CSS modules SHOULD reference these via `var(--token)`
+ * instead of hard-coding hex values, padding, or radii. When a new
+ * variant is needed (e.g. a special tint of blue), prefer adding it
+ * here over scattering it through page CSS.
+ *
+ * Naming convention:
+ *   --color-*        semantic colors (primary, danger, success, …)
+ *   --surface-*      page / card / sidebar surface fills
+ *   --text-*         foreground text colors
+ *   --border-*       border colors at different intensities
+ *   --radius-*       standard corner radii
+ *   --shadow-*       elevation tokens
+ *   --space-*        spacing scale (4/8/12/16/20/24/32)
+ *   --font-size-*    typography scale
+ *   --status-*       status pill backgrounds & foregrounds
+ * =====================================================================
+ */
+
+:root {
+  /* ------------------------------------------------------------------
+   * COLORS — Brand
+   * Tulip blue is the single primary accent across all surfaces.
+   * Use `--color-primary` for buttons, links, focus, active nav.
+   * ------------------------------------------------------------------ */
+  --color-primary: #4570B6;
+  --color-primary-hover: #013179;
+  --color-primary-active: #01265E;
+  --color-primary-50: #e9f0fe;   /* row hover, nav active tint */
+  --color-primary-100: #dbeafe;  /* status pill bg */
+  --color-primary-200: #bfd5f3;
+  --color-primary-700: #1e40af;  /* status pill fg (on -100) */
+  --color-primary-soft: rgba(69, 112, 182, 0.12);
+  --color-primary-ring: rgba(69, 112, 182, 0.18);
+
+  /* ------------------------------------------------------------------
+   * COLORS — Semantic
+   * ------------------------------------------------------------------ */
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+  --color-danger-bg: #fee2e2;
+  --color-danger-fg: #991b1b;
+
+  --color-success: #16a34a;
+  --color-success-hover: #15803d;
+  --color-success-bg: #dcfce7;
+  --color-success-fg: #166534;
+
+  --color-warning: #f59e0b;
+  --color-warning-bg: #fef3c7;
+  --color-warning-fg: #92400e;
+
+  --color-info: #0ea5e9;
+  --color-info-bg: #e0f2fe;
+  --color-info-fg: #0c4a6e;
+
+  --color-neutral: #6b7280;
+  --color-neutral-bg: #f3f4f6;
+  --color-neutral-fg: #374151;
+
+  /* ------------------------------------------------------------------
+   * SURFACES
+   * ------------------------------------------------------------------ */
+  --surface-page: #EFF3F4;        /* viewport background */
+  --surface-card: #ffffff;        /* cards / islands / modals */
+  --surface-muted: #f9fafb;       /* table thead, subtle panels */
+  --surface-subtle: #f8fafc;      /* sidebar hover, secondary chips */
+  --surface-overlay: rgba(15, 23, 42, 0.55);
+  --surface-sidebar: #ffffff;
+
+  /* ------------------------------------------------------------------
+   * TEXT
+   * ------------------------------------------------------------------ */
+  --text-primary: #0f172a;
+  --text-secondary: #1f2937;
+  --text-muted: #4b5563;
+  --text-subtle: #6b7280;
+  --text-disabled: #9ca3af;
+  --text-on-primary: #ffffff;
+  --text-link: var(--color-primary);
+
+  /* ------------------------------------------------------------------
+   * BORDERS
+   * ------------------------------------------------------------------ */
+  --border-subtle: #f1f5f9;
+  --border-soft: #e5e7eb;
+  --border-medium: #d1d5db;
+  --border-strong: #9ca3af;
+  --border-focus: var(--color-primary);
+
+  /* ------------------------------------------------------------------
+   * RADIUS — the canonical scale.
+   * Inputs/selects/buttons should use --radius-md (8px) by default.
+   * Cards/panels should use --radius-lg (12px). Pills use --radius-pill.
+   * ------------------------------------------------------------------ */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+
+  /* ------------------------------------------------------------------
+   * SHADOWS
+   * ------------------------------------------------------------------ */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.1);
+  --shadow-xl: 0 20px 48px rgba(15, 23, 42, 0.16);
+  --shadow-focus: 0 0 0 3px var(--color-primary-soft);
+
+  /* ------------------------------------------------------------------
+   * SPACING (8pt-based scale, with a 4 for tight contexts)
+   * ------------------------------------------------------------------ */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ------------------------------------------------------------------
+   * TYPOGRAPHY
+   * ------------------------------------------------------------------ */
+  --font-family: "Poppins", system-ui, -apple-system, sans-serif;
+
+  --font-size-xs: 11px;   /* uppercase eyebrow / micro labels */
+  --font-size-sm: 12px;   /* table body small, chips */
+  --font-size-base: 14px; /* default body, inputs, table */
+  --font-size-md: 15px;   /* form input text */
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+  --font-size-3xl: 24px;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-base: 1.5;
+
+  /* ------------------------------------------------------------------
+   * STATUS PILL PALETTE (used by .statusPill, see components.css)
+   * ------------------------------------------------------------------ */
+  --status-active-bg: var(--color-success-bg);
+  --status-active-fg: var(--color-success-fg);
+  --status-draft-bg: var(--color-neutral-bg);
+  --status-draft-fg: var(--color-neutral-fg);
+  --status-submitted-bg: var(--color-primary-100);
+  --status-submitted-fg: var(--color-primary-700);
+  --status-progress-bg: var(--color-warning-bg);
+  --status-progress-fg: var(--color-warning-fg);
+  --status-completed-bg: var(--color-success-bg);
+  --status-completed-fg: var(--color-success-fg);
+  --status-cancelled-bg: var(--color-danger-bg);
+  --status-cancelled-fg: var(--color-danger-fg);
+
+  /* ------------------------------------------------------------------
+   * LAYOUT
+   * ------------------------------------------------------------------ */
+  --layout-sidebar-width: 256px;
+  --layout-header-height: 64px;
+
+  /* ------------------------------------------------------------------
+   * MOTION
+   * ------------------------------------------------------------------ */
+  --transition-fast: 120ms ease;
+  --transition-base: 180ms ease;
+  --transition-slow: 260ms ease;
+}

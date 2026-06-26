@@ -1,0 +1,313 @@
+/*
+ * =====================================================================
+ * Tulip — Shared Component Utility Classes
+ * ---------------------------------------------------------------------
+ * Global, framework-free classes that codify the standard look of the
+ * app's most repeated UI elements. Use these wherever possible instead
+ * of redefining buttons / cards / tables inside per-page CSS modules.
+ *
+ * These classes are global (not scoped via CSS Modules) so they can
+ * be applied with className="btnPrimary" from any component without
+ * an import. They build entirely on the tokens defined in tokens.css.
+ *
+ * IMPORTANT: when a page needs a slightly different look (e.g. a
+ * smaller variant), prefer composing these with a per-page modifier
+ * class over redefining the whole component.
+ * =====================================================================
+ */
+
+/* ===================== BUTTONS ===================== */
+
+/*
+ * Base button. Every button variant extends from this. Keeps the
+ * focus ring, height, font, and hit target consistent.
+ */
+.tul-btn,
+.btn,
+button.btnPrimary,
+button.btnGhost,
+button.btnDanger,
+button.btnDangerSolid,
+button.btnSuccess {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 9px 16px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--transition-fast),
+              border-color var(--transition-fast),
+              color var(--transition-fast),
+              box-shadow var(--transition-fast);
+  outline: none;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.tul-btn:disabled,
+button.btnPrimary:disabled,
+button.btnGhost:disabled,
+button.btnDanger:disabled,
+button.btnDangerSolid:disabled,
+button.btnSuccess:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tul-btn:focus-visible,
+button.btnPrimary:focus-visible,
+button.btnGhost:focus-visible,
+button.btnDanger:focus-visible,
+button.btnDangerSolid:focus-visible,
+button.btnSuccess:focus-visible {
+  box-shadow: var(--shadow-focus);
+}
+
+/* ---- Primary (filled blue) — default Save / Confirm action ---- */
+.tul-btn-primary,
+button.btnPrimary {
+  background-color: var(--color-primary);
+  color: var(--text-on-primary);
+  border-color: var(--color-primary);
+}
+
+.tul-btn-primary:hover:enabled,
+button.btnPrimary:hover:enabled {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+/* ---- Ghost / secondary (outlined blue) — Cancel / Back actions ---- */
+.tul-btn-ghost,
+button.btnGhost {
+  background-color: var(--surface-card);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.tul-btn-ghost:hover:enabled,
+button.btnGhost:hover:enabled {
+  background-color: var(--color-primary-50);
+}
+
+/* ---- Danger outlined — destructive but non-final actions ---- */
+.tul-btn-danger,
+button.btnDanger {
+  background-color: var(--surface-card);
+  color: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
+}
+
+.tul-btn-danger:hover:enabled,
+button.btnDanger:hover:enabled {
+  background-color: #fef2f2;
+}
+
+/* ---- Danger filled — Delete / final destructive actions ---- */
+.tul-btn-danger-solid,
+button.btnDangerSolid {
+  background-color: var(--color-danger);
+  color: var(--text-on-primary);
+  border-color: var(--color-danger);
+}
+
+.tul-btn-danger-solid:hover:enabled,
+button.btnDangerSolid:hover:enabled {
+  background-color: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
+}
+
+/* ---- Success — Publish / Approve actions where green is meaningful ---- */
+.tul-btn-success,
+button.btnSuccess {
+  background-color: var(--color-success);
+  color: var(--text-on-primary);
+  border-color: var(--color-success);
+}
+
+.tul-btn-success:hover:enabled,
+button.btnSuccess:hover:enabled {
+  background-color: var(--color-success-hover);
+  border-color: var(--color-success-hover);
+}
+
+/* ---- Size modifiers ---- */
+.tul-btn-sm { padding: 6px 10px; font-size: var(--font-size-sm); }
+.tul-btn-lg { padding: 11px 20px; font-size: var(--font-size-base); }
+
+/* ===================== STATUS PILLS ===================== */
+
+/*
+ * Compact, consistent status indicator used on list rows, detail
+ * banners, and inside tables. Combine with a modifier class
+ * (.statusActive / .statusDraft / etc.) to set the colour.
+ */
+.tul-pill,
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  line-height: 1.4;
+  white-space: nowrap;
+  background: var(--status-draft-bg);
+  color: var(--status-draft-fg);
+}
+
+.tul-pill-active,    .statusActive    { background: var(--status-active-bg);    color: var(--status-active-fg); }
+.tul-pill-draft,     .statusDraft     { background: var(--status-draft-bg);     color: var(--status-draft-fg); }
+.tul-pill-submitted, .statusSubmitted { background: var(--status-submitted-bg); color: var(--status-submitted-fg); }
+.tul-pill-progress,  .statusProgress  { background: var(--status-progress-bg);  color: var(--status-progress-fg); }
+.tul-pill-completed, .statusCompleted { background: var(--status-completed-bg); color: var(--status-completed-fg); }
+.tul-pill-cancelled, .statusCancelled { background: var(--status-cancelled-bg); color: var(--status-cancelled-fg); }
+.tul-pill-danger     { background: var(--color-danger-bg);  color: var(--color-danger-fg); }
+.tul-pill-warning    { background: var(--color-warning-bg); color: var(--color-warning-fg); }
+
+/* ===================== CARDS / PANELS ===================== */
+
+/*
+ * Standard "card" surface — used inside WhiteIsland for sub-panels
+ * and on bespoke pages (LabStudyDetail, customer portal) as the
+ * top-level container.
+ */
+.tul-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-5);
+  box-shadow: var(--shadow-xs);
+}
+
+.tul-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.tul-card-title {
+  font-size: 14px;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.tul-card-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--text-subtle);
+}
+
+/* ===================== FORM CONTROLS ===================== */
+
+/*
+ * Global form control resets so every input/select/textarea inherits
+ * the same shape regardless of which page it lives on. Per-page CSS
+ * modules can still override locally when needed.
+ */
+.tul-input,
+.tul-select,
+.tul-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: 1.4;
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.tul-input:focus,
+.tul-select:focus,
+.tul-textarea:focus {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.tul-textarea { resize: vertical; min-height: 80px; }
+
+.tul-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.tul-field-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+}
+
+/* ===================== TABLE ===================== */
+
+/*
+ * Standard table styling used by list pages. Most CM list pages
+ * already approximate this look via duplicated CSS — over time those
+ * can migrate to .tul-table for a single source of truth.
+ */
+.tul-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--surface-card);
+  font-size: var(--font-size-base);
+}
+
+.tul-table thead th {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.tul-table tbody td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.tul-table tbody tr:hover {
+  background: var(--color-primary-50);
+  cursor: pointer;
+}
+
+.tul-table tbody tr:last-child td { border-bottom: none; }
+
+/* ===================== HELPERS ===================== */
+
+.tul-empty {
+  padding: var(--space-5) var(--space-3);
+  color: var(--text-subtle);
+  font-style: italic;
+  text-align: center;
+}
+
+.tul-link {
+  color: var(--text-link);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+}
+
+.tul-link:hover { text-decoration: underline; }

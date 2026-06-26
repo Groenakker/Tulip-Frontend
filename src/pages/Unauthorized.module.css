@@ -1,0 +1,52 @@
+/*
+ * Unauthorized.module.css
+ * -----------------------------------------------------------
+ * Styles for the access-denied page. Built entirely on the
+ * global tokens so it inherits the app's visual language and
+ * doesn't fall back to bare browser defaults like before.
+ */
+
+.wrapper {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-5);
+  text-align: center;
+}
+
+.lockIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-pill);
+  background: var(--color-danger-bg);
+  color: var(--color-danger-fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-2);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-3xl);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.message {
+  margin: 0;
+  font-size: var(--font-size-base);
+  color: var(--text-muted);
+  max-width: 480px;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}

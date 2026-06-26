@@ -67,11 +67,12 @@
 .info select,
 .info2 select {
   width: auto;
-  padding: 5px 0px 5px 9px;
-  border-radius: 20px;
-  border: 1px solid #D0D5DD;
-  background-color: #ffffff;
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
+  background-color: var(--surface-card);
   font-size: 13px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .info input:focus,
@@ -79,23 +80,23 @@
 .info select:focus,
 .info2 select:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
 }
 
 .tableInput {
   width: 100%;
-  padding: 5px 0px 5px 9px;
-  border-radius: 20px;
-  border: 1px solid #D0D5DD;
-  background-color: #ffffff;
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
+  background-color: var(--surface-card);
   font-size: 13px;
 }
 
 .tableInput:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
 }
 
 .saves{
@@ -104,39 +105,42 @@
   align-items: center;
   margin-top: 10px;
   gap: 10px;
-
 }
 
+/* Save / Delete buttons used across CM detail pages. Aligned to the
+ * canonical Tulip blue + radius-md so every CM detail page matches
+ * the LabStudyDetail / Customer Portal button look. */
 .saveButton {
-  display: flex ;
-  background-color: rgb(69 112 182);
-  color: white;
+  display: flex;
+  background-color: var(--color-primary);
+  color: var(--text-on-primary);
   border: none;
-  border-radius: 5px;
-  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  padding: 9px 16px;
   cursor: pointer;
   gap: 8px;
   align-items: center;
+  font-weight: var(--font-weight-semibold);
+  font-size: 13px;
+  transition: background-color var(--transition-fast);
 }
+.saveButton:hover { background-color: var(--color-primary-hover); }
+
 .deleteButton {
-  display: flex ;
-  background-color: rgb(220, 38, 38);
-  color: white;
+  display: flex;
+  background-color: var(--color-danger);
+  color: var(--text-on-primary);
   border: none;
-  border-radius: 5px;
-  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  padding: 9px 16px;
   cursor: pointer;
   gap: 8px;
   align-items: center;
+  font-weight: var(--font-weight-semibold);
+  font-size: 13px;
+  transition: background-color var(--transition-fast);
 }
-
-.deleteButton:hover {
-  background-color: rgb(153, 27, 27);
-}
-
-.saveButton:hover {
-  background-color:  rgb(1, 49, 126);
-}
+.deleteButton:hover { background-color: var(--color-danger-hover); }
 
 
 /* Table Styles */
@@ -245,10 +249,10 @@
 
 .signatureInput {
     /* width: 100%; */
-    padding: 5px 9px;
-    border-radius: 20px;
-    border: 1px solid #D0D5DD;
-    background-color: #ffffff;
+    padding: 7px 10px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-medium);
+    background-color: var(--surface-card);
     font-size: 13px;
 }
 

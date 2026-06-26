@@ -50,7 +50,14 @@ export default function CustomerSamples() {
                   <td>{s.projectName || "—"}</td>
                   <td><StatusPill value={s.status} /></td>
                   <td>{s.updatedAt ? new Date(s.updatedAt).toLocaleString() : "—"}</td>
-                  <td>{s.customerActionRequired && <span className={styles.actionable}>Sign</span>}</td>
+                  <td>
+                    {s.customerActionRequired && (
+                      <span className={styles.actionable}>Action required</span>
+                    )}
+                    {s.customerRejectedAt && !s.customerActionRequired && (
+                      <span className={`${styles.pill} ${styles.pillRed}`}>Rejected</span>
+                    )}
+                  </td>
                 </tr>
               )) : (
                 <tr><td colSpan="6"><div className={styles.empty}>No samples yet.</div></td></tr>

@@ -99,10 +99,20 @@
 .info select,
 .info2 input {
   width: auto;
-  padding: 5px 0px 5px 9px;
-  border-radius: 20px;
-  border: 1px solid #D0D5DD;
-  background-color: #ffffff;
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
+  background-color: var(--surface-card);
+  font-size: 13px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.info input:focus,
+.info select:focus,
+.info2 input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
 }
 
 .saves{
@@ -111,38 +121,40 @@
   align-items: center;
   margin-top: 10px;
   gap: 10px;
-
 }
 
 .saveButton {
-  display: flex ;
-  background-color: rgb(69 112 182);
-  color: white;
+  display: flex;
+  background-color: var(--color-primary);
+  color: var(--text-on-primary);
   border: none;
-  border-radius: 5px;
-  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  padding: 9px 16px;
   cursor: pointer;
   gap: 8px;
   align-items: center;
+  font-weight: var(--font-weight-semibold);
+  font-size: 13px;
+  transition: background-color var(--transition-fast);
 }
 .deleteButton {
-  display: flex ;
-  background-color: rgb(220, 38, 38);
-  color: white;
+  display: flex;
+  background-color: var(--color-danger);
+  color: var(--text-on-primary);
   border: none;
-  border-radius: 5px;
-  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  padding: 9px 16px;
   cursor: pointer;
   gap: 8px;
   align-items: center;
 }
 
 .deleteButton:hover {
-  background-color: rgb(153, 27, 27);
+  background-color: var(--color-danger-hover);
 }
 
 .saveButton:hover {
-  background-color:  rgb(1, 49, 126);
+  background-color: var(--color-primary-hover);
 }
 
 .saveButton:disabled {
@@ -151,7 +163,7 @@
 }
 
 .saveButton:disabled:hover {
-  background-color: rgb(69 112 182);
+  background-color: var(--color-primary);
 }
 
 

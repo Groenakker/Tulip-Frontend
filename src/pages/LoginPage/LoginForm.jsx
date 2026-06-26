@@ -120,7 +120,18 @@ function SignIn() {
           Don't you have an account? <a href="/signup">Sign up</a>
         </div>
 
-       
+        <div className="portal-divider">
+          <span>For customers</span>
+        </div>
+
+        <a
+          href="/portal/login"
+          className="customer-portal-button"
+          aria-label="Go to the Customer Portal login page"
+        >
+          Go to Customer Portal Login
+        </a>
+
       </div>
       
       <div className="signin-image-container">

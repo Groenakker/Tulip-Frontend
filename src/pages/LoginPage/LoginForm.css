@@ -166,6 +166,55 @@
   font-weight: 500;
 }
 
+/* Visual separator between the internal-app sign in flow and the
+   customer-portal shortcut underneath it. Same line treatment as
+   `.divider`, with a distinct label so the two sections don't get
+   confused. */
+.portal-divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0 14px;
+  color: #999;
+  font-size: 13px;
+}
+
+.portal-divider::before,
+.portal-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #ddd;
+}
+
+.portal-divider span {
+  padding: 0 12px;
+}
+
+/* Outlined / secondary button so it reads as an alternative
+   destination rather than competing with the primary "Sign in" CTA
+   above. Clicking goes to /portal/login (the customer portal). */
+.customer-portal-button {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: center;
+  background-color: #fff;
+  color: #0f0730;
+  border: 1.5px solid #0f0730;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.customer-portal-button:hover,
+.customer-portal-button:focus {
+  background-color: #0f0730;
+  color: #fff;
+  outline: none;
+}
+
 .footer {
   text-align: center;
   color: #666;

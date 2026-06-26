@@ -121,9 +121,56 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
             const dd = now.getDate().toString().padStart(2, '0');
             const dateStr = yy + mm + dd;
 
-            // Get partner code from receiving line or sample
-            const partnerCode = receivingLine?.bPartnerCode || sample?.bPartnerCode || '0000';
-            const partnerSuffix = partnerCode.slice(-4).padStart(4, '0');
+            // Resolve the customer (business partner) code that's stamped
+            // into the middle slot of the instance code. The receiving /
+            // shipping line, the sample, and the bpartner record are each
+            // searched in order so the code reflects the actual customer
+            // instead of falling back to "0000" whenever the caller forgot
+            // to denormalize the code onto the line item.
+            let partnerCode =
+                receivingLine?.bPartnerCode ||
+                sample?.bPartnerCode ||
+                sample?.partnerNumber ||
+                '';
+
+            // Fallback 1: pull the bPartnerCode from the sample document.
+            if (!partnerCode && (sample?.id || sample?.sampleId)) {
+                try {
+                    const sampleRes = await fetch(
+                        `${import.meta.env.VITE_BACKEND_URL}/api/samples/${sample.id || sample.sampleId}`,
+                        { credentials: 'include' }
+                    );
+                    if (sampleRes.ok) {
+                        const sampleDoc = await sampleRes.json();
+                        partnerCode =
+                            sampleDoc.bPartnerCode ||
+                            sampleDoc.partnerNumber ||
+                            '';
+
+                        // Fallback 2: if the sample only knows the partner _id,
+                        // hit /api/bpartners/:id for its partnerNumber.
+                        if (!partnerCode && sampleDoc.bPartnerID) {
+                            try {
+                                const bpRes = await fetch(
+                                    `${import.meta.env.VITE_BACKEND_URL}/api/bpartners/${sampleDoc.bPartnerID}`,
+                                    { credentials: 'include' }
+                                );
+                                if (bpRes.ok) {
+                                    const bp = await bpRes.json();
+                                    partnerCode = bp.partnerNumber || '';
+                                }
+                            } catch (_) {
+                                // Swallow — code will fall back to "0000" below.
+                            }
+                        }
+                    }
+                } catch (_) {
+                    // Swallow — code will fall back to "0000" below.
+                }
+            }
+
+            partnerCode = partnerCode || '0000';
+            const partnerSuffix = String(partnerCode).slice(-4).padStart(4, '0');
 
             // Find existing instances for this partner/date to get next serial
             const existingRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/instances`);

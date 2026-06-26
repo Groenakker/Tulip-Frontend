@@ -9,7 +9,7 @@ import Modal from '../../../components/Modal';
 import SampleForm from '../../../components/modals/SampleModal';
 import SampleSelect from '../../../components/modals/SampleSelect'
 import InstanceList from '../../../components/modals/InstanceListModal';
-import PrintBPDocsModal from '../../../components/modals/PrintBPDocsModal';
+import ShippingTemplatesModal from '../../../components/modals/ShippingTemplatesModal';
 import toast from '../../../components/Toaster/toast';
 import SignatureCanvas from 'react-signature-canvas';
 import { useAuth } from '../../../context/AuthContext';  
@@ -90,10 +90,12 @@ export default function ShipmentDetails() {
     const [loading, setLoading] = useState(true);
     const [projects, setProjects] = useState([]);
     const [projectsLoading, setProjectsLoading] = useState(true);
-    // Print BP Sample Documents modal — opens from the header
-    // action; lists the linked BP's sample documents and lets
-    // the user print/open any of them.
-    const [showPrintBPDocs, setShowPrintBPDocs] = useState(false);
+    // Print Vendor Templates modal — lists the system's built-in
+    // vendor submission forms (GLP / TIDS / TRF / PCF) pre-filled
+    // with this shipment's sample data so the courier copy can
+    // be printed even when the BP hasn't uploaded their own
+    // template yet.
+    const [showShippingTemplates, setShowShippingTemplates] = useState(false);
 
     // ----------------------------------------------------------------
     // Shippo-related state
@@ -1920,30 +1922,37 @@ export default function ShipmentDetails() {
                             <div className={styles.customerCard}>
                                 <div className={styles.customerCardHeader}>
                                     <FaMapMarkerAlt /> Customer details (auto-filled)
-                                    {/* Print the BP's sample / TRF documents. The
-                                        modal lists everything attached to the
-                                        partner on the BP detail page and lets
-                                        the user open/print any of them. */}
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPrintBPDocs(true)}
-                                        style={{
-                                            marginLeft: 'auto',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: 6,
-                                            background: 'rgb(69, 112, 182)',
-                                            color: 'white',
-                                            border: 'none',
-                                            padding: '6px 12px',
-                                            borderRadius: 6,
-                                            cursor: 'pointer',
-                                            fontSize: 12,
-                                            fontWeight: 600,
-                                        }}
-                                    >
-                                        <FaPrint /> Print BP Documents
-                                    </button>
+                                    <div style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                                        {/* Built-in vendor templates (Geneva GLP, GV TIDS,
+                                            BV Medical TRF, PSL Biocomp PCF, Accuprec
+                                            TIDS-GLP) pre-filled with this shipment's
+                                            sample data. Always available — doesn't
+                                            depend on a BP having uploaded a template. */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowShippingTemplates(true)}
+                                            disabled={!id || id === 'add'}
+                                            title={!id || id === 'add'
+                                                ? 'Save the shipping log before printing a template'
+                                                : 'Print a built-in vendor template (GLP / TIDS / TRF / PCF)'}
+                                            style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 6,
+                                                background: '#15803d',
+                                                color: 'white',
+                                                border: 'none',
+                                                padding: '6px 12px',
+                                                borderRadius: 6,
+                                                cursor: (!id || id === 'add') ? 'not-allowed' : 'pointer',
+                                                opacity: (!id || id === 'add') ? 0.55 : 1,
+                                                fontSize: 12,
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            <FaPrint /> Print Vendor Templates
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className={styles.customerCardGrid}>
                                     <div><strong>Name:</strong> {shipTo.name || '—'}</div>
@@ -2892,16 +2901,22 @@ export default function ShipmentDetails() {
                 </Modal>
             )}
 
-            {/* Print BP Sample Documents — opens the modal that
-                lists the linked Business Partner's sampleDocuments
-                (TRF / TIDS / PCF templates) so the user can print
-                or open any of them from the Shipping Log. */}
-            {showPrintBPDocs && selectedCustomerId && (
-                <PrintBPDocsModal
-                    bPartnerID={selectedCustomerId}
+            {/* Print Vendor Templates — opens the picker that
+                lists the system's hard-coded vendor submission
+                forms (GLP / TIDS / TRF / PCF). Each renders a
+                ready-to-print PDF mirroring the original layout
+                with this shipment's sample data filled in. */}
+            {showShippingTemplates && id && id !== 'add' && (
+                <ShippingTemplatesModal
+                    shippingId={id}
+                    shippingCode={log.shippingCode}
                     bPartnerName={shipTo.name || (customers.find(c => c._id === selectedCustomerId)?.name) || ''}
-                    shippingId={id && id !== 'add' ? id : null}
-                    onClose={() => setShowPrintBPDocs(false)}
+                    samples={items.map(it => ({
+                        _id: it.id,
+                        sampleCode: it.sampleCode,
+                        name: it.description,
+                    }))}
+                    onClose={() => setShowShippingTemplates(false)}
                 />
             )}
         </div>

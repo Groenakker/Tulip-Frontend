@@ -441,6 +441,7 @@ export default function DocumentDetails() {
     if (!l || !l.id) return null;
     if (l.type === "shipping") return `/ShippingLog/${l.id}`;
     if (l.type === "receiving") return `/RecieveLog/RecieveDetails/${l.id}`;
+    if (l.type === "sample") return `/SampleSubmission/SSDetail/${l.id}`;
     return null;
   })();
 

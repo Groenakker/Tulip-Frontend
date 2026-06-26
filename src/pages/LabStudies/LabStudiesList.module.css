@@ -1,0 +1,122 @@
+/*
+ * LabStudiesList.module.css
+ * -----------------------------------------------------------
+ * Scoped styles for the Lab Studies list page. Aligned with
+ * the global tokens in styles/tokens.css and the table look
+ * used across CM list pages (Business Partners, Projects,
+ * Sample Submission, etc.) so the experience is consistent.
+ */
+
+.page {
+  padding: var(--space-5);
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.search {
+  flex: 1;
+  max-width: 360px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.search:focus {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.error {
+  padding: 10px 12px;
+  margin-bottom: var(--space-3);
+  background: var(--color-danger-bg);
+  color: var(--color-danger-fg);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+/* ---------------- Table ---------------- */
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--surface-card);
+  font-size: var(--font-size-base);
+}
+
+.table thead th {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.table tbody td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.table tbody tr {
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.table tbody tr:hover {
+  background: var(--color-primary-50);
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-subtle);
+  padding: var(--space-8) var(--space-3);
+  font-style: italic;
+}
+
+.checkboxCell {
+  width: 36px;
+  text-align: center;
+}
+
+.link {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+}
+
+.link:hover { text-decoration: underline; }
+
+.muted {
+  color: var(--text-subtle);
+}
+
+.instancesCell {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

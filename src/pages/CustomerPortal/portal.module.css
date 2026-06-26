@@ -1,29 +1,34 @@
 /* ---------------------------------------------------------------
    Customer / Vendor portal — themed to match the internal app.
-   Same palette as components/Sidebar.css + pages/LoginPage so a
-   user moving between portals never feels they've left "the
-   product." Key tokens reused:
-     - Page background:   #EFF3F4
-     - Surface:           #ffffff with 16px radius & soft shadow
-     - Active nav:        #e9f0fe (Tulip blue tint)
-     - Primary accent:    #4570B6 (Tulip blue)
-     - Sign-in button:    #0f0730 / hover #12335c
-     - Body font:         Poppins
+   The portal is intentionally a bit more rounded (10px buttons,
+   16px panels) than the internal app's denser 8px / 12px rhythm,
+   but every color and weight reads from the SAME global tokens
+   defined in src/styles/tokens.css so a customer who flips
+   between portal and internal screenshots feels they're inside
+   one product.
+   Key tokens reused (see tokens.css):
+     - Page background:   var(--surface-page)        (#EFF3F4)
+     - Surface:           var(--surface-card)        (#ffffff)
+     - Primary CTA:       var(--color-primary)       (#4570B6)
+                          hover var(--color-primary-hover) (#013179)
+     - Active nav text:   #0f0730 (deep navy — portal-only accent)
+     - Active nav tint:   var(--color-primary-50)    (#e9f0fe)
+     - Body font:         var(--font-family)         (Poppins)
    ----------------------------------------------------------------*/
 
 .shell {
   display: flex;
   min-height: 100vh;
-  background-color: #EFF3F4;
-  font-family: 'Poppins', system-ui, sans-serif;
-  color: #1f2937;
+  background-color: var(--surface-page);
+  font-family: var(--font-family);
+  color: var(--text-secondary);
 }
 
 /* -------------------- Sidebar (matches internal) -------------------- */
 .sidebar {
   width: 250px;
-  background: #ffffff;
-  border-right: 1px solid #e5e7eb;
+  background: var(--surface-sidebar);
+  border-right: 1px solid var(--border-soft);
   display: flex;
   flex-direction: column;
   padding: 22px 14px;
@@ -71,15 +76,15 @@
   position: relative;
 }
 
-.navItem svg { color: #4570B6; font-size: 16px; }
+.navItem svg { color: var(--color-primary); font-size: 16px; }
 
 .navItem:hover {
-  background-color: #e9f0fe;
-  color: #1f2937;
+  background-color: var(--color-primary-50);
+  color: var(--text-secondary);
 }
 
 .navItemActive {
-  background-color: #e9f0fe;
+  background-color: var(--color-primary-50);
   color: #0f0730;
   font-weight: 600;
 }
@@ -241,13 +246,21 @@ a > .card:hover {
   color: #1f2937;
 }
 
-.panelHead a {
+/* Plain text-link styling inside a panel header (e.g. "View all →").
+   Scoped with :not() so anchors that have been promoted to a primary
+   or ghost button keep their button text color — otherwise a
+   `<Link className={styles.btnPrimary}>` rendered inside `.panelHead`
+   ends up with #4570B6 text on a #4570B6 background and the label
+   disappears. */
+.panelHead a:not(.btnPrimary):not(.btnGhost) {
   color: #4570B6;
   text-decoration: none;
   font-size: 13px;
   font-weight: 500;
 }
-.panelHead a:hover { text-decoration: underline; }
+.panelHead a:not(.btnPrimary):not(.btnGhost):hover {
+  text-decoration: underline;
+}
 
 /* -------------------- Tables -------------------- */
 .table {
@@ -297,11 +310,11 @@ a > .card:hover {
   letter-spacing: 0.3px;
 }
 
-.pillBlue   { background: #e9f0fe; color: #1e40af; }
-.pillGreen  { background: #ecfdf3; color: #027a48; }
-.pillAmber  { background: #fef3c7; color: #92400e; }
-.pillRed    { background: #fee2e2; color: #b42318; }
-.pillGray   { background: #f3f4f6; color: #374151; }
+.pillBlue   { background: var(--color-primary-50);   color: var(--color-primary-700); }
+.pillGreen  { background: var(--color-success-bg);    color: var(--color-success-fg); }
+.pillAmber  { background: var(--color-warning-bg);    color: var(--color-warning-fg); }
+.pillRed    { background: var(--color-danger-bg);     color: var(--color-danger-fg); }
+.pillGray   { background: var(--color-neutral-bg);    color: var(--color-neutral-fg); }
 
 .actionable {
   display: inline-flex;
@@ -317,10 +330,15 @@ a > .card:hover {
   letter-spacing: 0.3px;
 }
 
-/* -------------------- Buttons (mirror internal "signin-button") -------------------- */
+/* -------------------- Buttons (mirror internal app primary CTA) --------------------
+   The internal app uses Tulip blue (#4570B6, hover #013179) for its
+   primary buttons across Sample Submission, Shipping, Receiving, etc.
+   The portal mirrors that exact palette so a customer who flips
+   between portal pages and any screenshots the lab shares feels they
+   are inside the same product. */
 .btnPrimary {
-  background-color: #0f0730;
-  color: #ffffff;
+  background-color: var(--color-primary);
+  color: var(--text-on-primary);
   border: none;
   padding: 11px 22px;
   border-radius: 10px;
@@ -333,14 +351,15 @@ a > .card:hover {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  text-decoration: none;
 }
-.btnPrimary:hover:enabled { background-color: #12335c; }
-.btnPrimary:disabled { background-color: #6b7280; cursor: default; opacity: 0.6; }
+.btnPrimary:hover:enabled { background-color: var(--color-primary-hover); }
+.btnPrimary:disabled { background-color: var(--text-disabled); cursor: default; opacity: 0.7; }
 
 .btnGhost {
-  background: #ffffff;
-  color: #4570B6;
-  border: 1px solid #d1d5db;
+  background: var(--surface-card);
+  color: var(--color-primary);
+  border: 1px solid var(--border-medium);
   padding: 10px 18px;
   border-radius: 10px;
   font-size: 14px;
@@ -352,8 +371,9 @@ a > .card:hover {
   justify-content: center;
   gap: 6px;
   transition: background 0.15s ease, border-color 0.15s ease;
+  text-decoration: none;
 }
-.btnGhost:hover { background: #e9f0fe; border-color: #4570B6; }
+.btnGhost:hover { background: var(--color-primary-50); border-color: var(--color-primary); }
 
 /* -------------------- Login / Invite-signup page -------------------- */
 /* Two-column wrapper, same shape as src/pages/LoginPage/LoginForm.css */
@@ -440,11 +460,11 @@ a > .card:hover {
 .formField textarea {
   width: 100%;
   padding: 12px 15px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-medium);
   border-radius: 10px;
   font-size: 15px;
   font-family: inherit;
-  background: #fff;
+  background: var(--surface-card);
   box-sizing: border-box;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -453,8 +473,8 @@ a > .card:hover {
 .formField select:focus,
 .formField textarea:focus {
   outline: none;
-  border-color: #4570B6;
-  box-shadow: 0 0 0 3px rgba(69, 112, 182, 0.12);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
 }
 
 .formField input[readonly] {
@@ -504,4 +524,165 @@ a > .card:hover {
   padding: 36px 20px;
   color: #9ca3af;
   font-size: 14px;
+}
+
+/* -------------------- Project progress (Epic -> Story hierarchy)
+   Used on Customer Portal > Project detail to show the lab's
+   internal Epic / Story plan as a customer-friendly "Phases &
+   deliverables" list. Leaf-level tasks are intentionally not
+   rendered here — customers only need to see what was promised
+   (story) and how those promises are grouped (epic / phase).
+   ----------------------------------------------------------------*/
+.progressBar {
+  width: 100%;
+  height: 10px;
+  background: var(--color-primary-50);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 6px 0 18px;
+}
+
+.progressBarThin {
+  width: 100%;
+  height: 6px;
+  background: #eef2f7;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 10px 0 4px;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary) 0%, #6a8fd1 100%);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.phaseList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.phaseItem {
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  padding: 14px 16px 12px;
+  background: #fbfcfe;
+}
+
+.phaseHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.phaseTitleWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.phaseBadge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  background: var(--color-primary-50);
+  color: var(--color-primary-700);
+}
+
+.phaseBadgeNeutral {
+  background: var(--color-neutral-bg);
+  color: var(--color-neutral-fg);
+}
+
+.phaseTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  word-break: break-word;
+}
+
+.phaseMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.phaseCount {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  font-variant-numeric: tabular-nums;
+}
+
+.storyList {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: #eef2f7;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.storyItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #ffffff;
+}
+
+.storyItem::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+
+.storyTitle {
+  flex: 1;
+  font-size: 13.5px;
+  color: #374151;
+  word-break: break-word;
+}
+
+.storyMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.storyDue {
+  font-size: 11px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.storyEmpty {
+  margin-top: 10px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  color: #9ca3af;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px dashed #e5e7eb;
 }

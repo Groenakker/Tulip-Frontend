@@ -14,6 +14,7 @@ import {
   FaMapMarkerAlt,
   FaUserTie,
   FaTruckLoading,
+  FaFileSignature,
 } from "react-icons/fa";
 import WhiteIsland from "../../components/Whiteisland";
 import styles from "./Settings.module.css";
@@ -21,7 +22,8 @@ import UserEditModal from "../../components/modals/UserEditModal";
 import { useAuth } from "../../context/AuthContext";
 import Modal from "../../components/Modal";
 import Header from "../../components/Header";
-import PortalLoginsTab from "./PortalLoginsTab"; 
+import PortalLoginsTab from "./PortalLoginsTab";
+import VendorTemplatesTab from "./VendorTemplatesTab"; 
 const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 const DEFAULT_COMPANY_IMAGE =
   "https://via.placeholder.com/120x120.png?text=Company";
@@ -31,6 +33,7 @@ const menuOptions = [
   { id: "roles", label: "Roles & Permissions", icon: <FaShieldAlt /> },
   { id: "customer-logins", label: "Customer Logins", icon: <FaUserTie /> },
   { id: "vendor-logins", label: "Vendor Logins", icon: <FaTruckLoading /> },
+  { id: "vendor-templates", label: "Vendor Templates", icon: <FaFileSignature /> },
   { id: "company", label: "Company", icon: <FaBuilding /> },
   { id: "notifications", label: "Notifications", icon: <FaBell /> },
   { id: "system", label: "System Configuration", icon: <FaCog /> },
@@ -56,7 +59,13 @@ export default function Settings() {
   const [companyError, setCompanyError] = useState(null);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState(null);
-  const [companyForm, setCompanyForm] = useState({ name: "", address: "", email: "" });
+  const [companyForm, setCompanyForm] = useState({
+    name: "",
+    address: "",
+    email: "",
+    vatNumber: "",
+    mailingList: "",
+  });
   const [companyUpdateLoading, setCompanyUpdateLoading] = useState(false);
   const [companyUpdateError, setCompanyUpdateError] = useState("");
   const [roleOptions, setRoleOptions] = useState([]);
@@ -197,12 +206,16 @@ export default function Settings() {
           address: data.address,
           status: data.status,
           image: data.profile_img,
+          vatNumber: data.vatNumber,
+          mailingList: data.mailingList,
         };
         setCompanyDetails(companyData);
         setCompanyForm({
           name: data.company_name || "",
           address: data.address || "",
           email: data.company_email || "",
+          vatNumber: data.vatNumber || "",
+          mailingList: data.mailingList || "",
         });
       } catch (error) {
         if (error.name === "AbortError") {
@@ -724,6 +737,8 @@ export default function Settings() {
     const trimmedName = companyForm.name.trim();
     const trimmedAddress = companyForm.address.trim();
     const trimmedEmail = companyForm.email.trim();
+    const trimmedVat = (companyForm.vatNumber || "").trim();
+    const trimmedMailing = (companyForm.mailingList || "").trim();
 
     if (!trimmedName) {
       setCompanyUpdateError("Company name is required.");
@@ -746,6 +761,8 @@ export default function Settings() {
             company_name: trimmedName,
             address: trimmedAddress,
             company_email: trimmedEmail,
+            vatNumber: trimmedVat,
+            mailingList: trimmedMailing,
           }),
         }
       );
@@ -765,6 +782,8 @@ export default function Settings() {
               address: data?.address ?? trimmedAddress,
               status: data?.status ?? prev.status,
               image: data?.profile_img ?? prev.image,
+              vatNumber: data?.vatNumber ?? trimmedVat,
+              mailingList: data?.mailingList ?? trimmedMailing,
             }
           : {
               name: data?.company_name ?? trimmedName,
@@ -772,6 +791,8 @@ export default function Settings() {
               address: data?.address ?? trimmedAddress,
               status: data?.status ?? "Active",
               image: data?.profile_img ?? DEFAULT_COMPANY_IMAGE,
+              vatNumber: data?.vatNumber ?? trimmedVat,
+              mailingList: data?.mailingList ?? trimmedMailing,
             }
       );
 
@@ -1702,6 +1723,39 @@ export default function Settings() {
                         />
                       </div>
                     </div>
+                    {/* Tax / VAT number printed on lab test-request forms
+                        (BV TRF "VAT" row, customs paperwork, etc.). */}
+                    <div className={styles.details2}>
+                      <div className={styles.info2} style={{ width: "100%" }}>
+                        <div className={styles.infoDetail}>
+                          VAT / Tax number
+                        </div>
+                        <input
+                          name="vatNumber"
+                          placeholder="EU VAT / EIN / GSTIN / etc."
+                          value={companyForm.vatNumber}
+                          onChange={handleCompanyInputChange("vatNumber")}
+                          disabled={companyUpdateLoading}
+                        />
+                      </div>
+                    </div>
+                    {/* Mailing list: emails (comma or newline-separated)
+                        the lab should copy on the final report. Surfaces
+                        on the BV TRF "Mailing list" row. */}
+                    <div className={styles.details2}>
+                      <div className={styles.info2} style={{ width: "100%" }}>
+                        <div className={styles.infoDetail}>
+                          Report mailing list
+                        </div>
+                        <input
+                          name="mailingList"
+                          placeholder="alice@acme.com, bob@acme.com"
+                          value={companyForm.mailingList}
+                          onChange={handleCompanyInputChange("mailingList")}
+                          disabled={companyUpdateLoading}
+                        />
+                      </div>
+                    </div>
                     <div className={styles.details}>
                       <div className={styles.info} style={{ width: "100%" }}>
                         <div className={styles.infoDetail}>Status</div>
@@ -2029,6 +2083,8 @@ export default function Settings() {
         return <PortalLoginsTab userType="customer" />;
       case "vendor-logins":
         return <PortalLoginsTab userType="vendor" />;
+      case "vendor-templates":
+        return <VendorTemplatesTab />;
       default:
         return null;
     }

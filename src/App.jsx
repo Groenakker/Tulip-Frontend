@@ -47,20 +47,6 @@ import ComingSoon from "./pages/ComingSoon/ComingSoon";
 import MyTasks from "./pages/MyWorkspace/MyTasks";
 import MyCalendar from "./pages/MyWorkspace/MyCalendar";
 import MyWorkload from "./pages/MyWorkspace/MyWorkload";
-// Toxicology workspace (ported from toxintelligence-mern).
-import ToxDashboard from "./pages/Toxicology/Dashboard/ToxDashboard";
-import CompoundSearch from "./pages/Toxicology/Search/CompoundSearch";
-import LibraryList from "./pages/Toxicology/Library/LibraryList";
-import LibraryDetail from "./pages/Toxicology/Library/LibraryDetail";
-import FamilyList from "./pages/Toxicology/Families/FamilyList";
-import FamilyDetail from "./pages/Toxicology/Families/FamilyDetail";
-import TRAList from "./pages/Toxicology/TRA/TRAList";
-import TRADetail from "./pages/Toxicology/TRA/TRADetail";
-import TRAReview from "./pages/Toxicology/TRA/TRAReview";
-import ImportWizard from "./pages/Toxicology/Import/ImportWizard";
-import Literature from "./pages/Toxicology/Literature/Literature";
-import ToxReports from "./pages/Toxicology/Reports/Reports";
-import ToxGovernance from "./pages/Toxicology/Governance/Governance";
 // Customer Portal
 import { CustomerAuthProvider } from "./context/CustomerAuthContext";
 import CustomerLayout from "./pages/CustomerPortal/Layout";
@@ -80,9 +66,12 @@ import VendorLogin from "./pages/VendorPortal/Login";
 import VendorDashboard from "./pages/VendorPortal/Dashboard";
 import VendorOrders from "./pages/VendorPortal/Orders";
 import VendorOrderDetail from "./pages/VendorPortal/OrderDetail";
-// Internal Test Order pages
+// Internal Test Order pages (legacy; replaced by Lab Studies)
 import TestOrderList from "./pages/Testing/OrderList";
 import TestOrderDetail from "./pages/Testing/OrderDetail";
+// Lab Studies — per-test assignment of instances + vendor.
+import LabStudiesList from "./pages/LabStudies/LabStudiesList";
+import LabStudyDetail from "./pages/LabStudies/LabStudyDetail";
 // import Projects from './pages/Projects';
 // import ShippingLog from './pages/ShippingLog';
 // import RecieveLog from './pages/RecieveLog';
@@ -439,7 +428,16 @@ function AppContent() {
           <Route path="/ConstituentResearch" element={<ProtectedRoute module="Constituent Research"><ComingSoon /></ProtectedRoute>} />
           <Route path="/Library" element={<ProtectedRoute module="Library"><ComingSoon /></ProtectedRoute>} />
           <Route path="/CreateSample" element={<ProtectedRoute module="Create Sample"><ComingSoon /></ProtectedRoute>} />
-          <Route path="/LabStudies" element={<ProtectedRoute module="Lab Studies"><ComingSoon /></ProtectedRoute>} />
+          {/* Lab Studies — per-test assignment of sample instances + vendor.
+              Replaces the legacy Test Orders flow as the canonical place
+              to track which vendor is performing which test on which
+              instances. */}
+          <Route path="/LabStudies" element={
+            <ProtectedRoute module="Lab Studies"><LabStudiesList /></ProtectedRoute>
+          } />
+          <Route path="/LabStudies/:id" element={
+            <ProtectedRoute module="Lab Studies"><LabStudyDetail /></ProtectedRoute>
+          } />
           <Route path="/Reports" element={<ProtectedRoute module="Reports"><ComingSoon /></ProtectedRoute>} />
 
           <Route 
@@ -458,24 +456,6 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-          {/* Toxicology workspace. ProtectedRoute is intentionally used WITHOUT
-              a `module` prop so the section is authenticated-only (no per-
-              module permission gate). To gate later, swap `<ProtectedRoute>`
-              for `<ProtectedRoute module="Toxicology">`. */}
-          <Route path="/Toxicology"               element={<ProtectedRoute><ToxDashboard /></ProtectedRoute>} />
-          <Route path="/Toxicology/Search"        element={<ProtectedRoute><CompoundSearch /></ProtectedRoute>} />
-          <Route path="/Toxicology/Library"       element={<ProtectedRoute><LibraryList /></ProtectedRoute>} />
-          <Route path="/Toxicology/Library/:id"   element={<ProtectedRoute><LibraryDetail /></ProtectedRoute>} />
-          <Route path="/Toxicology/Families"      element={<ProtectedRoute><FamilyList /></ProtectedRoute>} />
-          <Route path="/Toxicology/Families/:id"  element={<ProtectedRoute><FamilyDetail /></ProtectedRoute>} />
-          <Route path="/Toxicology/TRA"           element={<ProtectedRoute><TRAList /></ProtectedRoute>} />
-          <Route path="/Toxicology/TRA/:id"       element={<ProtectedRoute><TRADetail /></ProtectedRoute>} />
-          <Route path="/Toxicology/TRA/:id/review" element={<ProtectedRoute><TRAReview /></ProtectedRoute>} />
-          <Route path="/Toxicology/Import"        element={<ProtectedRoute><ImportWizard /></ProtectedRoute>} />
-          <Route path="/Toxicology/Literature"    element={<ProtectedRoute><Literature /></ProtectedRoute>} />
-          <Route path="/Toxicology/Reports"       element={<ProtectedRoute><ToxReports /></ProtectedRoute>} />
-          <Route path="/Toxicology/Governance"    element={<ProtectedRoute><ToxGovernance /></ProtectedRoute>} />
-
           <Route 
             path="/not-authorized" 
             element={

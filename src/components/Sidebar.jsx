@@ -1,10 +1,9 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import './Sidebar.css';
-import { FaWallet, FaRedo, FaHome, FaCog, FaQuestionCircle, FaChevronDown, FaShippingFast, FaWarehouse, FaFile, FaHistory, FaSearch, FaBookOpen, FaUpload, FaTasks, FaCalendarAlt, FaChartBar, FaBriefcase } from 'react-icons/fa';
+import { FaWallet, FaRedo, FaHome, FaCog, FaQuestionCircle, FaChevronDown, FaShippingFast, FaWarehouse, FaFile, FaHistory, FaTasks, FaCalendarAlt, FaChartBar, FaBriefcase } from 'react-icons/fa';
 import { GoSidebarExpand } from "react-icons/go";
-import { GiRolledCloth, GiTestTubes, GiMolecule } from "react-icons/gi";
-import { RiHexagonFill } from "react-icons/ri";
-import { IoLibrary, IoBusiness } from "react-icons/io5";
+import { GiRolledCloth, GiTestTubes } from "react-icons/gi";
+import { IoBusiness } from "react-icons/io5";
 import { FaDiagramProject, FaFileWaveform } from "react-icons/fa6";
 import { SiAftership } from "react-icons/si";
 import { PiEyedropperSampleFill } from "react-icons/pi";
@@ -48,30 +47,11 @@ const menuItems = [
       { name: 'Lab Studies', menuIcon: <GiTestTubes />, path: '/LabStudies', permission: { module: 'Lab Studies', actions: 'read' } },
       { name: 'Reports', menuIcon: <BiSolidReport />, path: '/Reports', permission: { module: 'Reports', actions: 'read' } },
       { name: 'Test Codes', menuIcon: <TbReportAnalytics />, path: '/TestCodes', permission: { module: 'Test Codes', actions: 'read' } },
-      { name: 'Test Orders', menuIcon: <BiSolidReport />, path: '/Testing/Orders', permission: { module: 'Testing', actions: 'read' } },
+      // "Test Orders" entry intentionally removed — per-test
+      // assignment now lives under Lab Studies. The /Testing/Orders
+      // route is still mounted in App.jsx for any in-flight links but
+      // is no longer surfaced in the sidebar.
       { name: 'Instance', menuIcon: <GiTestTubes />, path: '/Instance', permission: { module: 'Instances', actions: 'read' } },
-    ],
-  },
-  // Toxicology workspace: an entire dropdown that mirrors the internal
-  // navigation of the ported toxintelligence-mern app. We don't add a
-  // `permission` key for now so the section is visible to every
-  // authenticated user — matches the open-by-default backend wiring in
-  // Tulip-Backend/src/tox/. To gate access later, add e.g.
-  // `permission: { module: 'Toxicology', actions: 'read' }` and seed
-  // the matching Permission document.
-  {
-    label: 'ToxIntelligence',
-    icon: <GiMolecule />,
-    submenu: [
-      { name: 'Dashboard',         menuIcon: <FaHome />,           path: '/Toxicology' },
-      { name: 'Compound Search',   menuIcon: <FaSearch />,         path: '/Toxicology/Search' },
-      { name: 'Compound Library',  menuIcon: <IoLibrary />,        path: '/Toxicology/Library' },
-      { name: 'Compound Families', menuIcon: <RiHexagonFill />,    path: '/Toxicology/Families' },
-      { name: 'TRA Projects',      menuIcon: <FaDiagramProject />, path: '/Toxicology/TRA' },
-      { name: 'Chemistry Import',  menuIcon: <FaUpload />,         path: '/Toxicology/Import' },
-      { name: 'Literature',        menuIcon: <FaBookOpen />,       path: '/Toxicology/Literature' },
-      { name: 'Reports',           menuIcon: <BiSolidReport />,    path: '/Toxicology/Reports' },
-      { name: 'Family Governance', menuIcon: <FaCog />,            path: '/Toxicology/Governance' },
     ],
   },
 ];

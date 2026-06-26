@@ -109,13 +109,13 @@
 
 
 .menuItem:hover {
-  background-color: #e9f0fe;
-  color: rgb(69 112 182);
+  background-color: var(--color-primary-50);
+  color: var(--color-primary);
 }
 
 .menuItem.active {
-  background-color: #e9f0fe;
-  color: rgb(69 112 182);
+  background-color: var(--color-primary-50);
+  color: var(--color-primary);
 }
 
 
@@ -143,15 +143,15 @@
 }
 
 .submenuItem:hover{
-  background-color: #e9f0fe;
-  border-radius: 6px;
-  color: rgb(69 112 182);
+  background-color: var(--color-primary-50);
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
 }
 
 .submenuItem.active {
-  background-color: #e9f0fe;
-  border-radius: 6px;
-  color: rgb(69 112 182);
+  background-color: var(--color-primary-50);
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
 }
 
 
@@ -202,12 +202,12 @@
 }
 
 .sidebarOption:hover {
-  color: rgb(69 112 182);
+  color: var(--color-primary);
 }
 
 .sidebarOption.active {
-  /* background-color: #e9f0fe; */
-  color: rgb(69 112 182);
+  /* background-color: var(--color-primary-50); */
+  color: var(--color-primary);
 }
 
 .profile {

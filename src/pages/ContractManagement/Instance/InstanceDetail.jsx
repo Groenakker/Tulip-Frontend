@@ -5,6 +5,17 @@ import { useParams, useNavigate } from "react-router-dom";
 import { FaSave, FaTrash } from "react-icons/fa";
 import Header from "../../../components/Header";
 import OpenRecordLink from "../../../components/RecordLink/OpenRecordLink";
+
+// Status palette shared with the Lab Studies pages so the pill colours
+// match wherever a study appears.
+const LAB_STUDY_STATUS_PALETTE = {
+  Draft: ["#f3f4f6", "#374151"],
+  Assigned: ["#dbeafe", "#1e40af"],
+  "In Progress": ["#fef3c7", "#92400e"],
+  Completed: ["#dcfce7", "#166534"],
+  Cancelled: ["#fee2e2", "#991b1b"],
+};
+
 export default function InstanceDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -18,6 +29,12 @@ export default function InstanceDetail() {
   const [movements, setMovements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMovements, setLoadingMovements] = useState(true);
+  // Lab studies this instance is currently assigned to (one instance
+  // can be part of multiple studies on a bulk sample). Surfacing the
+  // list here gives lab users a single jump-off point to every test
+  // currently consuming the physical sample.
+  const [labStudies, setLabStudies] = useState([]);
+  const [loadingStudies, setLoadingStudies] = useState(true);
 
   useEffect(() => {
     if (id) {
@@ -48,6 +65,22 @@ export default function InstanceDetail() {
           console.error("Failed to fetch movements:", err);
           setMovements([]);
           setLoadingMovements(false);
+        });
+
+      // Fetch related lab studies (instances[].instanceId === id).
+      fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/lab-studies?instanceId=${id}`,
+        { credentials: "include" }
+      )
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => {
+          setLabStudies(Array.isArray(data) ? data : []);
+          setLoadingStudies(false);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch related lab studies:", err);
+          setLabStudies([]);
+          setLoadingStudies(false);
         });
     }
   }, [id]);
@@ -202,6 +235,68 @@ export default function InstanceDetail() {
                 Save{" "}
               </button>
             </div>
+          </WhiteIsland>
+        </div>
+
+        {/* ---------- Related Lab Studies ---------- */}
+        <div className={styles.studiesSection}>
+          <WhiteIsland className={styles.bigIsland}>
+            <h3>Related Lab Studies</h3>
+            {loadingStudies ? (
+              <div style={{ padding: 12 }}>Loading lab studies…</div>
+            ) : labStudies.length === 0 ? (
+              <div className={styles.emptyStudies}>
+                This instance isn't assigned to any lab studies yet.
+              </div>
+            ) : (
+              <div className={styles.movementsTable}>
+                <table className={styles.studiesTable}>
+                  <thead>
+                    <tr>
+                      <th>Study #</th>
+                      <th>Test</th>
+                      <th>Vendor</th>
+                      <th>Customer</th>
+                      <th>Status</th>
+                      <th>Open</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {labStudies.map((study) => {
+                      const [bg, color] =
+                        LAB_STUDY_STATUS_PALETTE[study.status] ||
+                        LAB_STUDY_STATUS_PALETTE.Draft;
+                      return (
+                        <tr key={study._id}>
+                          <td>{study.studyCode || "—"}</td>
+                          <td>
+                            <div style={{ fontWeight: 600 }}>{study.grkCode || "—"}</div>
+                            {study.testCodeRef && (
+                              <div style={{ fontSize: 12, color: "#6b7280" }}>
+                                {study.testCodeRef}
+                              </div>
+                            )}
+                          </td>
+                          <td>{study.vendorBpName || "Not assigned"}</td>
+                          <td>{study.customerBpName || "—"}</td>
+                          <td>
+                            <span className={styles.studyStatusPill} style={{ background: bg, color }}>
+                              {study.status || "Draft"}
+                            </span>
+                          </td>
+                          <td>
+                            <OpenRecordLink
+                              to={`/LabStudies/${study._id}`}
+                              title="Open lab study"
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </WhiteIsland>
         </div>
 

@@ -1,0 +1,334 @@
+/*
+ * LabStudyDetail.module.css
+ * -----------------------------------------------------------
+ * Scoped styles for the redesigned Lab Study Detail page.
+ * Follows the rest of the app's blue palette (#4570B6 primary,
+ * #013179 hover) and matches the panel-with-card pattern used
+ * on the Sample Submission and Receiving detail pages.
+ */
+
+.page {
+  padding: 18px 22px 32px;
+  max-width: 1280px;
+  margin: 0 auto;
+  font-family: inherit;
+}
+
+/* ---------------- Status banner ---------------- */
+
+/* The big top banner combines study code, status pill, customer / sample
+ * tags and the action buttons. The accent stripe on the left changes
+ * color based on the study status so users can scan at a glance. */
+.banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 18px 22px;
+  border: 1px solid #e5e7eb;
+  border-left: 6px solid #4570B6;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  margin-bottom: 18px;
+}
+
+.bannerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.code {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: 0.2px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.tag {
+  background: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.tag strong { color: #0f172a; font-weight: 600; margin-right: 4px; }
+
+.bannerRight {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Status pill colors are applied via inline styles so we can keep the
+ * palette dictionary in JS, but the base pill shape lives here. */
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* ---------------- Buttons ---------------- */
+
+.btnPrimary {
+  background: #4570B6;
+  color: #ffffff;
+  border: 1px solid #4570B6;
+  padding: 9px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.15s ease;
+}
+
+.btnPrimary:hover:enabled { background: #013179; border-color: #013179; }
+.btnPrimary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btnGhost {
+  background: #ffffff;
+  color: #4570B6;
+  border: 1px solid #4570B6;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.btnGhost:hover:enabled { background: #f1f5f9; }
+
+.btnDanger {
+  background: #ffffff;
+  color: #b91c1c;
+  border: 1px solid #b91c1c;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.btnDanger:hover:enabled { background: #fef2f2; }
+
+/* ---------------- Card layout ---------------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 960px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 18px 20px 20px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.cardTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.cardSubtitle {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px 18px;
+}
+
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+
+.fieldLabel {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.fieldValue {
+  font-size: 14px;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+.fieldValueMuted { color: #6b7280; }
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 14px;
+  color: #0f172a;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: #4570B6;
+  box-shadow: 0 0 0 2px rgba(69, 112, 182, 0.18);
+}
+
+.textarea { resize: vertical; }
+
+/* Side-panel "quick stats" card with key metadata at a glance. */
+.sideStat {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+}
+
+.sideStat:last-child { border-bottom: none; }
+
+.sideStat span:first-child {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.sideStat span:last-child {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* ---------------- Instances table ---------------- */
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.table thead th {
+  background: #f8fafc;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.table tbody td {
+  padding: 11px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #0f172a;
+}
+
+.table tbody tr:last-child td { border-bottom: none; }
+
+.emptyRow {
+  color: #6b7280;
+  text-align: center;
+  padding: 18px 12px;
+  font-style: italic;
+}
+
+.warn {
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.loading {
+  padding: 30px;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* Footer meta strip (created / updated stamps). */
+.metaStrip {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #6b7280;
+  padding: 14px 4px 0;
+  margin-top: 4px;
+}
