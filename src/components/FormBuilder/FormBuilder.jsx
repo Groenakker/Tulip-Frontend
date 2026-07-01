@@ -23,6 +23,7 @@ import {
   FaSave,
 } from "react-icons/fa";
 import styles from "./FormBuilder.module.css";
+import Select from "../Select/Select";
 
 // ----------------------------------------------------------------
 // Form Builder
@@ -510,7 +511,7 @@ export default function FormBuilder({
                   updateTemplate((tpl) => ({ ...tpl, name: e.target.value }))
                 }
               />
-              <select
+              <Select
                 className={styles.categorySelect}
                 value={template.category}
                 onChange={(e) =>
@@ -522,7 +523,7 @@ export default function FormBuilder({
                     {c}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
           <div className={styles.topRight}>
@@ -745,7 +746,7 @@ function SectionEditor({
           onChange={(e) => onChangeTitle(e.target.value)}
           placeholder="Section title"
         />
-        <select
+        <Select
           className={styles.sectionColumns}
           value={section.columns}
           onChange={(e) => onChangeColumns(Number(e.target.value))}
@@ -754,7 +755,7 @@ function SectionEditor({
           <option value={1}>1 column</option>
           <option value={2}>2 columns</option>
           <option value={3}>3 columns</option>
-        </select>
+        </Select>
         <button
           type="button"
           className={styles.iconBtn}
@@ -984,9 +985,9 @@ function FieldPreview({ field }) {
       );
     case "select":
       return (
-        <select className={styles.fieldInput} disabled>
+        <Select className={styles.fieldInput} disabled>
           <option>{field.placeholder || "Select an option"}</option>
-        </select>
+        </Select>
       );
     case "radio":
       return (
@@ -1127,7 +1128,7 @@ function PropertiesPanel({ selected, onChange, onAutoKeyFromLabel }) {
 
           <div className={styles.propGroup}>
             <label className={styles.propLabel}>Width</label>
-            <select
+            <Select
               className={styles.propInput}
               value={field.width || "full"}
               onChange={(e) => onChange({ width: e.target.value })}
@@ -1135,7 +1136,7 @@ function PropertiesPanel({ selected, onChange, onAutoKeyFromLabel }) {
               <option value="full">Full</option>
               <option value="half">Half</option>
               <option value="third">Third</option>
-            </select>
+            </Select>
             <div className={styles.propsHint}>
               Width is honoured when the section uses 2 or 3 columns.
             </div>
@@ -1283,14 +1284,14 @@ function renderPreviewInput(field) {
       return <textarea placeholder={field.placeholder || ""} />;
     case "select":
       return (
-        <select>
+        <Select>
           <option value="">{field.placeholder || "Select..."}</option>
           {(field.options || []).map((o, i) => (
             <option key={i} value={o}>
               {o}
             </option>
           ))}
-        </select>
+        </Select>
       );
     case "radio":
       return (

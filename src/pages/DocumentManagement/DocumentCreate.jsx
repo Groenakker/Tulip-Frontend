@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "../../components/Toaster/toast";
 import Header from '../../components/Header';
 import { useAuth } from "../../context/AuthContext";
+import Select from "../../components/Select/Select";
 
 const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
@@ -343,7 +344,7 @@ export default function DocumentCreate() {
                 <div className={styles.details}>
                   <div className={styles.info}>
                     <div className={styles.infoDetail}>Category <span className={styles.required}>*</span></div>
-                    <select
+                    <Select
                       name="category"
                       value={document.category}
                       onChange={handleChange}
@@ -354,7 +355,7 @@ export default function DocumentCreate() {
                       <option value="HR">HR</option>
                       <option value="Operations">Operations</option>
                       <option value="Quality">Quality</option>
-                    </select>
+                    </Select>
                   </div>
 
                   <div className={styles.info}>
@@ -505,7 +506,7 @@ export default function DocumentCreate() {
                       <div style={{ marginBottom: "16px" }}>
                         <div>
                           <label className={styles.stakeholderFormLabel}>Role <span className={styles.required}>*</span></label>
-                          <select
+                          <Select
                             value={selectedTeamUserRole}
                             onChange={(e) => setSelectedTeamUserRole(e.target.value)}
                             style={{
@@ -524,7 +525,7 @@ export default function DocumentCreate() {
                             <option value="APPROVER">Approver</option>
                             <option value="OBSERVER">Observer</option>
                             <option value="EDITOR">Editor</option>
-                          </select>
+                          </Select>
                         </div>
                       </div>
                     )}
@@ -593,7 +594,7 @@ export default function DocumentCreate() {
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <label className={styles.stakeholderFormLabel}>Role <span className={styles.required}>*</span></label>
-                        <select
+                        <Select
                           name="role"
                           value={newStakeholder.role}
                           onChange={handleStakeholderChange}
@@ -614,7 +615,7 @@ export default function DocumentCreate() {
                           <option value="APPROVER">Approver</option>
                           <option value="OBSERVER">Observer</option>
                           <option value="EDITOR">Editor</option>
-                        </select>
+                        </Select>
                       </div>
                     </div>
                     <div className={styles.stakeholderFormActions}>

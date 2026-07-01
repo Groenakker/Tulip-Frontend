@@ -3,6 +3,7 @@ import styles from "./ContactsForm.module.css";
 import { FaUpload, FaPlus, FaTimes, FaUserFriends, FaUserPlus } from "react-icons/fa";
 import toast from "../Toaster/toast";
 import { useAuth } from "../../context/AuthContext";
+import Select from "../Select/Select";
 
 const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
@@ -367,7 +368,7 @@ const VersionsForm = ({ onClose, documentId, documentID, currentVersionNumber, o
                       <div style={{ marginBottom: "16px" }}>
                         <div>
                           <label style={{ display: "block", marginBottom: "4px", fontSize: "13px", fontWeight: "500" }}>Role *</label>
-                          <select
+                          <Select
                             value={selectedTeamUserRole}
                             onChange={(e) => setSelectedTeamUserRole(e.target.value)}
                             style={{ width: "100%", padding: "10px 14px", borderRadius: "8px", border: "1px solid #D0D5DD", fontSize: "14px" }}
@@ -377,7 +378,7 @@ const VersionsForm = ({ onClose, documentId, documentID, currentVersionNumber, o
                             <option value="APPROVER">Approver</option>
                             <option value="OBSERVER">Observer</option>
                             <option value="EDITOR">Editor</option>
-                          </select>
+                          </Select>
                         </div>
                       </div>
                     )}
@@ -408,13 +409,13 @@ const VersionsForm = ({ onClose, documentId, documentID, currentVersionNumber, o
                       </div>
                       <div style={{ gridColumn: "1 / -1" }}>
                         <label style={{ display: "block", marginBottom: "4px", fontSize: "13px", fontWeight: "500" }}>Role *</label>
-                        <select className={styles.input} name="role" value={newStakeholder.role} onChange={handleStakeholderChange}>
+                        <Select className={styles.input} name="role" value={newStakeholder.role} onChange={handleStakeholderChange}>
                           <option value="">Select Role</option>
                           <option value="REVIEWER">Reviewer</option>
                           <option value="APPROVER">Approver</option>
                           <option value="OBSERVER">Observer</option>
                           <option value="EDITOR">Editor</option>
-                        </select>
+                        </Select>
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>

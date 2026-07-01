@@ -8,6 +8,7 @@ import Modal from "../../components/Modal";
 import VersionsForm from "../../components/modals/VersionsForm";
 import VersionDetailsModal from "../../components/modals/VersionDetailsModal";
 import Header from '../../components/Header';
+import Select from "../../components/Select/Select";
 
 export default function DocumentDetails() {
   const { id } = useParams();
@@ -581,7 +582,7 @@ export default function DocumentDetails() {
                 <div className={styles.details}>
                   <div className={styles.info}>
                     <div className={styles.infoDetail}>Category <span className={styles.required}>*</span></div>
-                    <select
+                    <Select
                       name="category"
                       value={document.category}
                       onChange={handleChange}
@@ -593,7 +594,7 @@ export default function DocumentDetails() {
                       <option value="HR">HR</option>
                       <option value="Operations">Operations</option>
                       <option value="Quality">Quality</option>
-                    </select>
+                    </Select>
                   </div>
 
                   <div className={styles.info}>

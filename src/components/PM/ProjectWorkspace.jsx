@@ -17,6 +17,7 @@ import TaskModal from "./TaskModal";
 import HierarchyTree from "./HierarchyTree";
 import WorkloadHeatmap from "./WorkloadHeatmap";
 import toast from "../Toaster/toast";
+import Select from "../Select/Select";
 
 // Top-level Project Management workspace embedded into the
 // project detail page. Owns the active view, search + filter
@@ -210,7 +211,7 @@ export default function ProjectWorkspace({ project, canEdit, onProjectChanged })
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </label>
-              <select
+              <Select
                 className={styles.select}
                 value={filterAssignee}
                 onChange={(e) => setFilterAssignee(e.target.value)}
@@ -219,8 +220,8 @@ export default function ProjectWorkspace({ project, canEdit, onProjectChanged })
                 {team.members.map((m) => (
                   <option key={m.user._id} value={m.user._id}>{m.user.name}</option>
                 ))}
-              </select>
-              <select
+              </Select>
+              <Select
                 className={styles.select}
                 value={filterTag}
                 onChange={(e) => setFilterTag(e.target.value)}
@@ -229,7 +230,7 @@ export default function ProjectWorkspace({ project, canEdit, onProjectChanged })
                 {(project?.tags || []).map((t) => (
                   <option key={t.name} value={t.name}>#{t.name}</option>
                 ))}
-              </select>
+              </Select>
             </>
           ) : (
             <div style={{ flex: 1 }} />

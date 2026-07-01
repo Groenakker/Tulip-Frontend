@@ -9,6 +9,7 @@ import Header from "../../../components/Header";
 import ProjectWorkspace from "../../../components/PM/ProjectWorkspace";
 import { useAuth } from "../../../context/AuthContext";
 import OpenRecordLink from "../../../components/RecordLink/OpenRecordLink";
+import Select from "../../../components/Select/Select";
 
 export default function ProjectDetails() {
   const { id } = useParams();
@@ -357,7 +358,7 @@ export default function ProjectDetails() {
                         />
                       )}
                     </div>{" "}
-                    <select
+                    <Select
                       name="bPartnerCode"
                       value={project.bPartnerCode}
                       onChange={(e) => {
@@ -386,7 +387,7 @@ export default function ProjectDetails() {
                           {partner.partnerNumber}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                   <div className={styles.info} style={{ width: "55%" }}>
                     <div className={styles.infoDetail}>Name <span style={{ color: "red" }}>*</span></div>{" "}
@@ -399,7 +400,7 @@ export default function ProjectDetails() {
                   </div>
                   <div className={styles.info} style={{ width: "15%" }}>
                     <div className={styles.infoDetail}>Sponsor <span style={{ color: "red" }}>*</span></div>{" "}
-                    <select
+                    <Select
                       name="contact"
                       value={project.contact}
                       onChange={handleChange}
@@ -430,11 +431,11 @@ export default function ProjectDetails() {
                       {!contactOptions.length && project.contact ? (
                         <option value={project.contact}>{project.contact}</option>
                       ) : null}
-                    </select>
+                    </Select>
                   </div>
                   <div className={styles.info} style={{ width: "15%" }}>
                     <div className={styles.infoDetail}>Status <span style={{ color: "red" }}>*</span></div>{" "}
-                    <select
+                    <Select
                       name="status"
                       value={project.status}
                       onChange={handleChange}
@@ -444,7 +445,7 @@ export default function ProjectDetails() {
                       <option value="Completed">Completed</option>
                       <option value="On Hold">On Hold</option>
                       <option value="Cancelled">Cancelled</option>
-                    </select>
+                    </Select>
                   </div>
                 </div>
                 <div className={styles.details2}>
@@ -575,7 +576,12 @@ export default function ProjectDetails() {
         </div>
 
         <div className="table">
-          <TabbedTable data={pdata} />
+          {/* Project Management is the primary destination when
+              opening a project — make it the default landing tab
+              instead of falling back to whichever tab happens to
+              render first synchronously (which is Shipments while
+              the project doc is still in-flight). */}
+          <TabbedTable data={pdata} defaultTab="Project Management" />
         </div>
       </div>
     </>

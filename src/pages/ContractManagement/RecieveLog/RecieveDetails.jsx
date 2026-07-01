@@ -15,6 +15,7 @@ import { useAuth } from '../../../context/AuthContext';
 import RecordStatusBar from '../../../components/RecordLifecycle/RecordStatusBar';
 import RecordHistoryModal from '../../../components/RecordLifecycle/RecordHistoryModal';
 import OpenRecordLink, { isObjectId } from '../../../components/RecordLink/OpenRecordLink';
+import Select from '../../../components/Select/Select';
 export default function RecieveDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -572,7 +573,7 @@ export default function RecieveDetails() {
                                         />
                                     )}
                                 </div>
-                                <select name='projectId' value={log.projectId} onChange={onProjectChange}>
+                                <Select name='projectId' value={log.projectId} onChange={onProjectChange}>
                                     <option value=''>Select project...</option>
                                     {projectsLoading ? (
                                         <option value='' disabled>Loading...</option>
@@ -581,7 +582,7 @@ export default function RecieveDetails() {
                                             <option key={p._id} value={p._id}>{p.projectID || p.projectID}</option>
                                         ))
                                     )}
-                                </select>
+                                </Select>
                             </div>
                             <div className={styles.info} style={{ width: '100%' }}><div className={styles.infoDetail}>Project Description</div>        <input name='projectDesc' value={log.projectDesc} onChange={handleChange}></input></div>
                         </div>

@@ -16,6 +16,7 @@ import {
 import Header from '../../components/Header';
 import WhiteIsland from '../../components/Whiteisland';
 import styles from './ActivityLog.module.css';
+import Select from '../../components/Select/Select';
 
 /**
  * ActivityLog
@@ -205,7 +206,7 @@ export default function ActivityLog() {
                             />
                         </div>
 
-                        <select
+                        <Select
                             className={styles.filterSelect}
                             value={action}
                             onChange={(e) => {
@@ -219,9 +220,9 @@ export default function ActivityLog() {
                                     {a.charAt(0).toUpperCase() + a.slice(1)}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
 
-                        <select
+                        <Select
                             className={styles.filterSelect}
                             value={module}
                             onChange={(e) => {
@@ -235,9 +236,9 @@ export default function ActivityLog() {
                                     {m}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
 
-                        <select
+                        <Select
                             className={styles.filterSelect}
                             value={userId}
                             onChange={(e) => {
@@ -252,7 +253,7 @@ export default function ActivityLog() {
                                     {u.user_email ? ` (${u.user_email})` : ''}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
 
                         <input
                             type='date'

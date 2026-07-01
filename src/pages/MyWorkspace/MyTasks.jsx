@@ -7,6 +7,7 @@ import styles from "../../components/PM/pm.module.css";
 import { useAuth } from "../../context/AuthContext";
 import { pm, STATUSES, STATUS_COLORS, fmtDate } from "../../components/PM/pmApi";
 import { StatusBadge, PriorityBadge, TagBadge } from "../../components/PM/Badges";
+import TaskModal from "../../components/PM/TaskModal";
 import toast from "../../components/Toaster/toast";
 
 // Personal task board for the signed-in user. Pulls every task
@@ -20,6 +21,21 @@ export default function MyTasks() {
   const [tasks, setTasks] = useState([]);
   const [search, setSearch] = useState("");
   const [projectMap, setProjectMap] = useState(new Map());
+
+  // Task-modal state. We keep:
+  //   modalTask         — the task object currently being edited
+  //   modalProject      — its project, hydrated with `members`
+  //                       (joined with user info via getTeamSummary)
+  //                       so the assignee popover works
+  //   modalAllTasks     — sibling tasks on the same project so the
+  //                       dependencies / parent pickers populate
+  //   modalLoading      — true while we fetch the supporting data
+  //                       between the user clicking and the modal
+  //                       being able to render the team picker.
+  const [modalTask, setModalTask] = useState(null);
+  const [modalProject, setModalProject] = useState(null);
+  const [modalAllTasks, setModalAllTasks] = useState([]);
+  const [modalLoading, setModalLoading] = useState(false);
 
   const load = useCallback(async () => {
     if (!user?._id) return;
@@ -40,6 +56,45 @@ export default function MyTasks() {
   }, [user?._id]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Open the full task editor in-place. We need the same three
+  // bits ProjectWorkspace passes in: the task itself, its project
+  // (with team.members hydrated so the assignee picker works),
+  // and the sibling tasks for dependencies / parent. Fetched in
+  // parallel — modal pops open once everything arrives so the
+  // user never sees an empty Members list.
+  const openTaskModal = useCallback(async (task) => {
+    if (!task?._id || !task.project) return;
+    setModalLoading(true);
+    try {
+      const [projectRes, teamRes, tasksRes, freshTaskRes] = await Promise.all([
+        fetch(`${import.meta.env.VITE_BACKEND_URL}/api/projects/${task.project}`, {
+          credentials: "include",
+        }).then((r) => (r.ok ? r.json() : null)),
+        pm.getTeamSummary(task.project).catch(() => ({ members: [] })),
+        pm.listTasks({ project: task.project }).catch(() => ({ tasks: [] })),
+        // Refetch the task so we see its latest comments &
+        // attachments — the cached `mine` list omits attachments
+        // until the next refresh otherwise.
+        pm.getTask(task._id).catch(() => null),
+      ]);
+      if (!projectRes) {
+        toast.error("Could not load project for this task");
+        return;
+      }
+      setModalProject({ ...projectRes, members: teamRes?.members || [] });
+      setModalAllTasks(tasksRes?.tasks || []);
+      setModalTask(freshTaskRes?.task || task);
+    } finally {
+      setModalLoading(false);
+    }
+  }, []);
+
+  const closeTaskModal = () => {
+    setModalTask(null);
+    setModalProject(null);
+    setModalAllTasks([]);
+  };
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -91,6 +146,16 @@ export default function MyTasks() {
           </label>
         </div>
 
+        {modalLoading && (
+          <div style={{
+            position: "fixed", top: 12, right: 16, zIndex: 1100,
+            background: "#1f2937", color: "white", padding: "8px 12px",
+            borderRadius: 8, fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+          }}>
+            Loading task…
+          </div>
+        )}
+
         <div className={styles.board}>
           {STATUSES.map((s) => (
             <div key={s} className={styles.boardColumn}>
@@ -108,12 +173,40 @@ export default function MyTasks() {
                     <div
                       key={t._id}
                       className={styles.taskCard}
-                      onClick={() => navigate(`/Projects/ProjectDetails/${t.project}`)}
+                      onClick={() => openTaskModal(t)}
                       style={{ cursor: "pointer" }}
+                      title="Open task"
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
                         <div className={styles.taskCardTitle}>{t.title}</div>
-                        <FaExternalLinkAlt style={{ color: "#9ca3af", fontSize: 10, marginTop: 4 }} />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            // Stop the card click — this button is
+                            // the explicit "jump to the project page"
+                            // escape hatch, separate from the modal
+                            // open behaviour on the card body.
+                            e.stopPropagation();
+                            navigate(`/Projects/ProjectDetails/${t.project}`);
+                          }}
+                          title="Open in Project Management"
+                          aria-label="Open in Project Management"
+                          style={{
+                            background: "none",
+                            border: "none",
+                            padding: "2px 4px",
+                            cursor: "pointer",
+                            color: "#9ca3af",
+                            fontSize: 10,
+                            marginTop: 2,
+                            display: "inline-flex",
+                            alignItems: "center",
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = "#2563eb"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = "#9ca3af"; }}
+                        >
+                          <FaExternalLinkAlt />
+                        </button>
                       </div>
                       <div className={styles.taskCardMeta}>
                         <PriorityBadge priority={t.priority} />
@@ -142,6 +235,25 @@ export default function MyTasks() {
           ))}
         </div>
       </WhiteIsland>
+
+      {modalTask && modalProject && (
+        <TaskModal
+          task={modalTask}
+          project={modalProject}
+          allTasks={modalAllTasks}
+          onClose={closeTaskModal}
+          // Refetch the "my tasks" list so any edit (status change,
+          // new comment, attachment, etc.) is reflected in the
+          // kanban columns immediately. We also patch the modal's
+          // own `task` prop so subsequent saves see the freshest
+          // version without closing/reopening.
+          onSaved={(updated) => {
+            if (updated?._id) setModalTask(updated);
+            load();
+          }}
+          onDeleted={() => { closeTaskModal(); load(); }}
+        />
+      )}
     </>
   );
 }

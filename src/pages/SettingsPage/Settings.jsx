@@ -15,6 +15,7 @@ import {
   FaUserTie,
   FaTruckLoading,
   FaFileSignature,
+  FaClipboardList,
 } from "react-icons/fa";
 import WhiteIsland from "../../components/Whiteisland";
 import styles from "./Settings.module.css";
@@ -24,6 +25,8 @@ import Modal from "../../components/Modal";
 import Header from "../../components/Header";
 import PortalLoginsTab from "./PortalLoginsTab";
 import VendorTemplatesTab from "./VendorTemplatesTab"; 
+import BomTab from "./BomTab";
+import Select from "../../components/Select/Select";
 const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 const DEFAULT_COMPANY_IMAGE =
   "https://via.placeholder.com/120x120.png?text=Company";
@@ -34,6 +37,7 @@ const menuOptions = [
   { id: "customer-logins", label: "Customer Logins", icon: <FaUserTie /> },
   { id: "vendor-logins", label: "Vendor Logins", icon: <FaTruckLoading /> },
   { id: "vendor-templates", label: "Vendor Templates", icon: <FaFileSignature /> },
+  { id: "bom", label: "Bill of Materials", icon: <FaClipboardList /> },
   { id: "company", label: "Company", icon: <FaBuilding /> },
   { id: "notifications", label: "Notifications", icon: <FaBell /> },
   { id: "system", label: "System Configuration", icon: <FaCog /> },
@@ -1759,7 +1763,7 @@ export default function Settings() {
                     <div className={styles.details}>
                       <div className={styles.info} style={{ width: "100%" }}>
                         <div className={styles.infoDetail}>Status</div>
-                        <select
+                        <Select
                           className={styles.dropdown}
                           name="status"
                           value={companyDetails.status || "Active"}
@@ -1767,7 +1771,7 @@ export default function Settings() {
                         >
                           <option value="Active">Active</option>
                           <option value="Inactive">Inactive</option>
-                        </select>
+                        </Select>
                       </div>
                     </div>
                     {companyUpdateError && (
@@ -1949,7 +1953,7 @@ export default function Settings() {
                     </label>
                     <label className={styles.systemConfigField}>
                       <span className={styles.infoDetail}>Label File Type</span>
-                      <select
+                      <Select
                         value={shippoForm.labelFileType}
                         onChange={handleShippoFieldChange("labelFileType")}
                         disabled={shippoSaveLoading}
@@ -1960,7 +1964,7 @@ export default function Settings() {
                         <option value="PNG">PNG</option>
                         <option value="PNG_2.3x7.5">PNG 2.3x7.5</option>
                         <option value="ZPLII">ZPLII</option>
-                      </select>
+                      </Select>
                     </label>
                   </div>
                 </div>
@@ -2006,18 +2010,18 @@ export default function Settings() {
                     </label>
                     <label className={styles.systemConfigField}>
                       <span className={styles.infoDetail}>Distance Unit</span>
-                      <select
+                      <Select
                         value={shippoForm.distance_unit}
                         onChange={handleShippoFieldChange("distance_unit")}
                         disabled={shippoSaveLoading}
                       >
                         <option value="in">Inches (in)</option>
                         <option value="cm">Centimeters (cm)</option>
-                      </select>
+                      </Select>
                     </label>
                     <label className={styles.systemConfigField}>
                       <span className={styles.infoDetail}>Mass Unit</span>
-                      <select
+                      <Select
                         value={shippoForm.mass_unit}
                         onChange={handleShippoFieldChange("mass_unit")}
                         disabled={shippoSaveLoading}
@@ -2026,7 +2030,7 @@ export default function Settings() {
                         <option value="oz">Ounces (oz)</option>
                         <option value="kg">Kilograms (kg)</option>
                         <option value="g">Grams (g)</option>
-                      </select>
+                      </Select>
                     </label>
                   </div>
                 </div>
@@ -2042,7 +2046,7 @@ export default function Settings() {
                     </p>
                     <label className={`${styles.systemConfigField} ${styles.systemConfigFieldWide}`}>
                       <span className={styles.infoDetail}>Test Tracking State</span>
-                      <select
+                      <Select
                         value={shippoForm.testTrackingState}
                         onChange={handleShippoFieldChange("testTrackingState")}
                         disabled={shippoSaveLoading}
@@ -2053,7 +2057,7 @@ export default function Settings() {
                         <option value="SHIPPO_RETURNED">Returned</option>
                         <option value="SHIPPO_FAILURE">Failure</option>
                         <option value="SHIPPO_UNKNOWN">Unknown</option>
-                      </select>
+                      </Select>
                     </label>
                   </div>
                 )}
@@ -2085,6 +2089,8 @@ export default function Settings() {
         return <PortalLoginsTab userType="vendor" />;
       case "vendor-templates":
         return <VendorTemplatesTab />;
+      case "bom":
+        return <BomTab />;
       default:
         return null;
     }
@@ -2300,7 +2306,7 @@ export default function Settings() {
               <label className={styles.modalLabel} htmlFor="inviteRole">
                 Role
               </label>
-              <select
+              <Select
                 id="inviteRole"
                 className={styles.modalSelect}
                 value={inviteRole}
@@ -2312,7 +2318,7 @@ export default function Settings() {
                     {role.charAt(0).toUpperCase() + role.slice(1)}
                   </option>
                 ))}
-              </select>
+              </Select>
               {inviteError && (
                 <p className={styles.modalError}>{inviteError}</p>
               )}
@@ -2424,7 +2430,7 @@ export default function Settings() {
               <label className={styles.modalLabel} htmlFor="permissionModule">
                 Module
               </label>
-              <select
+              <Select
                 id="permissionModule"
                 className={styles.modalSelect}
                 value={permissionForm.module}
@@ -2461,7 +2467,7 @@ export default function Settings() {
                       {module}
                     </option>
                   ))}
-              </select>
+              </Select>
               <label className={styles.modalLabel}>Available Actions</label>
               <div className={styles.actionsCheckboxGroup}>
                 {availableActionsList.map((action) => (

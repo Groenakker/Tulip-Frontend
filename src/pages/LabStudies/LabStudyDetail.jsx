@@ -7,6 +7,7 @@ import OpenRecordLink from "../../components/RecordLink/OpenRecordLink";
 import toast from "../../components/Toaster/toast";
 import { useAuth } from "../../context/AuthContext";
 import styles from "./LabStudyDetail.module.css";
+import Select from "../../components/Select/Select";
 
 const API = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
@@ -353,7 +354,7 @@ export default function LabStudyDetail() {
                 <div className={styles.fieldGrid}>
                   <div className={styles.field}>
                     <span className={styles.fieldLabel}>Vendor (Lab)</span>
-                    <select
+                    <Select
                       className={styles.select}
                       value={study.vendorBpId || ""}
                       onChange={(e) => setField("vendorBpId", e.target.value)}
@@ -364,7 +365,7 @@ export default function LabStudyDetail() {
                           {v.name}{v.partnerNumber ? ` · ${v.partnerNumber}` : ""}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                     {eligibleVendors.length === 0 && (
                       <div className={styles.warn}>
                         No vendor lists this test code. Attach it to a vendor in Business Partners first.
@@ -373,7 +374,7 @@ export default function LabStudyDetail() {
                   </div>
                   <div className={styles.field}>
                     <span className={styles.fieldLabel}>Status</span>
-                    <select
+                    <Select
                       className={styles.select}
                       value={study.status || "Assigned"}
                       onChange={(e) => setField("status", e.target.value)}
@@ -381,7 +382,7 @@ export default function LabStudyDetail() {
                       {Object.keys(STATUS_PALETTE).map((s) => (
                         <option key={s} value={s}>{s}</option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                 </div>
 

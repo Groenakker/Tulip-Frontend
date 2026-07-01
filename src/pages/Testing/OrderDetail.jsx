@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { FaPaperPlane, FaBan, FaPlus, FaTrash, FaSave } from "react-icons/fa";
 import Header from "../../components/Header";
 import WhiteIsland from "../../components/Whiteisland";
+import Select from "../../components/Select/Select";
 
 const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 const fetchJson = async (url, opts = {}) => {
@@ -174,22 +175,22 @@ export default function TestOrderDetail() {
           <fieldset disabled={isLocked} style={{ border: "none", padding: 0 }}>
             <div style={grid}>
               <Field label="Vendor">
-                <select value={order.vendorBpId || ""} onChange={(e) => set("vendorBpId", e.target.value)} required>
+                <Select value={order.vendorBpId || ""} onChange={(e) => set("vendorBpId", e.target.value)} required>
                   <option value="">Select vendor</option>
                   {vendors.map((v) => <option key={v._id} value={v._id}>{v.name} · {v.partnerNumber}</option>)}
-                </select>
+                </Select>
               </Field>
               <Field label="Customer">
-                <select value={order.customerBpId || ""} onChange={(e) => set("customerBpId", e.target.value)}>
+                <Select value={order.customerBpId || ""} onChange={(e) => set("customerBpId", e.target.value)}>
                   <option value="">Select customer</option>
                   {partners.map((p) => <option key={p._id} value={p._id}>{p.name} · {p.partnerNumber}</option>)}
-                </select>
+                </Select>
               </Field>
               <Field label="Project">
-                <select value={order.projectId || ""} onChange={(e) => set("projectId", e.target.value)}>
+                <Select value={order.projectId || ""} onChange={(e) => set("projectId", e.target.value)}>
                   <option value="">No project</option>
                   {projects.map((p) => <option key={p._id} value={p._id}>{p.projectID} · {p.name}</option>)}
-                </select>
+                </Select>
               </Field>
             </div>
             <Field label="Notes">
@@ -219,16 +220,16 @@ export default function TestOrderDetail() {
               ) : order.lines.map((line, idx) => (
                 <tr key={idx}>
                   <td style={td}>
-                    <select disabled={isLocked || order.status !== "Draft"} value={line.sampleId || ""} onChange={(e) => updateLine(idx, { sampleId: e.target.value })}>
+                    <Select disabled={isLocked || order.status !== "Draft"} value={line.sampleId || ""} onChange={(e) => updateLine(idx, { sampleId: e.target.value })}>
                       <option value="">Select sample</option>
                       {samples.map((s) => <option key={s._id} value={s._id}>{s.sampleCode} · {s.name || ""}</option>)}
-                    </select>
+                    </Select>
                   </td>
                   <td style={td}>
-                    <select disabled={isLocked || order.status !== "Draft"} value={line.testCodeId || ""} onChange={(e) => updateLine(idx, { testCodeId: e.target.value })}>
+                    <Select disabled={isLocked || order.status !== "Draft"} value={line.testCodeId || ""} onChange={(e) => updateLine(idx, { testCodeId: e.target.value })}>
                       <option value="">Select test</option>
                       {testCodes.map((t) => <option key={t._id} value={t._id}>{t.code} · {t.descriptionShort}</option>)}
-                    </select>
+                    </Select>
                   </td>
                   <td style={td}><StatusPill value={line.status || "Pending"} /></td>
                   <td style={td}>{line.result || "—"}</td>

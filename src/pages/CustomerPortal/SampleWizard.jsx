@@ -7,6 +7,7 @@ import {
   FaVial,
 } from "react-icons/fa";
 import styles from "./sampleWizard.module.css";
+import Select from "../../components/Select/Select";
 
 /*  ===================================================================
     SampleWizard
@@ -74,14 +75,14 @@ const SelectField = ({ label, name, value, options, onChange, readOnly }) => (
     {readOnly ? (
       <div className={styles.readonlyValue}>{value || "—"}</div>
     ) : (
-      <select id={name} name={name} value={value || ""} onChange={onChange}>
+      <Select id={name} name={name} value={value || ""} onChange={onChange}>
         <option value="">— Select —</option>
         {options.map((o) => (
           <option key={o} value={o}>
             {o}
           </option>
         ))}
-      </select>
+      </Select>
     )}
   </div>
 );
@@ -135,7 +136,7 @@ function StepInfo({ sample, onChange, readOnly, projectOptions }) {
         {projectOptions ? (
           <div className={styles.fieldGroup}>
             <label htmlFor="projectID">Project *</label>
-            <select
+            <Select
               id="projectID"
               name="projectID"
               value={sample.projectID || ""}
@@ -148,7 +149,7 @@ function StepInfo({ sample, onChange, readOnly, projectOptions }) {
                   {p.projectID} · {p.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         ) : (
           <TextField label="Project" name="projectName" value={sample.projectName} readOnly />
@@ -612,14 +613,14 @@ function StepTests({ sample, setSample, readOnly, testCodes = [] }) {
           <div style={{ fontSize: 13, color: "#6b7280" }}>
             Pick the tests you'd like us to run. The lab will assign a vendor and instances after the sample arrives.
           </div>
-          <select onChange={addTest} defaultValue="">
+          <Select onChange={addTest} defaultValue="">
             <option value="">+ Add test code…</option>
             {available.map((t) => (
               <option key={t._id} value={t._id}>
                 {t.code} — {t.descriptionShort || t.descriptionLong}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
       )}
 

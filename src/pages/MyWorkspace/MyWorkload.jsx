@@ -4,6 +4,7 @@ import WhiteIsland from "../../components/Whiteisland";
 import styles from "../../components/PM/pm.module.css";
 import { pm, isoDay } from "../../components/PM/pmApi";
 import WorkloadHeatmap from "../../components/PM/WorkloadHeatmap";
+import PlanningBoard from "../../components/PM/PlanningBoard";
 import { useAuth } from "../../context/AuthContext";
 import toast from "../../components/Toaster/toast";
 
@@ -109,6 +110,28 @@ export default function MyWorkload() {
 
         <div className={styles.workloadPanel} style={{ marginTop: 0, padding: 12 }}>
           <WorkloadHeatmap rows={rows} />
+        </div>
+
+        {/* Drag-drop planning board: lets the user assign
+            specific tasks to specific days and tweak per-day
+            hours. Edits go straight to /work-plan and we
+            refetch on success so the heatmap and breakdown
+            below stay in sync. */}
+        <div style={{ marginTop: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+            <strong style={{ fontSize: 14 }}>Plan my week</strong>
+            <span style={{ fontSize: 11, color: "#6b7280" }}>
+              Drag a task onto a day, then tweak hours per cell.
+            </span>
+          </div>
+          <PlanningBoard
+            events={data.events}
+            byDay={data.byDay}
+            from={(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })()}
+            to={(() => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + DAYS_FWD); return d; })()}
+            capacity={capacity}
+            onChanged={load}
+          />
         </div>
 
         <div style={{ marginTop: 18 }}>

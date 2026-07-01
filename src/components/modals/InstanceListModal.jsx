@@ -4,6 +4,7 @@ import { FaSave } from 'react-icons/fa';
 import { LuPrinter } from "react-icons/lu";
 import JsBarcode from 'jsbarcode';
 import OpenRecordLink from '../RecordLink/OpenRecordLink';
+import Select from '../Select/Select';
 
 const InstanceList = ({ onClose, sample, receivingLine }) => {
     const [instances, setInstances] = useState([]);
@@ -617,7 +618,7 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
                                     <div className={styles.warehouseHeader}>
                                         {/* <span>Warehouse</span> */}
                                         {!loading && instances.length > 0 && (
-                                            <select
+                                            <Select
                                                 onChange={(e) => handleAssignToAll(e.target.value)}
                                                 className={styles.headerWarehouseSelect}
                                                 defaultValue=""
@@ -629,7 +630,7 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
                                                         {warehouse.warehouseID}
                                                     </option>
                                                 ))}
-                                            </select>
+                                            </Select>
                                         )}
                                     </div>
                                 </th>
@@ -667,7 +668,7 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
                                             </div>
                                         </td>
                                         <td>
-                                            <select
+                                            <Select
                                                 value={currentWarehouseId}
                                                 onChange={(e) => handleWarehouseChange(instance._id, e.target.value)}
                                                 className={styles.warehouseSelect}
@@ -678,7 +679,7 @@ const InstanceList = ({ onClose, sample, receivingLine }) => {
                                                         {warehouse.warehouseID}
                                                     </option>
                                                 ))}
-                                            </select>
+                                            </Select>
                                         </td>
                                     </tr>
                                 );

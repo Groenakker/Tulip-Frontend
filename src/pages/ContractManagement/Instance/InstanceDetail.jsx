@@ -5,6 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { FaSave, FaTrash } from "react-icons/fa";
 import Header from "../../../components/Header";
 import OpenRecordLink from "../../../components/RecordLink/OpenRecordLink";
+import Select from "../../../components/Select/Select";
 
 // Status palette shared with the Lab Studies pages so the pill colours
 // match wherever a study appears.
@@ -187,7 +188,7 @@ export default function InstanceDetail() {
                   </div>
                   <div className={styles.info} style={{ width: "50%" }}>
                     <div className={styles.infoDetail}>Status</div>
-                    <select
+                    <Select
                       className={styles.dropdown}
                       name="status"
                       value={instance.status || "Pending"}
@@ -198,7 +199,7 @@ export default function InstanceDetail() {
                       <option value="Completed">Completed</option>
                       <option value="Failed">Failed</option>
                       <option value="Cancelled">Cancelled</option>
-                    </select>
+                    </Select>
                   </div>
                 </div>
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FaSave, FaInfoCircle, FaFilePdf, FaFileWord, FaFileExcel, FaSearch, FaEye, FaTimes, FaPlus } from "react-icons/fa";
 import styles from "./VendorTemplatesTab.module.css";
+import Select from "../../components/Select/Select";
 
 // ============================================================
 // Settings → Vendor Templates
@@ -557,7 +558,7 @@ export default function VendorTemplatesTab() {
         <div className={styles.cardHead}>
           <h3>2. Field mapping</h3>
           <div className={styles.cardTools}>
-            <select
+            <Select
               className={styles.select}
               value={selectedKey}
               onChange={(e) => setSelectedKey(e.target.value)}
@@ -565,7 +566,7 @@ export default function VendorTemplatesTab() {
               {templates.map((t) => (
                 <option key={t.key} value={t.key}>{t.label}</option>
               ))}
-            </select>
+            </Select>
             <button
               type="button"
               className={styles.previewBtn}
@@ -618,7 +619,7 @@ export default function VendorTemplatesTab() {
                         )}
                       </div>
                       <div className={styles.slotControl}>
-                        <select
+                        <Select
                           className={styles.select}
                           value={selectValue}
                           onChange={(e) => onModeChange(slot, e.target.value)}
@@ -632,7 +633,7 @@ export default function VendorTemplatesTab() {
                               ))}
                             </optgroup>
                           ))}
-                        </select>
+                        </Select>
                         {row.mode === STATIC_MODE && (
                           <input
                             className={styles.staticInput}

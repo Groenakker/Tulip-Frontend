@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { FaPlus, FaTrash, FaUndo, FaKey, FaToggleOn, FaToggleOff } from "react-icons/fa";
 import Modal from "../../components/Modal";
 import styles from "./Settings.module.css";
+import Select from "../../components/Select/Select";
 
 // Reusable Settings tab body for the "Customer Logins" and "Vendor
 // Logins" admin views. The two are mechanically identical — they
@@ -274,7 +275,7 @@ export default function PortalLoginsTab({ userType }) {
             </p>
             <form className={styles.inviteForm} onSubmit={submitInvite}>
               <label className={styles.modalLabel}>Business Partner</label>
-              <select
+              <Select
                 className={styles.modalSelect}
                 required
                 disabled={partnersLoading || inviteLoading}
@@ -301,7 +302,7 @@ export default function PortalLoginsTab({ userType }) {
                     {p.name}{p.partnerNumber ? ` · ${p.partnerNumber}` : ""}
                   </option>
                 ))}
-              </select>
+              </Select>
 
               <label className={styles.modalLabel}>Email</label>
               <input

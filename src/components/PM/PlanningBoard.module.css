@@ -1,0 +1,247 @@
+/* My Workload planning board.
+   Two regions side-by-side:
+     - left:  fixed-width "Unplanned" column (a vertical list
+              of all assignable / partially planned tasks).
+     - right: a horizontally-scrolling track of one column per
+              weekday in the chosen window.
+   The Tulip blue + Poppins look is inherited from pm.module.css. */
+
+.planBoard {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+
+/* The left "Unplanned" column is anchored — only the day track
+   scrolls horizontally, so the source of tasks never disappears
+   off-screen while the user drags. */
+.unplannedCol {
+  flex: 0 0 280px;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.daysScroller {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.planColumn {
+  display: flex;
+  flex-direction: column;
+  background: #f4f6f9;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px;
+  min-height: 220px;
+}
+
+.dayCol {
+  flex: 0 0 170px;
+}
+
+.planColumn.dropTarget {
+  background: #e9f0fe;
+  border-color: #4570B6;
+  box-shadow: inset 0 0 0 2px rgba(69, 112, 182, 0.25);
+}
+
+.planColumn.today {
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.planColumnHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px 8px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.planColumnTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.planColumnCount {
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 10px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.planColumnBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 60px;
+  flex: 1 1 auto;
+}
+
+.emptyHint,
+.dropHere {
+  font-size: 11px;
+  color: #9ca3af;
+  padding: 12px 6px;
+  text-align: center;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  background: #ffffff80;
+}
+
+.dropHere { padding: 18px 6px; }
+
+.legend {
+  margin-top: 10px;
+  font-size: 10.5px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-top: 1px dashed #e5e7eb;
+  padding-top: 8px;
+}
+
+/* --- chip styles --- */
+.taskChip,
+.dayChip {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-left: 3px solid #9ca3af;
+  border-radius: 8px;
+  padding: 8px 9px;
+  font-family: Poppins, system-ui, sans-serif;
+  cursor: grab;
+  transition: box-shadow .15s, transform .05s;
+}
+
+.taskChip:active,
+.dayChip:active { cursor: grabbing; transform: scale(0.99); }
+
+.taskChip:hover,
+.dayChip:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
+  border-color: #4570B6;
+}
+
+.taskChipTitle,
+.dayChipTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.taskChipMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: #6b7280;
+}
+
+.dueLabel {
+  background: #f3f4f6;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.remainingPill {
+  background: #e9f0fe;
+  color: #01317E;
+  border: 1px solid #c7d2fe;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-weight: 600;
+}
+
+.priorityDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  background: #9ca3af;
+}
+
+.dayChipRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dayChipRow + .dayChipRow { margin-top: 4px; }
+
+.hoursWrap {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 1px 4px;
+}
+
+.hoursInput {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: Poppins, system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+  padding: 2px 0;
+  /* hide the spinner so the column stays compact — the user
+     can still type or use arrow keys */
+  -moz-appearance: textfield;
+}
+
+.hoursInput::-webkit-outer-spin-button,
+.hoursInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.hoursSuffix {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.iconBtn {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconBtn:hover { color: #dc2626; background: #fef2f2; }
+
+.busy {
+  opacity: 0.65;
+  pointer-events: none;
+}

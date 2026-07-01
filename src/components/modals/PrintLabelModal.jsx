@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import styles from './PrintLabelModal.module.css';
 import { LuPrinter } from "react-icons/lu";
 import { IoMdClose } from "react-icons/io";
+import Select from '../Select/Select';
 
 const PrintLabelModal = ({ onClose, instance }) => {
     const [labelSize, setLabelSize] = useState('2.5x1'); // 2.5 inch x 1 inch
@@ -190,15 +191,15 @@ const PrintLabelModal = ({ onClose, instance }) => {
                 <div className={styles.settings}>
                     <div className={styles.settingGroup}>
                         <label>Label Size:</label>
-                        <select 
-                            value={labelSize} 
+                        <Select
+                            value={labelSize}
                             onChange={(e) => setLabelSize(e.target.value)}
                             className={styles.sizeSelect}
                         >
                             <option value="2.5x1">2.5" x 1" (Standard)</option>
                             <option value="2x1">2" x 1"</option>
                             <option value="3x1">3" x 1"</option>
-                        </select>
+                        </Select>
                     </div>
                 </div>
             </div>

@@ -19,6 +19,7 @@ import RecordHistoryModal from '../../../components/RecordLifecycle/RecordHistor
 import { FaPlus, FaGlobe } from 'react-icons/fa';
 import SearchableSelect from '../../../components/SearchableSelect/SearchableSelect';
 import OpenRecordLink, { isObjectId } from '../../../components/RecordLink/OpenRecordLink';
+import Select from '../../../components/Select/Select';
 
 // All shipping endpoints (and the bpartners/projects/companies/shippo
 // helpers used on this page) sit behind verifyToken, which reads the
@@ -1893,7 +1894,7 @@ export default function ShipmentDetails() {
                                         ) : null;
                                     })()}
                                 </div>
-                                <select
+                                <Select
                                     name='projectCode'
                                     value={log.projectCode || ''}
                                     onChange={onProjectChange}
@@ -1909,7 +1910,7 @@ export default function ShipmentDetails() {
                                             </option>
                                         ))
                                     )}
-                                </select>
+                                </Select>
                             </div>
                             <div className={styles.info} style={{ width: '100%' }}>
                                 <div className={styles.infoDetail}>Project Description</div>
@@ -2186,7 +2187,7 @@ export default function ShipmentDetails() {
                             and lets the user type/edit fields manually below. */}
                         <label className={styles.shippoSavedAddress}>
                             Saved address
-                            <select
+                            <Select
                                 value={selectedCompanyAddressId}
                                 onChange={(e) => handleSelectCompanyAddress(e.target.value)}
                             >
@@ -2202,7 +2203,7 @@ export default function ShipmentDetails() {
                                         {a.city ? ` — ${a.city}${a.state ? ', ' + a.state : ''}` : ''}
                                     </option>
                                 ))}
-                            </select>
+                            </Select>
                         </label>
 
                         <div className={styles.shippoGrid}>
@@ -2248,22 +2249,22 @@ export default function ShipmentDetails() {
                             <label>Width<input type='number' min='0' step='0.01' value={parcel.width} onChange={(e) => handleParcelChange('width', e.target.value)} /></label>
                             <label>Height<input type='number' min='0' step='0.01' value={parcel.height} onChange={(e) => handleParcelChange('height', e.target.value)} /></label>
                             <label>Unit
-                                <select value={parcel.distance_unit} onChange={(e) => handleParcelChange('distance_unit', e.target.value)}>
+                                <Select value={parcel.distance_unit} onChange={(e) => handleParcelChange('distance_unit', e.target.value)}>
                                     <option value='in'>inches</option>
                                     <option value='cm'>cm</option>
                                     <option value='ft'>feet</option>
                                     <option value='mm'>mm</option>
                                     <option value='m'>m</option>
-                                </select>
+                                </Select>
                             </label>
                             <label>Weight<input type='number' min='0' step='0.01' value={parcel.weight} onChange={(e) => handleParcelChange('weight', e.target.value)} /></label>
                             <label>Mass Unit
-                                <select value={parcel.mass_unit} onChange={(e) => handleParcelChange('mass_unit', e.target.value)}>
+                                <Select value={parcel.mass_unit} onChange={(e) => handleParcelChange('mass_unit', e.target.value)}>
                                     <option value='lb'>lb</option>
                                     <option value='oz'>oz</option>
                                     <option value='kg'>kg</option>
                                     <option value='g'>g</option>
-                                </select>
+                                </Select>
                             </label>
                         </div>
                         <div className={styles.shippoActions}>
@@ -2311,7 +2312,7 @@ export default function ShipmentDetails() {
                         <>
                             <div className={styles.shippoGrid} style={{ marginTop: 10 }}>
                                 <label>Contents Type
-                                    <select
+                                    <Select
                                         value={customs.contentsType}
                                         onChange={(e) => handleCustomsChange('contentsType', e.target.value)}
                                     >
@@ -2322,7 +2323,7 @@ export default function ShipmentDetails() {
                                         <option value='SAMPLE'>Sample</option>
                                         <option value='HUMANITARIAN_DONATION'>Humanitarian Donation</option>
                                         <option value='OTHER'>Other</option>
-                                    </select>
+                                    </Select>
                                 </label>
                                 {customs.contentsType === 'OTHER' && (
                                     <label>Contents Explanation
@@ -2333,16 +2334,16 @@ export default function ShipmentDetails() {
                                     </label>
                                 )}
                                 <label>Non-Delivery Option
-                                    <select
+                                    <Select
                                         value={customs.nonDeliveryOption}
                                         onChange={(e) => handleCustomsChange('nonDeliveryOption', e.target.value)}
                                     >
                                         <option value='RETURN'>Return</option>
                                         <option value='ABANDON'>Abandon</option>
-                                    </select>
+                                    </Select>
                                 </label>
                                 <label>Incoterm (optional)
-                                    <select
+                                    <Select
                                         value={customs.incoterm || ''}
                                         onChange={(e) => handleCustomsChange('incoterm', e.target.value)}
                                     >
@@ -2350,7 +2351,7 @@ export default function ShipmentDetails() {
                                         <option value='DDP'>DDP (Delivered Duty Paid)</option>
                                         <option value='DDU'>DDU (Delivered Duty Unpaid)</option>
                                         <option value='FCA'>FCA (Free Carrier)</option>
-                                    </select>
+                                    </Select>
                                 </label>
                                 <label>Certify Signer
                                     <input
@@ -2370,7 +2371,7 @@ export default function ShipmentDetails() {
                                       here lets the user override (e.g. with a real
                                       AES ITN for high-value shipments).
                                     */}
-                                    <select
+                                    <Select
                                         value={customs.eelPfc || ''}
                                         onChange={(e) => handleCustomsChange('eelPfc', e.target.value)}
                                     >
@@ -2379,7 +2380,7 @@ export default function ShipmentDetails() {
                                         <option value='NOEEI_30_37_h'>NOEEI 30.37(h) — tools of trade</option>
                                         <option value='NOEEI_30_36'>NOEEI 30.36 — shipments to Canada</option>
                                         <option value='AES_ITN'>I have an AES ITN (enter below)</option>
-                                    </select>
+                                    </Select>
                                     {customs.eelPfc === 'AES_ITN' && (
                                         <input
                                             value={customs._eelPfcCustom || ''}
@@ -2478,7 +2479,7 @@ export default function ShipmentDetails() {
                                                         />
                                                     </td>
                                                     <td style={{ width: 80 }}>
-                                                        <select
+                                                        <Select
                                                             className={styles.tableInput}
                                                             value={it.massUnit || 'lb'}
                                                             onChange={(e) => handleCustomsItemChange(idx, 'massUnit', e.target.value)}
@@ -2487,7 +2488,7 @@ export default function ShipmentDetails() {
                                                             <option value='oz'>oz</option>
                                                             <option value='kg'>kg</option>
                                                             <option value='g'>g</option>
-                                                        </select>
+                                                        </Select>
                                                     </td>
                                                     <td style={{ width: 90 }}>
                                                         <input

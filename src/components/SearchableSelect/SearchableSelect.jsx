@@ -40,6 +40,14 @@ export default function SearchableSelect({
   triggerClassName = "",
   menuMaxHeight = 260,
   id,
+  name,
+  // When the option list is short the search box is more noise
+  // than help — every native <select> in the app used to render
+  // without one. We auto-hide the search whenever there are
+  // fewer than this many options, but the caller can force the
+  // search input back on by passing `searchable={true}`.
+  alwaysShowSearch = false,
+  searchThreshold = 6,
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -78,7 +86,9 @@ export default function SearchableSelect({
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
-  // Auto-focus the search box when the menu opens.
+  // Auto-focus the search box when the menu opens. We tolerate
+  // a missing ref (short lists hide the search row) so the
+  // alwaysShowSearch=false branch doesn't throw.
   useEffect(() => {
     if (open) {
       setQuery("");
@@ -89,6 +99,12 @@ export default function SearchableSelect({
 
   const openMenu = () => { if (!disabled) setOpen(true); };
 
+  // Dual signature on purpose: legacy call sites pass a raw
+  // value, the new `<Select>` shim passes a synthetic event so
+  // form-style handlers (e.target.value / e.target.name) keep
+  // working. We invoke onChange with whichever shape callers
+  // expect — detected by arity is brittle, so we always send
+  // the value and let the shim decorate it before bubbling.
   const pick = (opt) => {
     onChange?.(opt.value);
     setOpen(false);
@@ -98,6 +114,8 @@ export default function SearchableSelect({
     e.stopPropagation();
     onChange?.("");
   };
+
+  const showSearch = alwaysShowSearch || options.length >= searchThreshold;
 
   const onKeyDown = (e) => {
     if (e.key === "Escape") { setOpen(false); return; }
@@ -157,18 +175,20 @@ export default function SearchableSelect({
 
       {open && (
         <div className={styles.menu} style={{ maxHeight: menuMaxHeight }}>
-          <div className={styles.searchRow}>
-            <FaSearch className={styles.searchIcon} />
-            <input
-              ref={inputRef}
-              className={styles.searchInput}
-              placeholder="Type to search…"
-              value={query}
-              onChange={(e) => { setQuery(e.target.value); setActiveIndex(0); }}
-              onKeyDown={onKeyDown}
-            />
-          </div>
-          <div className={styles.menuList} role="listbox">
+          {showSearch && (
+            <div className={styles.searchRow}>
+              <FaSearch className={styles.searchIcon} />
+              <input
+                ref={inputRef}
+                className={styles.searchInput}
+                placeholder="Type to search…"
+                value={query}
+                onChange={(e) => { setQuery(e.target.value); setActiveIndex(0); }}
+                onKeyDown={onKeyDown}
+              />
+            </div>
+          )}
+          <div className={styles.menuList} role="listbox" onKeyDown={onKeyDown} tabIndex={-1}>
             {loading ? (
               <div className={styles.menuEmpty}>Loading…</div>
             ) : filtered.length === 0 ? (

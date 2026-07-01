@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import styles from "../CustomerPortal/portal.module.css";
 import { StatusPill } from "../CustomerPortal/Dashboard";
+import Select from "../../components/Select/Select";
 
 const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
@@ -85,13 +86,13 @@ export default function VendorOrderDetail() {
                 <td>{l.sampleCode || "—"}</td>
                 <td>{l.testCodeRef || "—"}</td>
                 <td>
-                  <select
+                  <Select
                     value={l.status}
                     disabled={isLocked || saving === l._id}
                     onChange={(e) => saveLine(l._id, { status: e.target.value })}
                   >
                     {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                  </Select>
                 </td>
                 <td>
                   <input

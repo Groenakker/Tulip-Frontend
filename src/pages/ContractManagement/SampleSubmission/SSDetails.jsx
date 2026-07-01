@@ -14,6 +14,7 @@ import RecordStatusBar from '../../../components/RecordLifecycle/RecordStatusBar
 import RecordHistoryModal from '../../../components/RecordLifecycle/RecordHistoryModal';
 import OpenRecordLink, { isObjectId } from '../../../components/RecordLink/OpenRecordLink';
 import MultiSelect from '../../../components/MultiSelect/MultiSelect';
+import Select from '../../../components/Select/Select';
 export default function SSDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -1531,7 +1532,7 @@ export default function SSDetail() {
                                             />
                                         )}
                                     </div>
-                                    <select 
+                                    <Select 
                                         className={styles.dropdown}
                                         name="bPartnerCode" 
                                         value={sample.bPartnerCode} 
@@ -1543,7 +1544,7 @@ export default function SSDetail() {
                                                 {partner.partnerNumber} - {partner.name}
                                             </option>
                                         ))}
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '33%' }}>
                                     <div className={styles.infoDetail}>
@@ -1556,7 +1557,7 @@ export default function SSDetail() {
                                             />
                                         )}
                                     </div>
-                                    <select 
+                                    <Select 
                                         className={styles.dropdown}
                                         name="projectID" 
                                         value={sample.projectID} 
@@ -1568,16 +1569,16 @@ export default function SSDetail() {
                                                 {project.projectID || project.projectCode} - {project.description || project.name}
                                             </option>
                                         ))}
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '33%' }}>
                                     <div className={styles.infoDetail}>Form Status</div>
-                                    <select className={styles.dropdown} name="status" value={sample.status} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="status" value={sample.status} onChange={handleChange}>
                                         <option value="Draft">Draft</option>
                                         <option value="Submitted">Submitted</option>
                                         <option value="Accepted">Accepted</option>
                                         <option value="Rejected">Rejected</option>
-                                    </select>
+                                    </Select>
                                 </div>
                             </div>
 
@@ -1727,11 +1728,11 @@ export default function SSDetail() {
                                 </div>
                                 <div className={styles.info} style={{ width: '20%' }}>
                                     <div className={styles.infoDetail}>Duration of Contact</div>
-                                    <select className={styles.dropdown} name="contactDuration" value={sample.contactDuration} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="contactDuration" value={sample.contactDuration} onChange={handleChange}>
                                         <option value="A - Limited (<24h)">A - Limited ( LT 24h)</option>
                                         <option value="B - Prolonged (24h-30d)">B - Prolonged (24h-30d)</option>
                                         <option value="C - Permanent (>30d)">C - Permanent ( GT 30d)</option>
-                                    </select>
+                                    </Select>
                                 </div>
 
                                 <div className={styles.info} style={{ width: '20%' }}>
@@ -1751,17 +1752,17 @@ export default function SSDetail() {
                             <div className={styles.details}>
                                 <div className={styles.info} style={{ width: '20%' }}>
                                     <div className={styles.infoDetail}>Wall Thickness</div>
-                                    <select className={styles.dropdown} name="wallThickness" value={sample.wallThickness} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="wallThickness" value={sample.wallThickness} onChange={handleChange}>
                                         <option value=">1.0 mm">GT 1.0 mm</option>
                                         <option value="<1.0 mm">LT 1.0 mm</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '20%' }}>
                                     <div className={styles.infoDetail}>Extraction Ratios</div>
-                                    <select className={styles.dropdown} name="extractionRatios" value={sample.extractionRatios} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="extractionRatios" value={sample.extractionRatios} onChange={handleChange}>
                                         <option value="3 cm2/ml">3 cm2/ml</option>
                                         <option value="6 cm2/ml">6 cm2/ml</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '20%' }}>
                                     <div className={styles.infoDetail}>Desired Markets</div>
@@ -1769,18 +1770,18 @@ export default function SSDetail() {
                                 </div>
                                 <div className={styles.info} style={{ width: '20%' }}>
                                     <div className={styles.infoDetail}>Sample Sterile</div>
-                                    <select className={styles.dropdown} name="sampleSterile" value={sample.sampleSterile} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="sampleSterile" value={sample.sampleSterile} onChange={handleChange}>
                                         <option value="Sterile">Sterile</option>
                                         <option value="Non-Sterile">Non-Sterile</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '20%' }}>
                                     <div className={styles.infoDetail}>Sterilization Method</div>
-                                    <select className={styles.dropdown} name="sterilizationMethod" value={sample.sterilizationMethod} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="sterilizationMethod" value={sample.sterilizationMethod} onChange={handleChange}>
                                         <option value="Radiation">Radiation</option>
                                         <option value="EtO">EtO</option>
                                         <option value="Steam">Steam</option>
-                                    </select>
+                                    </Select>
                                 </div>
                             </div>
 
@@ -2105,7 +2106,7 @@ export default function SSDetail() {
                             <div className={styles.details}>
                                 <div className={styles.info} style={{ width: '25%' }}>
                                     <div className={styles.infoDetail}>Study Compliance</div>
-                                    <select className={styles.dropdown} name="studyCompliance" value={sample.studyCompliance || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="studyCompliance" value={sample.studyCompliance || ''} onChange={handleChange}>
                                         <option value="">—</option>
                                         <option value="GLP">GLP</option>
                                         <option value="Non-GLP">Non-GLP</option>
@@ -2113,11 +2114,11 @@ export default function SSDetail() {
                                         <option value="ASCA (A2LA)">ASCA (A2LA)</option>
                                         <option value="Non-NABL">Non-NABL</option>
                                         <option value="Other">Other</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '25%' }}>
                                     <div className={styles.infoDetail}>Product Type</div>
-                                    <select className={styles.dropdown} name="productType" value={sample.productType || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="productType" value={sample.productType || ''} onChange={handleChange}>
                                         <option value="">—</option>
                                         <option value="Medical Device">Medical Device</option>
                                         <option value="Herbal Formulation">Herbal Formulation</option>
@@ -2128,27 +2129,27 @@ export default function SSDetail() {
                                         <option value="Food Additives">Food Additives</option>
                                         <option value="Packaging Material">Packaging Material</option>
                                         <option value="Other">Other</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '25%' }}>
                                     <div className={styles.infoDetail}>Method of Manufacturing</div>
-                                    <select className={styles.dropdown} name="methodOfManufacturing" value={sample.methodOfManufacturing || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="methodOfManufacturing" value={sample.methodOfManufacturing || ''} onChange={handleChange}>
                                         <option value="">—</option>
                                         <option value="Injection Molded">Injection Molded</option>
                                         <option value="Formulated">Formulated</option>
                                         <option value="3D Printed">3D Printed</option>
                                         <option value="Other">Other</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '25%' }}>
                                     <div className={styles.infoDetail}>Body Contact Nature</div>
-                                    <select className={styles.dropdown} name="bodyContactNature" value={sample.bodyContactNature || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="bodyContactNature" value={sample.bodyContactNature || ''} onChange={handleChange}>
                                         <option value="">—</option>
                                         <option value="Intact skin">Intact skin</option>
                                         <option value="Intact mucosal membrane">Intact mucosal membrane</option>
                                         <option value="Breached / compromised surfaces">Breached / compromised surfaces</option>
                                         <option value="Circulating blood">Circulating blood</option>
-                                    </select>
+                                    </Select>
                                 </div>
                             </div>
 
@@ -2251,86 +2252,86 @@ export default function SSDetail() {
                             <div className={styles.details}>
                                 <div className={styles.info} style={{ width: '33%' }}>
                                     <div className={styles.infoDetail}>Extraction Method</div>
-                                    <select className={styles.dropdown} name="extractionMethod" value={sample.extractionMethod || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="extractionMethod" value={sample.extractionMethod || ''} onChange={handleChange}>
                                         <option value="">—</option>
                                         <option value="All Parts Included">All Parts Included</option>
                                         <option value="Internal Filled then Submerged">Internal Filled then Submerged</option>
                                         <option value="Internal Only - Filled">Internal Only - Filled</option>
                                         <option value="External Only - Submerged">External Only - Submerged</option>
                                         <option value="Other">Other</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '33%' }}>
                                     <div className={styles.infoDetail}>Extraction Temperature</div>
-                                    <select className={styles.dropdown} name="extractionTemperature" value={sample.extractionTemperature || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="extractionTemperature" value={sample.extractionTemperature || ''} onChange={handleChange}>
                                         <option value="">—</option>
                                         <option value="37°C">37 °C</option>
                                         <option value="50°C">50 °C</option>
                                         <option value="70°C">70 °C</option>
                                         <option value="121°C">121 °C</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '33%' }}>
                                     <div className={styles.infoDetail}>Samples Pooled?</div>
-                                    <select className={styles.dropdown} name="samplesPooled" value={sample.samplesPooled || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="samplesPooled" value={sample.samplesPooled || ''} onChange={handleChange}>
                                         <option value="">—</option>
                                         <option value="Yes">Yes</option>
                                         <option value="No">No</option>
                                         <option value="N/A">N/A</option>
-                                    </select>
+                                    </Select>
                                 </div>
                             </div>
 
                             <div className={styles.details}>
                                 <div className={styles.info} style={{ width: '50%' }}>
                                     <div className={styles.infoDetail}>Polar Extraction Vehicle</div>
-                                    <select className={styles.dropdown} name="polarVehicle" value={sample.polarVehicle || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="polarVehicle" value={sample.polarVehicle || ''} onChange={handleChange}>
                                         <option value="">—</option>
                                         <option value="Physiological Saline">Physiological Saline</option>
                                         <option value="Distilled Water">Distilled Water</option>
                                         <option value="USP 88 Vehicle">USP 88 Vehicle</option>
                                         <option value="Other">Other</option>
                                         <option value="N/A">N/A</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '50%' }}>
                                     <div className={styles.infoDetail}>Non-Polar Extraction Vehicle</div>
-                                    <select className={styles.dropdown} name="nonPolarVehicle" value={sample.nonPolarVehicle || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="nonPolarVehicle" value={sample.nonPolarVehicle || ''} onChange={handleChange}>
                                         <option value="">—</option>
                                         <option value="Cottonseed Oil">Cottonseed Oil</option>
                                         <option value="Sesame Oil">Sesame Oil</option>
                                         <option value="USP 88 Vehicle">USP 88 Vehicle</option>
                                         <option value="Other">Other</option>
                                         <option value="N/A">N/A</option>
-                                    </select>
+                                    </Select>
                                 </div>
                             </div>
 
                             <div className={styles.details}>
                                 <div className={styles.info} style={{ width: '33%' }}>
                                     <div className={styles.infoDetail}>Can be cut before extraction?</div>
-                                    <select className={styles.dropdown} name="canBeCut" value={sample.canBeCut || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="canBeCut" value={sample.canBeCut || ''} onChange={handleChange}>
                                         <option value="">—</option>
                                         <option value="Yes">Yes</option>
                                         <option value="No">No</option>
                                         <option value="N/A">N/A</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '33%' }}>
                                     <div className={styles.infoDetail}>Biohazard?</div>
-                                    <select className={styles.dropdown} name="biohazard" value={sample.biohazard || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="biohazard" value={sample.biohazard || ''} onChange={handleChange}>
                                         <option value="">—</option>
                                         <option value="Yes">Yes</option>
                                         <option value="No">No</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '33%' }}>
                                     <div className={styles.infoDetail}>Product Stable?</div>
-                                    <select className={styles.dropdown} name="productStable" value={sample.productStable || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="productStable" value={sample.productStable || ''} onChange={handleChange}>
                                         <option value="">—</option>
                                         <option value="Yes">Yes</option>
                                         <option value="No">No</option>
-                                    </select>
+                                    </Select>
                                 </div>
                             </div>
 
@@ -2364,45 +2365,45 @@ export default function SSDetail() {
                             <div className={styles.details}>
                                 <div className={styles.info} style={{ width: '20%' }}>
                                     <div className={styles.infoDetail}>MSDS Attached?</div>
-                                    <select className={styles.dropdown} name="msdsAttached" value={sample.msdsAttached || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="msdsAttached" value={sample.msdsAttached || ''} onChange={handleChange}>
                                         <option value="">—</option><option value="Yes">Yes</option><option value="No">No</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '20%' }}>
                                     <div className={styles.infoDetail}>COA Attached?</div>
-                                    <select className={styles.dropdown} name="coaAttached" value={sample.coaAttached || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="coaAttached" value={sample.coaAttached || ''} onChange={handleChange}>
                                         <option value="">—</option><option value="Yes">Yes</option><option value="No">No</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '20%' }}>
                                     <div className={styles.infoDetail}>CAD Drawings?</div>
-                                    <select className={styles.dropdown} name="cadDrawingsAttached" value={sample.cadDrawingsAttached || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="cadDrawingsAttached" value={sample.cadDrawingsAttached || ''} onChange={handleChange}>
                                         <option value="">—</option><option value="Yes">Yes</option><option value="No">No</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '20%' }}>
                                     <div className={styles.infoDetail}>Absorption Check?</div>
-                                    <select className={styles.dropdown} name="absorptionCheck" value={sample.absorptionCheck || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="absorptionCheck" value={sample.absorptionCheck || ''} onChange={handleChange}>
                                         <option value="">—</option><option value="Yes">Yes</option><option value="No">No</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '20%' }}>
                                     <div className={styles.infoDetail}>Dose Formulation Analysis?</div>
-                                    <select className={styles.dropdown} name="doseFormulationAnalysisRequired" value={sample.doseFormulationAnalysisRequired || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="doseFormulationAnalysisRequired" value={sample.doseFormulationAnalysisRequired || ''} onChange={handleChange}>
                                         <option value="">—</option><option value="Yes">Yes</option><option value="No">No</option>
-                                    </select>
+                                    </Select>
                                 </div>
                             </div>
 
                             <div className={styles.details}>
                                 <div className={styles.info} style={{ width: '100%' }}>
                                     <div className={styles.infoDetail}>Predicate Device</div>
-                                    <select className={styles.dropdown} name="predicateDevice" value={sample.predicateDevice || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="predicateDevice" value={sample.predicateDevice || ''} onChange={handleChange}>
                                         <option value="">—</option>
                                         <option value="Supplied by Sponsor">Supplied by Sponsor</option>
                                         <option value="Procured by Test facility">Procured by Test facility</option>
                                         <option value="N/A">N/A</option>
-                                    </select>
+                                    </Select>
                                 </div>
                             </div>
 
@@ -2410,9 +2411,9 @@ export default function SSDetail() {
                             <div className={styles.details}>
                                 <div className={styles.info} style={{ width: '25%' }}>
                                     <div className={styles.infoDetail}>EU MDR Class</div>
-                                    <select className={styles.dropdown} name="mdrClassification" value={sample.mdrClassification || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="mdrClassification" value={sample.mdrClassification || ''} onChange={handleChange}>
                                         <option value="">—</option><option value="I">I</option><option value="IIa">IIa</option><option value="IIb">IIb</option><option value="III">III</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '25%' }}>
                                     <div className={styles.infoDetail}>EU MDR Rule</div>
@@ -2420,15 +2421,15 @@ export default function SSDetail() {
                                 </div>
                                 <div className={styles.info} style={{ width: '25%' }}>
                                     <div className={styles.infoDetail}>Indian MDR Class</div>
-                                    <select className={styles.dropdown} name="indianMdrClass" value={sample.indianMdrClass || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="indianMdrClass" value={sample.indianMdrClass || ''} onChange={handleChange}>
                                         <option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <div className={styles.info} style={{ width: '25%' }}>
                                     <div className={styles.infoDetail}>US FDA Class</div>
-                                    <select className={styles.dropdown} name="fdaClassification" value={sample.fdaClassification || ''} onChange={handleChange}>
+                                    <Select className={styles.dropdown} name="fdaClassification" value={sample.fdaClassification || ''} onChange={handleChange}>
                                         <option value="">—</option><option value="I">I</option><option value="II">II</option><option value="III">III</option>
-                                    </select>
+                                    </Select>
                                 </div>
                             </div>
 
@@ -2922,7 +2923,7 @@ export default function SSDetail() {
                                                                         return (
                                                                             <>
                                                                                 <label style={{ fontWeight: 600, fontSize: 11 }}>Vendor</label>
-                                                                                <select
+                                                                                <Select
                                                                                     value={draft.vendorBpId}
                                                                                     onChange={(e) => updateAssignmentDraft(test.id, { vendorBpId: e.target.value })}
                                                                                     style={{ padding: 4, border: '1px solid #d1d5db', borderRadius: 4 }}
@@ -2933,7 +2934,7 @@ export default function SSDetail() {
                                                                                             {v.name}{v.partnerNumber ? ` · ${v.partnerNumber}` : ''}
                                                                                         </option>
                                                                                     ))}
-                                                                                </select>
+                                                                                </Select>
                                                                                 {eligibleVendors.length === 0 && (
                                                                                     <div style={{ color: '#b91c1c', fontSize: 10, lineHeight: 1.3, display: 'flex', flexDirection: 'column', gap: 2 }}>
                                                                                         <span>

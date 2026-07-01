@@ -11,6 +11,7 @@ import toast from "../../../components/Toaster/toast";
 import { useAuth } from "../../../context/AuthContext";
 import Header from "../../../components/Header";
 import BPDocuments from "../../../components/BPDocuments/BPDocuments";
+import Select from "../../../components/Select/Select";
 // export default function Pdetail() {
 //   const [partner, setPartner] = useState({
 //     id: "C00030",
@@ -547,7 +548,7 @@ export default function Pdetail() {
                   </div>
                   <div className={styles.info} style={{ width: "25%" }}>
                     <div className={styles.infoDetail}>Category <span style={{ color: "red" }}>*</span></div>
-                    <select
+                    <Select
                       className={styles.dropdown}
                       name="category"
                       value={partner.category || ""}
@@ -559,7 +560,7 @@ export default function Pdetail() {
                       <option value="Client & Vendor">
                         Client &amp; Vendor
                       </option>
-                    </select>
+                    </Select>
                   </div>
                 </div>
 
@@ -567,7 +568,7 @@ export default function Pdetail() {
                 <div className={styles.details2}>
                   <div className={styles.info} style={{ width: "15%" }}>
                     <div className={styles.infoDetail}>Status <span style={{ color: "red" }}>*</span></div>
-                    <select
+                    <Select
                       className={styles.dropdown}
                       name="status"
                       value={partner.status || "Active"}
@@ -575,7 +576,7 @@ export default function Pdetail() {
                     >
                       <option value="Active">Active</option>
                       <option value="Inactive">Inactive</option>
-                    </select>
+                    </Select>
                   </div>
                   <div className={styles.info2} style={{ width: "60%" }}>
                     <div className={styles.infoDetail}>Email</div>

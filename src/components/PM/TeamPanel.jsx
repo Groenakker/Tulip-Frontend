@@ -4,6 +4,7 @@ import styles from "./pm.module.css";
 import Avatar from "./Avatar";
 import { pm } from "./pmApi";
 import toast from "../Toaster/toast";
+import Select from "../Select/Select";
 
 // Project team manager. Lists current members with their
 // per-project role + workload counters, and offers an
@@ -186,14 +187,14 @@ export default function TeamPanel({ projectId, canEdit, onChanged }) {
 
               <div className={styles.memberActions}>
                 {canEdit ? (
-                  <select
+                  <Select
                     className={styles.select}
                     value={m.role}
                     onChange={(e) => changeRole(m._id, e.target.value)}
                     style={{ minWidth: 110 }}
                   >
                     {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-                  </select>
+                  </Select>
                 ) : (
                   <span className={styles.memberMeta}>{m.role}</span>
                 )}

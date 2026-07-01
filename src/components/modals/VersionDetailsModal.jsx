@@ -2,6 +2,7 @@ import { useState } from "react";
 import styles from "./ContactsForm.module.css";
 import { FaSave, FaTrash, FaPlus, FaTimes, FaEnvelope, FaComment, FaDownload } from "react-icons/fa";
 import toast from "../Toaster/toast";
+import Select from "../Select/Select";
 
 const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
@@ -606,7 +607,7 @@ const VersionDetailsModal = ({ version, documentId, onClose, onUpdate, onDelete,
                   <label style={{ display: "block", marginBottom: "4px", fontSize: "13px", fontWeight: "500", color: "#374151" }}>
                     Role *
                   </label>
-                  <select
+                  <Select
                     className={styles.input}
                     name="role"
                     value={newStakeholder.role}
@@ -617,7 +618,7 @@ const VersionDetailsModal = ({ version, documentId, onClose, onUpdate, onDelete,
                     <option value="APPROVER">Approver</option>
                     <option value="OBSERVER">Observer</option>
                     <option value="EDITOR">Editor</option>
-                  </select>
+                  </Select>
                 </div>
               </div>
               <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
@@ -844,7 +845,7 @@ const VersionDetailsModal = ({ version, documentId, onClose, onUpdate, onDelete,
                   <label style={{ display: "block", marginBottom: "4px", fontSize: "13px", fontWeight: "500", color: "#374151" }}>
                     Status
                   </label>
-                  <select
+                  <Select
                     className={styles.input}
                     name="status"
                     value={newReview.status}
@@ -853,7 +854,7 @@ const VersionDetailsModal = ({ version, documentId, onClose, onUpdate, onDelete,
                     <option value="Pending">Pending</option>
                     <option value="Approved">Approved</option>
                     <option value="Rejected">Rejected</option>
-                  </select>
+                  </Select>
                 </div>
               </div>
               <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>

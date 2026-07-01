@@ -27,6 +27,17 @@ const req = (method, path, body, opts = {}) =>
     ...opts,
   }).then(j);
 
+// Multipart helper for endpoints that receive a single file
+// (task attachment paste/drop/pick). We deliberately *don't*
+// set a Content-Type header so the browser fills in the multi-
+// part boundary itself.
+const reqForm = (method, path, formData) =>
+  fetch(`${BASE}${path}`, {
+    method,
+    credentials: "include",
+    body: formData,
+  }).then(j);
+
 export const pm = {
   // tasks
   listTasks: (params = {}) => {
@@ -41,6 +52,20 @@ export const pm = {
   updateStatus: (id, body, { force } = {}) =>
     req("PATCH", `/api/tasks/${id}/status${force ? "?force=true" : ""}`, body),
   addComment: (id, body) => req("POST", `/api/tasks/${id}/comments`, body),
+  // file: a File / Blob from clipboard, drag-drop, or input.
+  // optional `filename` overrides the synthesized one — handy
+  // when the user typed a name alongside a clipboard paste.
+  addAttachment: (id, file, filename) => {
+    const fd = new FormData();
+    // Falling back to "pasted-image" gives the server a hint
+    // when the browser doesn't supply a name (some paste paths
+    // hand us a nameless Blob).
+    fd.append("file", file, file.name || filename || "pasted-image");
+    if (filename) fd.append("filename", filename);
+    return reqForm("POST", `/api/tasks/${id}/attachments`, fd);
+  },
+  removeAttachment: (id, attachmentId) =>
+    req("DELETE", `/api/tasks/${id}/attachments/${attachmentId}`),
   deleteTask: (id) => req("DELETE", `/api/tasks/${id}`),
 
   // workload / availability
@@ -52,6 +77,16 @@ export const pm = {
     const qs = new URLSearchParams(params).toString();
     return req("GET", `/api/tasks/availability${qs ? `?${qs}` : ""}`);
   },
+  // Replaces the CURRENT user's per-day plan for a task.
+  // entries: [{ date: "YYYY-MM-DD" | Date, hours: number }]
+  // Hours === 0 entries are treated as deletions by the backend.
+  updateWorkPlan: (taskId, entries) =>
+    req("PUT", `/api/tasks/${taskId}/work-plan`, {
+      entries: (entries || []).map((e) => ({
+        date: typeof e.date === "string" ? e.date : new Date(e.date).toISOString().slice(0, 10),
+        hours: Number(e.hours) || 0,
+      })),
+    }),
 
   // projects (PM extensions)
   getInsights: (projectId) => req("GET", `/api/projects/${projectId}/insights`),
